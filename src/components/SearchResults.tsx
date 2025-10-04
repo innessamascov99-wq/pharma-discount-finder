@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Search, Filter, Clock, ExternalLink, Bookmark, BookmarkCheck, ChevronDown, ChevronUp } from 'lucide-react';
 import { supabase } from './supabaseClient'
-import { supabase } from './supabaseClient'
+\
 
 
 interface Program {

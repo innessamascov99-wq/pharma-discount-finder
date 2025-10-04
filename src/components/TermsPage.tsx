@@ -1,6 +1,6 @@
 import React from 'react';
 import { FileText, Shield, AlertTriangle, Mail, Scale } from 'lucide-react';
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 export function TermsPage() {
   return (

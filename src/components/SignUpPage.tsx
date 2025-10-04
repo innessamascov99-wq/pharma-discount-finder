@@ -5,6 +5,8 @@ import { UserPlus, Eye, EyeOff, Check, X, Shield, Lock, Search, Mail } from 'luc
 interface FormData {
   firstName: string;
   lastName: string;
+  age: string;
+  state: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -13,6 +15,8 @@ interface FormData {
 interface FormErrors {
   firstName?: string;
   lastName?: string;
+  age?: string;
+  state?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
@@ -22,6 +26,8 @@ export function SignUpPage() {
   const [formData, setFormData] = useState<FormData>({
     firstName: '',
     lastName: '',
+    age: '',
+    state: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -32,6 +38,60 @@ export function SignUpPage() {
   const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [isSuccess, setIsSuccess] = useState(false);
+
+  const usStates = [
+    { value: 'AL', label: 'Alabama' },
+    { value: 'AK', label: 'Alaska' },
+    { value: 'AZ', label: 'Arizona' },
+    { value: 'AR', label: 'Arkansas' },
+    { value: 'CA', label: 'California' },
+    { value: 'CO', label: 'Colorado' },
+    { value: 'CT', label: 'Connecticut' },
+    { value: 'DE', label: 'Delaware' },
+    { value: 'DC', label: 'District of Columbia' },
+    { value: 'FL', label: 'Florida' },
+    { value: 'GA', label: 'Georgia' },
+    { value: 'HI', label: 'Hawaii' },
+    { value: 'ID', label: 'Idaho' },
+    { value: 'IL', label: 'Illinois' },
+    { value: 'IN', label: 'Indiana' },
+    { value: 'IA', label: 'Iowa' },
+    { value: 'KS', label: 'Kansas' },
+    { value: 'KY', label: 'Kentucky' },
+    { value: 'LA', label: 'Louisiana' },
+    { value: 'ME', label: 'Maine' },
+    { value: 'MD', label: 'Maryland' },
+    { value: 'MA', label: 'Massachusetts' },
+    { value: 'MI', label: 'Michigan' },
+    { value: 'MN', label: 'Minnesota' },
+    { value: 'MS', label: 'Mississippi' },
+    { value: 'MO', label: 'Missouri' },
+    { value: 'MT', label: 'Montana' },
+    { value: 'NE', label: 'Nebraska' },
+    { value: 'NV', label: 'Nevada' },
+    { value: 'NH', label: 'New Hampshire' },
+    { value: 'NJ', label: 'New Jersey' },
+    { value: 'NM', label: 'New Mexico' },
+    { value: 'NY', label: 'New York' },
+    { value: 'NC', label: 'North Carolina' },
+    { value: 'ND', label: 'North Dakota' },
+    { value: 'OH', label: 'Ohio' },
+    { value: 'OK', label: 'Oklahoma' },
+    { value: 'OR', label: 'Oregon' },
+    { value: 'PA', label: 'Pennsylvania' },
+    { value: 'RI', label: 'Rhode Island' },
+    { value: 'SC', label: 'South Carolina' },
+    { value: 'SD', label: 'South Dakota' },
+    { value: 'TN', label: 'Tennessee' },
+    { value: 'TX', label: 'Texas' },
+    { value: 'UT', label: 'Utah' },
+    { value: 'VT', label: 'Vermont' },
+    { value: 'VA', label: 'Virginia' },
+    { value: 'WA', label: 'Washington' },
+    { value: 'WV', label: 'West Virginia' },
+    { value: 'WI', label: 'Wisconsin' },
+    { value: 'WY', label: 'Wyoming' }
+  ];
 
   const validateEmail = (email: string): boolean => {
     const emailRegex = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
@@ -65,6 +125,16 @@ export function SignUpPage() {
     }
   };
 
+  const handleSelectChange = (e: React.ChangeEvent<HTMLSelectElement>) => {
+    const { name, value } = e.target;
+    setFormData(prev => ({ ...prev, [name]: value }));
+    
+    // Clear error when user makes selection
+    if (errors[name as keyof FormErrors]) {
+      setErrors(prev => ({ ...prev, [name]: undefined }));
+    }
+  };
+
   const validateForm = (): boolean => {
     const newErrors: FormErrors = {};
 
@@ -74,6 +144,19 @@ export function SignUpPage() {
 
     if (!formData.lastName.trim()) {
       newErrors.lastName = 'Last name is required';
+    }
+
+    if (!formData.age.trim()) {
+      newErrors.age = 'Age is required';
+    } else {
+      const ageNum = parseInt(formData.age);
+      if (isNaN(ageNum) || ageNum < 18) {
+        newErrors.age = 'You must be 18 years or older to create an account';
+      }
+    }
+
+    if (!formData.state) {
+      newErrors.state = 'Please select your state';
     }
 
     if (!formData.email.trim()) {
@@ -215,6 +298,55 @@ export function SignUpPage() {
                   <p className="mt-1 text-sm text-red-600">{errors.lastName}</p>
                 )}
               </div>
+            </div>
+
+            {/* Age */}
+            <div>
+              <label htmlFor="age" className="block text-sm font-medium text-slate-700 mb-2">
+                Age *
+              </label>
+              <input
+                type="number"
+                id="age"
+                name="age"
+                value={formData.age}
+                onChange={handleChange}
+                min="18"
+                max="120"
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  errors.age ? 'border-red-300' : 'border-slate-300'
+                }`}
+                placeholder="Enter your age"
+              />
+              {errors.age && (
+                <p className="mt-1 text-sm text-red-600">{errors.age}</p>
+              )}
+            </div>
+
+            {/* State */}
+            <div>
+              <label htmlFor="state" className="block text-sm font-medium text-slate-700 mb-2">
+                State *
+              </label>
+              <select
+                id="state"
+                name="state"
+                value={formData.state}
+                onChange={handleSelectChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  errors.state ? 'border-red-300' : 'border-slate-300'
+                }`}
+              >
+                <option value="">Select your state</option>
+                {usStates.map((state) => (
+                  <option key={state.value} value={state.value}>
+                    {state.label}
+                  </option>
+                ))}
+              </select>
+              {errors.state && (
+                <p className="mt-1 text-sm text-red-600">{errors.state}</p>
+              )}
             </div>
 
             {/* Email */}

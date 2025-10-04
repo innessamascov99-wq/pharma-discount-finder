@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, FileText, CheckCircle } from 'lucide-react';
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 
 export function HowItWorks() {

@@ -1,5 +1,8 @@
 import React, { useState } from 'react';
-import { Search, Filter, Clock, ExternalLink, Bookmark, BookmarkCheck } from 'lucide-react';
+import { Search, Filter, Clock, ExternalLink, Bookmark, BookmarkCheck, ChevronDown, ChevronUp } from 'lucide-react';
+import { supabase } from './supabaseClient'
+import { supabase } from './supabaseClient'
+
 
 interface Program {
   id: string;
@@ -10,9 +13,16 @@ interface Program {
   fetchedDate: string;
   source: string;
   eligibility: 'insured' | 'uninsured' | 'both';
+  savingsAmount: number; // monthly savings amount in dollars
   isSaved: boolean;
 }
 
+interface FilterState {
+  brands: string[];
+  eligibility: string[];
+  freshness: string;
+  savingsAmount: string;
+}
 const mockPrograms: Program[] = [
   {
     id: '1',

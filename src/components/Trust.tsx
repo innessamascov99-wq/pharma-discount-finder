@@ -1,5 +1,7 @@
 import React from 'react';
 import { Shield, Globe, Calendar, AlertTriangle } from 'lucide-react';
+import { supabase } from '../supabaseClient'
+
 
 export function Trust() {
   return (

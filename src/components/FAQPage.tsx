@@ -1,5 +1,7 @@
 import React, { useState } from 'react';
 import { ChevronDown, ChevronUp, HelpCircle } from 'lucide-react';
+import { supabase } from './supabaseClient'
+
 
 export function FAQPage() {
   const [openIndex, setOpenIndex] = useState<number | null>(0);

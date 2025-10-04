@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, Eye, EyeOff, Check, X, Shield, Lock, Search, Mail } from 'lucide-react';
+import { supabase } from './supabaseClient'
 
 interface FormData {
   firstName: string;

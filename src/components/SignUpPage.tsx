@@ -7,6 +7,7 @@ interface FormData {
   lastName: string;
   age: string;
   state: string;
+  insuranceStatus: string;
   email: string;
   password: string;
   confirmPassword: string;
@@ -17,6 +18,7 @@ interface FormErrors {
   lastName?: string;
   age?: string;
   state?: string;
+  insuranceStatus?: string;
   email?: string;
   password?: string;
   confirmPassword?: string;
@@ -28,6 +30,7 @@ export function SignUpPage() {
     lastName: '',
     age: '',
     state: '',
+    insuranceStatus: '',
     email: '',
     password: '',
     confirmPassword: ''
@@ -157,6 +160,10 @@ export function SignUpPage() {
 
     if (!formData.state) {
       newErrors.state = 'Please select your state';
+    }
+
+    if (!formData.insuranceStatus) {
+      newErrors.insuranceStatus = 'Please select your insurance status';
     }
 
     if (!formData.email.trim()) {
@@ -346,6 +353,32 @@ export function SignUpPage() {
               </select>
               {errors.state && (
                 <p className="mt-1 text-sm text-red-600">{errors.state}</p>
+              )}
+            </div>
+
+            {/* Insurance Status */}
+            <div>
+              <label htmlFor="insuranceStatus" className="block text-sm font-medium text-slate-700 mb-2">
+                Insurance Status *
+              </label>
+              <select
+                id="insuranceStatus"
+                name="insuranceStatus"
+                value={formData.insuranceStatus}
+                onChange={handleSelectChange}
+                className={`w-full px-4 py-3 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-transparent transition-colors ${
+                  errors.insuranceStatus ? 'border-red-300' : 'border-slate-300'
+                }`}
+              >
+                <option value="" disabled>Select insurance status</option>
+                <option value="commercially-insured">Commercially Insured</option>
+                <option value="medicare">Medicare</option>
+                <option value="medicaid">Medicaid</option>
+                <option value="uninsured">Uninsured</option>
+                <option value="prefer-not-to-say">Prefer not to say</option>
+              </select>
+              {errors.insuranceStatus && (
+                <p className="mt-1 text-sm text-red-600">{errors.insuranceStatus}</p>
               )}
             </div>
 

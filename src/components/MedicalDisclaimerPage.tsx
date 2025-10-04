@@ -1,5 +1,7 @@
 import React from 'react';
 import { AlertTriangle, Shield, FileText, Users, ExternalLink, Scale } from 'lucide-react';
+import { supabase } from './supabaseClient'
+
 
 export function MedicalDisclaimerPage() {
   return (

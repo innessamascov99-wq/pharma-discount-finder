@@ -13,6 +13,8 @@ import { MedicalDisclaimerPage } from './components/MedicalDisclaimerPage';
 import { SignUpPage } from './components/SignUpPage';
 import { LoginPage } from './components/LoginPage';
 import { ForgotPasswordPage } from './components/ForgotPasswordPage';
+import { supabase } from '../supabaseClient'
+
 
 function App() {
   return (

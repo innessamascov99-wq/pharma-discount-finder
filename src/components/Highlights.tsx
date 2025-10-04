@@ -1,5 +1,7 @@
 import React from 'react';
 import { Shield, Clock, FileText, Zap } from 'lucide-react';
+import { supabase } from './supabaseClient'
+
 
 export function Highlights() {
   const highlights = [

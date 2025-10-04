@@ -1,5 +1,7 @@
 import React from 'react';
 import { Heart, Shield, Users, Search, FileText, CheckCircle, DollarSign } from 'lucide-react';
+import { supabase } from './supabaseClient'
+
 
 export function AboutPage() {
   return (

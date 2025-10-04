@@ -6,21 +6,18 @@ const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYm
 
 export const supabase = createClient(supabaseUrl, supabaseAnonKey)
 
-// Create a test record
-const testDatabase = async () => {
-  // First, ask your friend to create the table in Supabase dashboard
-  // Then you can insert data:
-  
+// Optional: Test connection function (call manually when needed)
+export const testConnection = async () => {
   const { data, error } = await supabase
-    .from('connection_test')  // table name
-    .insert({ message: 'Testing from Bolt!' })
-    .select()
+    .from('signup')
+    .select('count')
+    .limit(1)
   
   if (error) {
-    console.error('Error:', error)
-  } else {
-    console.log('Success! Data:', data)
+    console.error('Connection error:', error)
+    return false
   }
+  
+  console.log('Connection successful!')
+  return true
 }
-
-testDatabase()

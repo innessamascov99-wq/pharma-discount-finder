@@ -1,5 +1,7 @@
 import React from 'react';
 import { Brain, Shield, Clock, Eye, Save, Share } from 'lucide-react';
+import { supabase } from './supabaseClient'
+
 
 export function Features() {
   const features = [

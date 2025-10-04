@@ -1,7 +1,7 @@
 import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { UserPlus, Eye, EyeOff, Check, X, Shield, Lock, Search, Mail } from 'lucide-react';
-import { supabase } from './supabaseClient'
+import { supabase } from '../supabaseClient'
 
 interface FormData {
   firstName: string;
@@ -23,6 +23,7 @@ interface FormErrors {
   email?: string;
   password?: string;
   confirmPassword?: string;
+  general?: string;
 }
 
 export function SignUpPage() {
@@ -199,11 +200,46 @@ export function SignUpPage() {
 
     setIsSubmitting(true);
     
-    // Simulate API call
-    await new Promise(resolve => setTimeout(resolve, 1500));
-    
-    setIsSubmitting(false);
-    setIsSuccess(true);
+    try {
+      // Hash the password (in a real app, this should be done server-side)
+      // For now, we'll store it as plain text (NOT recommended for production)
+      const { data, error } = await supabase
+        .from('signup')
+        .insert([
+          {
+            email: formData.email.trim().toLowerCase(),
+            password_hash: formData.password, // In production, hash this server-side
+            first_name: formData.firstName.trim(),
+            last_name: formData.lastName.trim(),
+            age: parseInt(formData.age),
+            state: formData.state,
+            insurance_status: formData.insuranceStatus
+          }
+        ])
+        .select();
+
+      if (error) {
+        console.error('Signup error:', error);
+        
+        // Handle specific error cases
+        if (error.code === '23505' && error.message.includes('email')) {
+          setErrors({ email: 'An account with this email already exists' });
+        } else {
+          setErrors({ general: 'Failed to create account. Please try again.' });
+        }
+        setIsSubmitting(false);
+        return;
+      }
+
+      console.log('User created successfully:', data);
+      setIsSubmitting(false);
+      setIsSuccess(true);
+      
+    } catch (error) {
+      console.error('Unexpected error:', error);
+      setErrors({ general: 'An unexpected error occurred. Please try again.' });
+      setIsSubmitting(false);
+    }
   };
 
   const passwordStrength = getPasswordStrength(formData.password);
@@ -265,6 +301,13 @@ export function SignUpPage() {
       <section className="bg-white py-16">
         <div className="max-w-md mx-auto px-4 sm:px-6 lg:px-8">
           <form onSubmit={handleSubmit} className="space-y-6">
+            {/* General Error Message */}
+            {errors.general && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4">
+                <p className="text-red-700 text-sm">{errors.general}</p>
+              </div>
+            )}
+
             {/* Name Fields */}
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
               <div>

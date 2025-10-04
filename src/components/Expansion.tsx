@@ -1,5 +1,7 @@
 import React from 'react';
 import { TrendingUp } from 'lucide-react';
+import { supabase } from './supabaseClient'
+
 
 export function Expansion() {
   return (

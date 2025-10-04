@@ -8,6 +8,8 @@ import { Features } from './Features';
 import { Trust } from './Trust';
 import { Expansion } from './Expansion';
 import { FAQ } from './FAQ';
+import { supabase } from './supabaseClient'
+
 
 export function LandingPage() {
   return (

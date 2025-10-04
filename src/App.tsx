@@ -1,31 +1,40 @@
-import React, { useState } from 'react';
+import React from 'react';
+import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
 import { Header } from './components/Header';
-import { HeroSection } from './components/HeroSection';
-import { TrustBadges } from './components/TrustBadges';
-import { SearchBar } from './components/SearchBar';
-import { ProgramPreview } from './components/ProgramPreview';
-import { HowItWorks } from './components/HowItWorks';
-import { FeaturesGrid } from './components/FeaturesGrid';
-import { TrustTransparency } from './components/TrustTransparency';
 import { Footer } from './components/Footer';
+import { LandingPage } from './components/LandingPage';
+import { SearchResults } from './components/SearchResults';
+import { AboutPage } from './components/AboutPage';
+import { FAQPage } from './components/FAQPage';
+import { ContactPage } from './components/ContactPage';
+import { PrivacyPage } from './components/PrivacyPage';
+import { TermsPage } from './components/TermsPage';
+import { MedicalDisclaimerPage } from './components/MedicalDisclaimerPage';
+import { SignUpPage } from './components/SignUpPage';
+import { LoginPage } from './components/LoginPage';
+import { ForgotPasswordPage } from './components/ForgotPasswordPage';
 
 function App() {
   return (
-    <div className="min-h-screen bg-background">
-      <Header />
-      
-      <main>
-        <HeroSection />
-        <TrustBadges />
-        <SearchBar />
-        <ProgramPreview />
-        <HowItWorks />
-        <FeaturesGrid />
-        <TrustTransparency />
-      </main>
-      
-      <Footer />
-    </div>
+    <Router>
+      <div className="min-h-screen bg-white">
+        <Header />
+        <Routes>
+          <Route path="/" element={<LandingPage />} />
+          <Route path="/search" element={<SearchResults />} />
+          <Route path="/about" element={<AboutPage />} />
+          <Route path="/faq" element={<FAQPage />} />
+          <Route path="/contact" element={<ContactPage />} />
+          <Route path="/privacy" element={<PrivacyPage />} />
+          <Route path="/terms" element={<TermsPage />} />
+          <Route path="/medical-disclaimer" element={<MedicalDisclaimerPage />} />
+          <Route path="/signup" element={<SignUpPage />} />
+          <Route path="/login" element={<LoginPage />} />
+          <Route path="/forgot-password" element={<ForgotPasswordPage />} />
+        </Routes>
+        <Footer />
+      </div>
+    </Router>
   );
 }
 

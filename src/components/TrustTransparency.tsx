@@ -21,7 +21,7 @@ export const TrustTransparency: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <Calendar className="w-6 h-6" />
+                  <Calendar className="w-6 h-6 text-primary" />
                   Data Freshness Example
                 </CardTitle>
               </CardHeader>
@@ -43,14 +43,14 @@ export const TrustTransparency: React.FC = () => {
             </Card>
 
             <div className="flex justify-center gap-8">
-              <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center shadow-md border">
-                <Shield className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/20">
+                <Shield className="w-8 h-8 text-primary drop-shadow-sm" />
               </div>
-              <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center shadow-md border">
-                <FileCheck className="w-8 h-8 text-primary" />
+              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/20">
+                <FileCheck className="w-8 h-8 text-primary drop-shadow-sm" />
               </div>
-              <div className="w-16 h-16 bg-background rounded-full flex items-center justify-center shadow-md border">
-                <AlertTriangle className="w-8 h-8 text-warning" />
+              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-warning/20">
+                <AlertTriangle className="w-8 h-8 text-warning drop-shadow-sm" />
               </div>
             </div>
           </div>
@@ -60,7 +60,7 @@ export const TrustTransparency: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-6 h-6" />
+                  <Shield className="w-6 h-6 text-primary" />
                   Our Commitment
                 </CardTitle>
               </CardHeader>
@@ -81,7 +81,7 @@ export const TrustTransparency: React.FC = () => {
             <Card className="border-l-4 border-l-warning">
               <CardContent className="pt-6">
                 <div className="flex items-start gap-3">
-                  <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5" />
+                  <AlertTriangle className="w-6 h-6 text-warning flex-shrink-0 mt-0.5 drop-shadow-sm" />
                   <div>
                     <h4 className="font-semibold mb-2">Important Disclaimer</h4>
                     <p className="text-sm text-muted-foreground leading-relaxed">

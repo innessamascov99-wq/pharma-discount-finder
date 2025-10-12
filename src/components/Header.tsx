@@ -40,8 +40,8 @@ export const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)' }}>
-                <Pill className="w-6 h-6 text-white" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
+                <Pill className="w-6 h-6 text-white drop-shadow-md" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold tracking-tight">
@@ -81,7 +81,7 @@ export const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMenu}
-            className="md:hidden p-2 rounded-lg hover:bg-gray-100 transition-colors duration-200"
+            className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors duration-200"
             aria-label="Toggle menu"
           >
             {isMenuOpen ? (
@@ -100,13 +100,13 @@ export const Header: React.FC = () => {
               : 'max-h-0 opacity-0 overflow-hidden'
           }`}
         >
-          <div className="py-4 border-t border-gray-200">
+          <div className="py-4 border-t border-border">
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
                 <a
                   key={link.name}
                   href={link.href}
-                  className="text-text hover:text-primary transition-colors duration-200 font-medium py-2"
+                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
                   onClick={() => setIsMenuOpen(false)}
                 >
                   {link.name}
@@ -115,7 +115,7 @@ export const Header: React.FC = () => {
             </nav>
             
             {/* Mobile Theme Toggle and Auth Buttons */}
-            <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-gray-200">
+            <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-border">
               <div className="flex justify-center mb-2">
                 <ThemeToggle />
               </div>

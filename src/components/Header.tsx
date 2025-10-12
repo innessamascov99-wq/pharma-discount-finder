@@ -1,13 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Pill } from 'lucide-react';
+import { Menu, X, Pill, User, LogOut } from 'lucide-react';
 import { Button } from './ui';
 import { ThemeToggle } from './ThemeToggle';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
+  const { user, signOut } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -20,6 +22,11 @@ export const Header: React.FC = () => {
 
   const toggleMenu = () => {
     setIsMenuOpen(!isMenuOpen);
+  };
+
+  const handleSignOut = async () => {
+    await signOut();
+    navigate('/');
   };
 
   const navLinks = [
@@ -72,12 +79,27 @@ export const Header: React.FC = () => {
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
-              Login
-            </Button>
-            <Button variant="default" size="sm" onClick={() => navigate('/signup')}>
-              Sign Up
-            </Button>
+            {user ? (
+              <>
+                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent">
+                  <User className="w-4 h-4 text-primary" />
+                  <span className="text-sm font-medium">{user.email}</span>
+                </div>
+                <Button variant="ghost" size="sm" onClick={handleSignOut}>
+                  <LogOut className="w-4 h-4 mr-2" />
+                  Logout
+                </Button>
+              </>
+            ) : (
+              <>
+                <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
+                  Login
+                </Button>
+                <Button variant="default" size="sm" onClick={() => navigate('/signup')}>
+                  Sign Up
+                </Button>
+              </>
+            )}
           </div>
 
           {/* Mobile Menu Button */}
@@ -121,12 +143,27 @@ export const Header: React.FC = () => {
               <div className="flex justify-center mb-2">
                 <ThemeToggle />
               </div>
-              <Button variant="ghost" size="sm" className="w-full" onClick={() => { navigate('/login'); setIsMenuOpen(false); }}>
-                Login
-              </Button>
-              <Button variant="default" size="sm" className="w-full" onClick={() => { navigate('/signup'); setIsMenuOpen(false); }}>
-                Sign Up
-              </Button>
+              {user ? (
+                <>
+                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent justify-center">
+                    <User className="w-4 h-4 text-primary" />
+                    <span className="text-sm font-medium">{user.email}</span>
+                  </div>
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => { handleSignOut(); setIsMenuOpen(false); }}>
+                    <LogOut className="w-4 h-4 mr-2" />
+                    Logout
+                  </Button>
+                </>
+              ) : (
+                <>
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => { navigate('/login'); setIsMenuOpen(false); }}>
+                    Login
+                  </Button>
+                  <Button variant="default" size="sm" className="w-full" onClick={() => { navigate('/signup'); setIsMenuOpen(false); }}>
+                    Sign Up
+                  </Button>
+                </>
+              )}
             </div>
           </div>
         </div>

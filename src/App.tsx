@@ -6,6 +6,7 @@ import { Footer } from './components/Footer';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
+import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
   const [showAnimation, setShowAnimation] = useState(true);
@@ -61,7 +62,9 @@ function AppContent() {
 function App() {
   return (
     <Router>
-      <AppContent />
+      <AuthProvider>
+        <AppContent />
+      </AuthProvider>
     </Router>
   );
 }

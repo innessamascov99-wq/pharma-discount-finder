@@ -1,19 +1,66 @@
 import React, { useState } from 'react';
-import { Link } from 'react-router-dom';
-import { Pill } from 'lucide-react';
+import { Link, useNavigate } from 'react-router-dom';
+import { Pill, AlertCircle, Loader2 } from 'lucide-react';
 import { Button, Input } from '../components/ui';
+import { useAuth } from '../contexts/AuthContext';
 
 export const Login: React.FC = () => {
   const [email, setEmail] = useState('');
+  const [password, setPassword] = useState('');
   const [staySignedIn, setStaySignedIn] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
+  const [showPasswordField, setShowPasswordField] = useState(false);
+  const { signIn, signInWithGoogle } = useAuth();
+  const navigate = useNavigate();
 
-  const handleSubmit = (e: React.FormEvent) => {
+  const handleNext = (e: React.FormEvent) => {
     e.preventDefault();
-    console.log('Login with:', email, staySignedIn);
+    if (email && !showPasswordField) {
+      setShowPasswordField(true);
+    }
   };
 
-  const handleGoogleSignIn = () => {
-    console.log('Sign in with Google');
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!showPasswordField) {
+      setShowPasswordField(true);
+      return;
+    }
+
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { error } = await signIn(email, password);
+
+      if (error) {
+        setError(error.message);
+      } else {
+        navigate('/');
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  const handleGoogleSignIn = async () => {
+    setError(null);
+    setLoading(true);
+
+    try {
+      const { error } = await signInWithGoogle();
+
+      if (error) {
+        setError(error.message);
+        setLoading(false);
+      }
+    } catch (err) {
+      setError('An unexpected error occurred');
+      setLoading(false);
+    }
   };
 
   return (
@@ -43,6 +90,13 @@ export const Login: React.FC = () => {
         </div>
 
         <form onSubmit={handleSubmit} className="space-y-6">
+          {error && (
+            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
+              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+              <p className="text-sm text-destructive">{error}</p>
+            </div>
+          )}
+
           <div>
             <Input
               type="email"
@@ -51,16 +105,42 @@ export const Login: React.FC = () => {
               placeholder="Username, email, or mobile"
               className="h-14 text-base"
               required
+              disabled={loading}
             />
           </div>
+
+          {showPasswordField && (
+            <div>
+              <Input
+                type="password"
+                value={password}
+                onChange={(e) => setPassword(e.target.value)}
+                placeholder="Password"
+                className="h-14 text-base"
+                required
+                disabled={loading}
+                autoFocus
+              />
+            </div>
+          )}
 
           <Button
             type="submit"
             variant="default"
             size="lg"
             className="w-full h-14 text-lg font-semibold"
+            disabled={loading}
           >
-            Next
+            {loading ? (
+              <>
+                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                Signing in...
+              </>
+            ) : showPasswordField ? (
+              'Sign In'
+            ) : (
+              'Next'
+            )}
           </Button>
 
           <div className="flex items-center justify-between text-sm">
@@ -114,6 +194,7 @@ export const Login: React.FC = () => {
             size="lg"
             onClick={handleGoogleSignIn}
             className="w-full h-14 text-lg font-medium border-2 hover:bg-accent"
+            disabled={loading}
           >
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
               <path

@@ -15,27 +15,27 @@ export const SearchBar: React.FC = () => {
   };
 
   return (
-    <section className="py-16 bg-muted/50">
+    <section className="py-24 bg-muted/30">
       <div className="max-w-4xl mx-auto px-6">
-        <div className="text-center mb-8">
-          <h2 className="text-3xl font-bold mb-4">
-            Find Your Brand-Name Drug Discount
+        <div className="text-center mb-12">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+            Find Your Discount
           </h2>
-          <p className="text-lg text-muted-foreground">
+          <p className="text-xl text-foreground/70 font-light">
             Search thousands of verified manufacturer programs
           </p>
         </div>
 
         <form onSubmit={handleSearch} className="relative">
-          <div className="flex items-center gap-2">
+          <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
               <Input
                 type="text"
                 value={searchQuery}
                 onChange={(e) => setSearchQuery(e.target.value)}
                 placeholder="Search brand (e.g., Mounjaro, Januvia)"
-                className="pl-10 h-12 text-base"
+                className="pl-12 h-14 text-lg"
                 list="drug-suggestions"
               />
               <datalist id="drug-suggestions">
@@ -49,30 +49,30 @@ export const SearchBar: React.FC = () => {
               type="submit"
               variant="default"
               size="lg"
-              className="h-12"
+              className="h-14 px-8 text-lg"
             >
               Search
             </Button>
           </div>
         </form>
 
-        <div className="mt-6 text-center">
-          <p className="text-sm text-muted-foreground">
+        <div className="mt-8 text-center">
+          <p className="text-base text-foreground/70 mb-3">
             Popular searches:
-            {suggestions.slice(0, 4).map((drug, index) => (
-              <span key={index}>
-                <Button
-                  variant="link"
-                  size="sm"
-                  onClick={() => setSearchQuery(drug)}
-                  className="h-auto p-0 mx-1"
-                >
-                  {drug}
-                </Button>
-                {index < 3 && ', '}
-              </span>
-            ))}
           </p>
+          <div className="flex flex-wrap items-center justify-center gap-2">
+            {suggestions.slice(0, 4).map((drug, index) => (
+              <Button
+                key={index}
+                variant="outline"
+                size="sm"
+                onClick={() => setSearchQuery(drug)}
+                className="h-9"
+              >
+                {drug}
+              </Button>
+            ))}
+          </div>
         </div>
       </div>
     </section>

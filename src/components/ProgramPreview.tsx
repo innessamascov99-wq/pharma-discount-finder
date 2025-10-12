@@ -22,31 +22,31 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
       <CardHeader>
         <div className="flex items-start justify-between">
           <div className="flex-1">
-            <CardTitle className="text-xl mb-1">
+            <CardTitle className="text-2xl mb-2">
               {brandName}
             </CardTitle>
-            <CardDescription className="text-sm">
+            <CardDescription className="text-base">
               {programName}
             </CardDescription>
           </div>
 
-          <Badge variant={isRecent ? "secondary" : "outline"} className="gap-1">
+          <Badge variant={isRecent ? "secondary" : "outline"} className="gap-1 py-1.5 px-3">
             {isRecent ? (
-              <CheckCircle className="w-3 h-3" />
+              <CheckCircle className="w-3.5 h-3.5" />
             ) : (
-              <Clock className="w-3 h-3" />
+              <Clock className="w-3.5 h-3.5" />
             )}
-            {isRecent ? 'Updated' : '60+ days'}
+            <span className="text-xs">{isRecent ? 'Updated' : '60+ days'}</span>
           </Badge>
         </div>
       </CardHeader>
 
       <CardContent className="flex-1">
-        <div className="space-y-2">
+        <div className="space-y-3">
           {eligibility.map((item, index) => (
-            <div key={index} className="flex items-start gap-2">
-              <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-              <p className="text-sm text-muted-foreground">
+            <div key={index} className="flex items-start gap-3">
+              <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
+              <p className="text-base text-foreground/80 leading-relaxed">
                 {item}
               </p>
             </div>
@@ -114,25 +114,25 @@ export const ProgramPreview: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-24 bg-background">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold mb-4">
-            Sample Program Previews
+        <div className="text-center mb-16">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+            Program Examples
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
+          <p className="text-xl text-foreground/70 max-w-3xl mx-auto font-light leading-relaxed">
             See how we break down complex manufacturer programs into clear, actionable information
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-16">
           {programs.map((program, index) => (
             <ProgramCard key={index} {...program} />
           ))}
         </div>
 
         <div className="text-center">
-          <Button variant="outline" size="lg">
+          <Button variant="outline" size="lg" className="h-12 px-8 text-base">
             View All Programs
           </Button>
         </div>

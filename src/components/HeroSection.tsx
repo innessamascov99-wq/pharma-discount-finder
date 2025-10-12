@@ -4,7 +4,7 @@ import { Button, Badge } from './ui';
 
 export const HeroSection: React.FC = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
       {/* Modern Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         {/* Subtle Pattern Overlay */}
@@ -16,74 +16,76 @@ export const HeroSection: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-16 text-center">
-        <div className="max-w-4xl mx-auto space-y-8">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center">
+        <div className="max-w-5xl mx-auto space-y-12">
           
           {/* Trust Indicators */}
-          <div className="flex items-center justify-center gap-4 mb-8">
-            <Badge variant="secondary" className="gap-2">
-              <Shield className="w-3 h-3" />
+          <div className="flex items-center justify-center gap-3 flex-wrap">
+            <Badge variant="secondary" className="gap-2 py-2 px-4 text-sm">
+              <Shield className="w-4 h-4" />
               <span>Verified Programs</span>
             </Badge>
-            <Badge variant="secondary" className="gap-2">
-              <Search className="w-3 h-3" />
+            <Badge variant="secondary" className="gap-2 py-2 px-4 text-sm">
+              <Search className="w-4 h-4" />
               <span>Easy Search</span>
             </Badge>
-            <Badge variant="secondary" className="gap-2">
-              <Users className="w-3 h-3" />
+            <Badge variant="secondary" className="gap-2 py-2 px-4 text-sm">
+              <Users className="w-4 h-4" />
               <span>Patient-Focused</span>
             </Badge>
           </div>
 
           {/* Main Headlines */}
-          <div className="space-y-6">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-tight">
-              Save on brand-name prescriptions with verified manufacturer programs
+          <div className="space-y-8">
+            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
+              Save on Brand-Name
+              <br />
+              <span className="text-primary">Prescriptions</span>
             </h1>
 
-            <p className="text-lg md:text-xl text-muted-foreground max-w-3xl mx-auto">
-              We collect official savings offers and turn the fine print into clear, simple summaries you can rely on
+            <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto font-light leading-relaxed">
+              We turn complex manufacturer programs into clear, simple summaries you can trust
             </p>
           </div>
 
           {/* Call-to-Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-8">
+          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
             <Button
               variant="default"
               size="lg"
-              className="w-full sm:w-auto text-base"
+              className="w-full sm:w-auto text-lg h-14 px-10"
             >
               Find Discounts
             </Button>
             <Button
               variant="outline"
               size="lg"
-              className="w-full sm:w-auto text-base"
+              className="w-full sm:w-auto text-lg h-14 px-10"
             >
               Create Account
             </Button>
           </div>
 
           {/* Supporting Information */}
-          <div className="pt-12 text-center">
-            <p className="text-sm text-muted-foreground max-w-2xl mx-auto">
-              <strong className="text-primary font-semibold">100% Free to Use</strong> • No hidden fees • Programs sourced directly from manufacturer websites
+          <div className="pt-8 text-center">
+            <p className="text-base text-foreground/70 max-w-2xl mx-auto leading-relaxed">
+              <strong className="text-foreground font-semibold">100% Free to Use</strong> • No Hidden Fees • Direct from Manufacturers
             </p>
           </div>
 
           {/* Visual Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-8 pt-16 max-w-3xl mx-auto">
-            <div className="text-center space-y-2">
-              <div className="text-3xl font-bold text-primary">500+</div>
-              <div className="text-sm text-muted-foreground">Verified Programs</div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-16 max-w-4xl mx-auto">
+            <div className="text-center space-y-3">
+              <div className="text-5xl font-bold text-primary">500+</div>
+              <div className="text-base text-foreground/70 font-medium">Verified Programs</div>
             </div>
-            <div className="text-center space-y-2">
-              <div className="text-3xl font-bold text-primary">$2.5B</div>
-              <div className="text-sm text-muted-foreground">Potential Savings</div>
+            <div className="text-center space-y-3">
+              <div className="text-5xl font-bold text-primary">$2.5B</div>
+              <div className="text-base text-foreground/70 font-medium">Potential Savings</div>
             </div>
-            <div className="text-center space-y-2">
-              <div className="text-3xl font-bold text-primary">50K+</div>
-              <div className="text-sm text-muted-foreground">Patients Helped</div>
+            <div className="text-center space-y-3">
+              <div className="text-5xl font-bold text-primary">50K+</div>
+              <div className="text-base text-foreground/70 font-medium">Patients Helped</div>
             </div>
           </div>
         </div>

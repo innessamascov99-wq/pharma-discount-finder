@@ -24,37 +24,37 @@ export const HowItWorks: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-muted/50">
+    <section className="py-24 bg-muted/30">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">
+        <div className="text-center mb-20">
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
             How It Works
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            Finding prescription discounts shouldn't be complicated. We've simplified the process into three easy steps.
+          <p className="text-xl text-foreground/70 max-w-3xl mx-auto font-light leading-relaxed">
+            Finding prescription discounts shouldn't be complicated. Three simple steps.
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-16">
           {steps.map((step, index) => (
             <div key={index} className="text-center relative">
-              <div className="relative mb-8">
-                <div className="w-20 h-20 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
-                  <span className="text-2xl font-bold text-primary-foreground">
+              <div className="relative mb-10">
+                <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg">
+                  <span className="text-3xl font-bold text-primary-foreground">
                     {step.number}
                   </span>
                 </div>
 
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-12 h-12 bg-background rounded-full flex items-center justify-center shadow-md border-2 border-primary/20">
-                  <step.icon className="w-6 h-6 text-primary" />
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-background rounded-full flex items-center justify-center shadow-md border-2 border-primary/20">
+                  <step.icon className="w-7 h-7 text-primary" />
                 </div>
               </div>
 
               <div className="space-y-4">
-                <h3 className="text-xl font-semibold">
+                <h3 className="text-2xl font-semibold tracking-tight">
                   {step.title}
                 </h3>
-                <p className="text-muted-foreground leading-relaxed">
+                <p className="text-base text-foreground/70 leading-relaxed">
                   {step.description}
                 </p>
               </div>

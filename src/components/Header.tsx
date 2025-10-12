@@ -37,13 +37,20 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex items-center gap-3">
-            <div className="w-8 h-8 bg-primary rounded-lg flex items-center justify-center">
-              <Pill className="w-5 h-5 text-white" />
+          <div className="flex flex-col">
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+                <Pill className="w-6 h-6 text-white" />
+              </div>
+              <div className="flex flex-col">
+                <span className="text-xl font-bold tracking-tight">
+                  Pharma Discount Finder
+                </span>
+                <span className="text-xs text-muted-foreground font-medium">
+                  Healthcare Made Affordable
+                </span>
+              </div>
             </div>
-            <span className="text-xl font-bold text-text">
-              Pharma Discount Finder
-            </span>
           </div>
 
           {/* Desktop Navigation */}

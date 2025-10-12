@@ -32,14 +32,14 @@ export const FeaturesGrid: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-background">
+    <section className="py-24 bg-background">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold mb-4">
-            Why Choose Pharma Discount Finder
+          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+            Why Choose Us
           </h2>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            We've built the most comprehensive and user-friendly platform for finding prescription drug discounts
+          <p className="text-xl text-foreground/70 max-w-3xl mx-auto font-light leading-relaxed">
+            The most comprehensive platform for finding prescription drug discounts
           </p>
         </div>
 
@@ -47,13 +47,13 @@ export const FeaturesGrid: React.FC = () => {
           {features.map((feature, index) => (
             <Card key={index} className="text-center hover:shadow-md transition-shadow">
               <CardHeader>
-                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
-                  <feature.icon className="w-6 h-6 text-primary" />
+                <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <feature.icon className="w-8 h-8 text-primary" />
                 </div>
-                <CardTitle className="text-base">{feature.title}</CardTitle>
+                <CardTitle className="text-lg">{feature.title}</CardTitle>
               </CardHeader>
               <CardContent>
-                <CardDescription className="text-xs">
+                <CardDescription className="text-sm leading-relaxed">
                   {feature.description}
                 </CardDescription>
               </CardContent>

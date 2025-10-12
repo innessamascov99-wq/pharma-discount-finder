@@ -26,22 +26,22 @@ export const TrustBadges: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-background border-b">
+    <section className="py-20 bg-background border-b">
       <div className="max-w-7xl mx-auto px-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-10">
           {badges.map((badge, index) => (
             <div
               key={index}
-              className="flex flex-col items-center text-center space-y-4 p-6 rounded-lg hover:bg-accent transition-colors"
+              className="flex flex-col items-center text-center space-y-5 p-8 rounded-lg hover:bg-accent transition-colors"
             >
-              <div className="w-16 h-16 bg-primary/10 rounded-full flex items-center justify-center">
-                <badge.icon className="w-8 h-8 text-primary" />
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
+                <badge.icon className="w-10 h-10 text-primary" />
               </div>
-              <div className="space-y-2">
-                <h3 className="text-lg font-semibold">
+              <div className="space-y-3">
+                <h3 className="text-xl font-semibold tracking-tight">
                   {badge.title}
                 </h3>
-                <p className="text-sm text-muted-foreground leading-relaxed">
+                <p className="text-base text-foreground/70 leading-relaxed">
                   {badge.description}
                 </p>
               </div>

@@ -8,6 +8,7 @@ import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ForgotPassword } from './pages/ForgotPassword';
 import { FAQ } from './pages/FAQ';
+import { About } from './pages/About';
 import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
@@ -53,6 +54,7 @@ function AppContent() {
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
               <Route path="/faq" element={<FAQ />} />
+              <Route path="/about" element={<About />} />
             </Routes>
           </main>
 

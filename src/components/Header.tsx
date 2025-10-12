@@ -39,7 +39,7 @@ export const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 bg-primary rounded-lg flex items-center justify-center">
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center" style={{ background: 'linear-gradient(135deg, #06b6d4 0%, #10b981 100%)' }}>
                 <Pill className="w-6 h-6 text-white" />
               </div>
               <div className="flex flex-col">
@@ -47,7 +47,7 @@ export const Header: React.FC = () => {
                   Pharma Discount Finder
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  Healthcare Made Affordable
+                  Medication Made Affordable
                 </span>
               </div>
             </div>

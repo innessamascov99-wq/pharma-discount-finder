@@ -12,20 +12,25 @@ import { Footer } from './components/Footer';
 
 function App() {
   const [showAnimation, setShowAnimation] = useState(true);
+  const [showContent, setShowContent] = useState(false);
   const [hasVisited, setHasVisited] = useState(false);
 
   useEffect(() => {
     const visited = sessionStorage.getItem('hasVisited');
     if (visited) {
       setShowAnimation(false);
+      setShowContent(true);
       setHasVisited(true);
     }
   }, []);
 
   const handleAnimationComplete = () => {
     setShowAnimation(false);
-    setHasVisited(true);
-    sessionStorage.setItem('hasVisited', 'true');
+    setTimeout(() => {
+      setShowContent(true);
+      setHasVisited(true);
+      sessionStorage.setItem('hasVisited', 'true');
+    }, 100);
   };
 
   return (
@@ -34,21 +39,23 @@ function App() {
         <InitialAnimation onComplete={handleAnimationComplete} />
       )}
 
-      <div className="min-h-screen bg-background">
-        <Header />
+      {showContent && (
+        <div className="min-h-screen bg-background animate-in fade-in duration-700">
+          <Header />
 
-        <main>
-          <HeroSection />
-          <TrustBadges />
-          <SearchBar />
-          <ProgramPreview />
-          <HowItWorks />
-          <FeaturesGrid />
-          <TrustTransparency />
-        </main>
+          <main>
+            <HeroSection />
+            <TrustBadges />
+            <SearchBar />
+            <ProgramPreview />
+            <HowItWorks />
+            <FeaturesGrid />
+            <TrustTransparency />
+          </main>
 
-        <Footer />
-      </div>
+          <Footer />
+        </div>
+      )}
     </>
   );
 }

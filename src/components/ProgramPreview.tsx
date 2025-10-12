@@ -1,6 +1,6 @@
 import React from 'react';
 import { ExternalLink, Clock, CheckCircle } from 'lucide-react';
-import { Button, Card } from './ui';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge } from './ui';
 
 interface ProgramCardProps {
   brandName: string;
@@ -18,57 +18,57 @@ const ProgramCard: React.FC<ProgramCardProps> = ({
   sourceUrl
 }) => {
   return (
-    <Card hover className="h-full flex flex-col">
-      <div className="flex-1">
-        <div className="flex items-start justify-between mb-4">
-          <div>
-            <h3 className="text-xl font-bold text-text mb-1">
+    <Card className="h-full flex flex-col hover:shadow-md transition-shadow">
+      <CardHeader>
+        <div className="flex items-start justify-between">
+          <div className="flex-1">
+            <CardTitle className="text-xl mb-1">
               {brandName}
-            </h3>
-            <p className="text-sm text-gray-600 font-medium">
+            </CardTitle>
+            <CardDescription className="text-sm">
               {programName}
-            </p>
+            </CardDescription>
           </div>
-          
-          <div className={`px-3 py-1 rounded-full text-xs font-medium flex items-center gap-1 ${
-            isRecent 
-              ? 'bg-secondary-100 text-secondary-700' 
-              : 'bg-warning-100 text-warning-700'
-          }`}>
+
+          <Badge variant={isRecent ? "secondary" : "outline"} className="gap-1">
             {isRecent ? (
               <CheckCircle className="w-3 h-3" />
             ) : (
               <Clock className="w-3 h-3" />
             )}
-            {isRecent ? 'Recently Updated' : '60+ days old'}
-          </div>
+            {isRecent ? 'Updated' : '60+ days'}
+          </Badge>
         </div>
+      </CardHeader>
 
-        <div className="space-y-2 mb-6">
+      <CardContent className="flex-1">
+        <div className="space-y-2">
           {eligibility.map((item, index) => (
             <div key={index} className="flex items-start gap-2">
               <div className="w-1.5 h-1.5 bg-primary rounded-full mt-2 flex-shrink-0"></div>
-              <p className="text-sm text-gray-700 leading-relaxed">
+              <p className="text-sm text-muted-foreground">
                 {item}
               </p>
             </div>
           ))}
         </div>
-      </div>
+      </CardContent>
 
-      <div className="flex items-center justify-between pt-4 border-t border-gray-100">
-        <a 
-          href={sourceUrl}
-          className="flex items-center gap-1 text-sm text-primary hover:text-primary-700 transition-colors duration-200"
+      <CardFooter className="flex items-center justify-between">
+        <Button
+          variant="link"
+          size="sm"
+          className="p-0 h-auto gap-1"
+          onClick={() => window.open(sourceUrl, '_blank')}
         >
           <ExternalLink className="w-4 h-4" />
           Source
-        </a>
-        
-        <Button variant="primary" size="sm">
+        </Button>
+
+        <Button variant="default" size="sm">
           View Details
         </Button>
-      </div>
+      </CardFooter>
     </Card>
   );
 };
@@ -114,25 +114,25 @@ export const ProgramPreview: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-background">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-12">
-          <h2 className="text-3xl font-bold text-text mb-4">
+          <h2 className="text-3xl font-bold mb-4">
             Sample Program Previews
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             See how we break down complex manufacturer programs into clear, actionable information
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-8 mb-12">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6 mb-12">
           {programs.map((program, index) => (
             <ProgramCard key={index} {...program} />
           ))}
         </div>
 
         <div className="text-center">
-          <Button variant="outline" size="lg" className="px-8">
+          <Button variant="outline" size="lg">
             View All Programs
           </Button>
         </div>

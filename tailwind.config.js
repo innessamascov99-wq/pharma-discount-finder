@@ -1,11 +1,18 @@
 /** @type {import('tailwindcss').Config} */
 export default {
+  darkMode: ['class'],
   content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
+        border: 'hsl(214.3 31.8% 91.4%)',
+        input: 'hsl(214.3 31.8% 91.4%)',
+        ring: 'hsl(221.2 83.2% 53.3%)',
+        background: 'hsl(0 0% 100%)',
+        foreground: 'hsl(222.2 84% 4.9%)',
         primary: {
-          DEFAULT: '#2563EB',
+          DEFAULT: 'hsl(221.2 83.2% 53.3%)',
+          foreground: 'hsl(210 40% 98%)',
           50: '#EFF6FF',
           100: '#DBEAFE',
           200: '#BFDBFE',
@@ -18,7 +25,8 @@ export default {
           900: '#1E3A8A'
         },
         secondary: {
-          DEFAULT: '#10B981',
+          DEFAULT: 'hsl(210 40% 96.1%)',
+          foreground: 'hsl(222.2 47.4% 11.2%)',
           50: '#ECFDF5',
           100: '#D1FAE5',
           200: '#A7F3D0',
@@ -29,6 +37,26 @@ export default {
           700: '#047857',
           800: '#065F46',
           900: '#064E3B'
+        },
+        destructive: {
+          DEFAULT: 'hsl(0 84.2% 60.2%)',
+          foreground: 'hsl(210 40% 98%)',
+        },
+        muted: {
+          DEFAULT: 'hsl(210 40% 96.1%)',
+          foreground: 'hsl(215.4 16.3% 46.9%)',
+        },
+        accent: {
+          DEFAULT: 'hsl(210 40% 96.1%)',
+          foreground: 'hsl(222.2 47.4% 11.2%)',
+        },
+        popover: {
+          DEFAULT: 'hsl(0 0% 100%)',
+          foreground: 'hsl(222.2 84% 4.9%)',
+        },
+        card: {
+          DEFAULT: 'hsl(0 0% 100%)',
+          foreground: 'hsl(222.2 84% 4.9%)',
         },
         warning: {
           DEFAULT: '#F59E0B',
@@ -56,8 +84,12 @@ export default {
           800: '#991B1B',
           900: '#7F1D1D'
         },
-        background: '#F9FAFB',
         text: '#1F2937'
+      },
+      borderRadius: {
+        lg: 'var(--radius)',
+        md: 'calc(var(--radius) - 2px)',
+        sm: 'calc(var(--radius) - 4px)',
       },
       fontSize: {
         'xs': '0.875rem',     // 14px

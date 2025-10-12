@@ -1,73 +1,23 @@
-import React from 'react';
-import { Video as LucideIcon } from 'lucide-react';
+import * as React from 'react';
+import { cn } from '../../lib/utils';
 
-interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {
-  label?: string;
-  error?: string;
-  helpText?: string;
-  icon?: LucideIcon;
-  iconPosition?: 'left' | 'right';
-}
+export interface InputProps extends React.InputHTMLAttributes<HTMLInputElement> {}
 
-export const Input: React.FC<InputProps> = ({
-  label,
-  error,
-  helpText,
-  icon: Icon,
-  iconPosition = 'left',
-  className = '',
-  id,
-  ...props
-}) => {
-  const inputId = id || `input-${Math.random().toString(36).substr(2, 9)}`;
-  
-  const baseClasses = 'w-full px-4 py-3 rounded-lg border transition-all duration-200 focus:outline-none focus:ring-4 focus:ring-opacity-50 disabled:opacity-50 disabled:cursor-not-allowed';
-  
-  const stateClasses = error 
-    ? 'border-error-300 focus:border-error-500 focus:ring-error-200' 
-    : 'border-gray-300 focus:border-primary focus:ring-primary-200';
-    
-  const iconClasses = Icon ? (iconPosition === 'left' ? 'pl-12' : 'pr-12') : '';
-
-  return (
-    <div className="space-y-2">
-      {label && (
-        <label 
-          htmlFor={inputId} 
-          className="block text-sm font-semibold text-text"
-        >
-          {label}
-        </label>
-      )}
-      
-      <div className="relative">
-        {Icon && (
-          <div className={`absolute inset-y-0 ${iconPosition === 'left' ? 'left-0 pl-4' : 'right-0 pr-4'} flex items-center pointer-events-none`}>
-            <Icon 
-              size={20} 
-              className={error ? 'text-error-400' : 'text-gray-400'} 
-            />
-          </div>
+const Input = React.forwardRef<HTMLInputElement, InputProps>(
+  ({ className, type, ...props }, ref) => {
+    return (
+      <input
+        type={type}
+        className={cn(
+          'flex h-10 w-full rounded-md border border-input bg-background px-3 py-2 text-sm ring-offset-background file:border-0 file:bg-transparent file:text-sm file:font-medium placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50',
+          className
         )}
-        
-        <input
-          id={inputId}
-          className={`${baseClasses} ${stateClasses} ${iconClasses} ${className}`}
-          {...props}
-        />
-      </div>
-      
-      {error && (
-        <p className="text-sm text-error-600">
-          {error}
-        </p>
-      )}
-      
-      {helpText && !error && (
-        <p className="text-sm text-gray-600">
-          {helpText}
-        </p>
-      )}
-    </div>
-  );
-};
+        ref={ref}
+        {...props}
+      />
+    );
+  }
+);
+Input.displayName = 'Input';
+
+export { Input };

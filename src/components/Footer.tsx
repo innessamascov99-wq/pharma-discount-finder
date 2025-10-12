@@ -62,10 +62,10 @@ export const Footer: React.FC = () => {
                 in plain English.
               </p>
             </div>
-            <Button 
-              variant="outline" 
-              size="sm" 
-              className="border-gray-400 text-gray-300 hover:bg-gray-700 hover:border-gray-300"
+            <Button
+              variant="outline"
+              size="sm"
+              className="border-gray-400 text-gray-300 hover:bg-gray-700"
             >
               Learn More
             </Button>
@@ -120,13 +120,13 @@ export const Footer: React.FC = () => {
                 onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
                 className="w-full px-4 py-3 rounded-lg border border-slate-600 bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-200 focus:ring-opacity-50 transition-all duration-200"
               />
-              <Button 
+              <Button
                 type="submit"
-                variant="primary" 
+                variant="default"
                 size="sm"
-                icon={MessageCircle}
-                className="w-full"
+                className="w-full gap-2"
               >
+                <MessageCircle className="w-4 h-4" />
                 Send Message
               </Button>
             </form>

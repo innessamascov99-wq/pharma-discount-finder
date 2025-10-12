@@ -1,5 +1,6 @@
 import React from 'react';
 import { Brain, ExternalLink, RefreshCw, UserCheck, Share2 } from 'lucide-react';
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from './ui';
 
 export const FeaturesGrid: React.FC = () => {
   const features = [
@@ -31,36 +32,32 @@ export const FeaturesGrid: React.FC = () => {
   ];
 
   return (
-    <section className="py-16 bg-white">
+    <section className="py-16 bg-background">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-3xl font-bold text-text mb-4">
+          <h2 className="text-3xl font-bold mb-4">
             Why Choose Pharma Discount Finder
           </h2>
-          <p className="text-lg text-gray-600 max-w-2xl mx-auto">
+          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
             We've built the most comprehensive and user-friendly platform for finding prescription drug discounts
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {features.map((feature, index) => (
-            <div 
-              key={index}
-              className="text-center space-y-4 p-6 rounded-lg hover:bg-gray-50 transition-colors duration-200"
-            >
-              <div className="w-16 h-16 bg-primary-100 rounded-full flex items-center justify-center mx-auto">
-                <feature.icon className="w-8 h-8 text-primary-600" />
-              </div>
-              
-              <div className="space-y-2">
-                <h3 className="text-lg font-bold text-text">
-                  {feature.title}
-                </h3>
-                <p className="text-sm text-gray-600 leading-relaxed">
+            <Card key={index} className="text-center hover:shadow-md transition-shadow">
+              <CardHeader>
+                <div className="w-12 h-12 bg-primary/10 rounded-full flex items-center justify-center mx-auto mb-4">
+                  <feature.icon className="w-6 h-6 text-primary" />
+                </div>
+                <CardTitle className="text-base">{feature.title}</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <CardDescription className="text-xs">
                   {feature.description}
-                </p>
-              </div>
-            </div>
+                </CardDescription>
+              </CardContent>
+            </Card>
           ))}
         </div>
       </div>

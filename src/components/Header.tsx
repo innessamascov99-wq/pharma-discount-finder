@@ -61,10 +61,10 @@ export const Header: React.FC = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
-            <Button variant="outline" size="sm">
+            <Button variant="ghost" size="sm">
               Login
             </Button>
-            <Button variant="primary" size="sm">
+            <Button variant="default" size="sm">
               Sign Up
             </Button>
           </div>
@@ -107,10 +107,10 @@ export const Header: React.FC = () => {
             
             {/* Mobile Auth Buttons */}
             <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-gray-200">
-              <Button variant="outline" size="sm" className="w-full">
+              <Button variant="ghost" size="sm" className="w-full">
                 Login
               </Button>
-              <Button variant="primary" size="sm" className="w-full">
+              <Button variant="default" size="sm" className="w-full">
                 Sign Up
               </Button>
             </div>

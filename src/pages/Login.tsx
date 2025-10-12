@@ -156,7 +156,7 @@ export const Login: React.FC = () => {
               to="/forgot-password"
               className="text-primary font-medium hover:underline"
             >
-              Forgot username?
+              Forgot password?
             </Link>
           </div>
 

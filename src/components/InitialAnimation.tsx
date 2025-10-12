@@ -9,13 +9,13 @@ export const InitialAnimation: React.FC<InitialAnimationProps> = ({ onComplete }
   const [stage, setStage] = useState(0);
 
   useEffect(() => {
-    const timer1 = setTimeout(() => setStage(1), 300);
-    const timer2 = setTimeout(() => setStage(2), 1200);
-    const timer3 = setTimeout(() => setStage(3), 2400);
+    const timer1 = setTimeout(() => setStage(1), 500);
+    const timer2 = setTimeout(() => setStage(2), 1500);
+    const timer3 = setTimeout(() => setStage(3), 3000);
     const timer4 = setTimeout(() => {
       setStage(4);
-      setTimeout(onComplete, 600);
-    }, 3600);
+      setTimeout(onComplete, 800);
+    }, 5000);
 
     return () => {
       clearTimeout(timer1);
@@ -88,15 +88,15 @@ export const InitialAnimation: React.FC<InitialAnimationProps> = ({ onComplete }
               }`}
             >
               <div className="flex items-center gap-4 mb-4">
-                <div className="w-16 h-16 bg-primary rounded-2xl flex items-center justify-center shadow-lg">
-                  <Pill className="w-9 h-9 text-white" />
+                <div className="w-16 h-16 rounded-2xl flex items-center justify-center shadow-lg animate-pulse-glow" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
+                  <Pill className="w-9 h-9 text-white drop-shadow-md animate-wiggle" />
                 </div>
                 <div>
                   <h1 className="text-3xl font-bold tracking-tight">
                     Pharma Discount Finder
                   </h1>
                   <p className="text-sm text-muted-foreground font-medium">
-                    Healthcare Made Affordable
+                    Medication Made Affordable
                   </p>
                 </div>
               </div>

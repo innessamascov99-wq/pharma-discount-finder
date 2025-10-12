@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { Link, useNavigate } from 'react-router-dom';
 import { Menu, X, Pill } from 'lucide-react';
 import { Button } from './ui';
 import { ThemeToggle } from './ThemeToggle';
@@ -6,6 +7,7 @@ import { ThemeToggle } from './ThemeToggle';
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
+  const navigate = useNavigate();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -28,7 +30,7 @@ export const Header: React.FC = () => {
   ];
 
   return (
-    <header 
+    <header
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
         isScrolled
           ? 'bg-background/95 backdrop-blur-md shadow-md'
@@ -38,7 +40,7 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <div className="flex flex-col">
+          <Link to="/" className="flex flex-col">
             <div className="flex items-center gap-3">
               <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg animate-pulse-glow" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
                 <Pill className="w-6 h-6 text-white drop-shadow-md animate-wiggle" />
@@ -52,7 +54,7 @@ export const Header: React.FC = () => {
                 </span>
               </div>
             </div>
-          </div>
+          </Link>
 
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
@@ -70,10 +72,10 @@ export const Header: React.FC = () => {
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
-            <Button variant="ghost" size="sm">
+            <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>
               Login
             </Button>
-            <Button variant="default" size="sm">
+            <Button variant="default" size="sm" onClick={() => navigate('/signup')}>
               Sign Up
             </Button>
           </div>
@@ -119,10 +121,10 @@ export const Header: React.FC = () => {
               <div className="flex justify-center mb-2">
                 <ThemeToggle />
               </div>
-              <Button variant="ghost" size="sm" className="w-full">
+              <Button variant="ghost" size="sm" className="w-full" onClick={() => { navigate('/login'); setIsMenuOpen(false); }}>
                 Login
               </Button>
-              <Button variant="default" size="sm" className="w-full">
+              <Button variant="default" size="sm" className="w-full" onClick={() => { navigate('/signup'); setIsMenuOpen(false); }}>
                 Sign Up
               </Button>
             </div>

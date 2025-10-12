@@ -1,28 +1,28 @@
 import { useState, useEffect } from 'react';
+import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-router-dom';
 import { InitialAnimation } from './components/InitialAnimation';
 import { Header } from './components/Header';
-import { HeroSection } from './components/HeroSection';
-import { TrustBadges } from './components/TrustBadges';
-import { SearchBar } from './components/SearchBar';
-import { ProgramPreview } from './components/ProgramPreview';
-import { HowItWorks } from './components/HowItWorks';
-import { FeaturesGrid } from './components/FeaturesGrid';
-import { TrustTransparency } from './components/TrustTransparency';
 import { Footer } from './components/Footer';
+import { Home } from './pages/Home';
+import { Login } from './pages/Login';
+import { Signup } from './pages/Signup';
 
-function App() {
+function AppContent() {
   const [showAnimation, setShowAnimation] = useState(true);
   const [showContent, setShowContent] = useState(false);
   const [hasVisited, setHasVisited] = useState(false);
+  const location = useLocation();
+
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup';
 
   useEffect(() => {
     const visited = sessionStorage.getItem('hasVisited');
-    if (visited) {
+    if (visited || isAuthPage) {
       setShowAnimation(false);
       setShowContent(true);
       setHasVisited(true);
     }
-  }, []);
+  }, [isAuthPage]);
 
   const handleAnimationComplete = () => {
     setShowAnimation(false);
@@ -35,28 +35,34 @@ function App() {
 
   return (
     <>
-      {showAnimation && !hasVisited && (
+      {showAnimation && !hasVisited && !isAuthPage && (
         <InitialAnimation onComplete={handleAnimationComplete} />
       )}
 
-      {showContent && (
+      {(showContent || isAuthPage) && (
         <div className="min-h-screen bg-background animate-in fade-in duration-700">
-          <Header />
+          {!isAuthPage && <Header />}
 
           <main>
-            <HeroSection />
-            <TrustBadges />
-            <SearchBar />
-            <ProgramPreview />
-            <HowItWorks />
-            <FeaturesGrid />
-            <TrustTransparency />
+            <Routes>
+              <Route path="/" element={<Home />} />
+              <Route path="/login" element={<Login />} />
+              <Route path="/signup" element={<Signup />} />
+            </Routes>
           </main>
 
-          <Footer />
+          {!isAuthPage && <Footer />}
         </div>
       )}
     </>
+  );
+}
+
+function App() {
+  return (
+    <Router>
+      <AppContent />
+    </Router>
   );
 }
 

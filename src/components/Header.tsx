@@ -30,9 +30,9 @@ export const Header: React.FC = () => {
   };
 
   const navLinks = [
-    { name: 'Home', href: '#home' },
+    { name: 'Home', href: '/' },
     { name: 'About', href: '#about' },
-    { name: 'FAQ', href: '#faq' },
+    { name: 'FAQ', href: '/faq' },
     { name: 'Contact', href: '#contact' }
   ];
 
@@ -66,13 +66,23 @@ export const Header: React.FC = () => {
           {/* Desktop Navigation */}
           <nav className="hidden md:flex items-center gap-8">
             {navLinks.map((link) => (
-              <a
-                key={link.name}
-                href={link.href}
-                className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
-              >
-                {link.name}
-              </a>
+              link.href.startsWith('#') ? (
+                <a
+                  key={link.name}
+                  href={link.href}
+                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                >
+                  {link.name}
+                </a>
+              ) : (
+                <Link
+                  key={link.name}
+                  to={link.href}
+                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                >
+                  {link.name}
+                </Link>
+              )
             ))}
           </nav>
 
@@ -127,14 +137,25 @@ export const Header: React.FC = () => {
           <div className="py-4 border-t border-border">
             <nav className="flex flex-col gap-4">
               {navLinks.map((link) => (
-                <a
-                  key={link.name}
-                  href={link.href}
-                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
-                  onClick={() => setIsMenuOpen(false)}
-                >
-                  {link.name}
-                </a>
+                link.href.startsWith('#') ? (
+                  <a
+                    key={link.name}
+                    href={link.href}
+                    className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.name}
+                  </a>
+                ) : (
+                  <Link
+                    key={link.name}
+                    to={link.href}
+                    className="text-foreground hover:text-primary transition-colors duration-200 font-medium py-2"
+                    onClick={() => setIsMenuOpen(false)}
+                  >
+                    {link.name}
+                  </Link>
+                )
               ))}
             </nav>
             

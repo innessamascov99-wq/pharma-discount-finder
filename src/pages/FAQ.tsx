@@ -48,43 +48,43 @@ export const FAQ: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white">
-      <section className="bg-gradient-to-br from-blue-50 to-slate-100 py-16 lg:py-24">
+    <div className="min-h-screen bg-white dark:bg-slate-950">
+      <section className="bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 py-16 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-6">
             <HelpCircle className="h-12 w-12 text-blue-600" />
           </div>
-          <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 mb-6 leading-tight">
+          <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 dark:text-slate-100 mb-6 leading-tight">
             Frequently Asked Questions
           </h1>
-          <p className="text-xl text-slate-600 leading-relaxed max-w-2xl mx-auto">
+          <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-2xl mx-auto">
             Quick answers to common questions about finding and using prescription discount programs
           </p>
         </div>
       </section>
 
-      <section className="bg-white py-16">
+      <section className="bg-white dark:bg-slate-950 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="space-y-4">
             {faqs.map((faq, index) => (
-              <div key={index} className="border border-slate-200 rounded-lg overflow-hidden shadow-sm">
+              <div key={index} className="border border-slate-200 dark:border-slate-700 rounded-lg overflow-hidden shadow-sm">
                 <button
-                  className="w-full px-6 py-5 text-left bg-white hover:bg-slate-50 transition-colors flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
+                  className="w-full px-6 py-5 text-left bg-white dark:bg-slate-900 hover:bg-slate-50 dark:hover:bg-slate-800 transition-colors flex items-center justify-between focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-inset"
                   onClick={() => setOpenIndex(openIndex === index ? null : index)}
                   aria-expanded={openIndex === index}
                 >
-                  <h3 className="font-semibold text-slate-800 pr-4 text-lg">{faq.question}</h3>
+                  <h3 className="font-semibold text-slate-800 dark:text-slate-100 pr-4 text-lg">{faq.question}</h3>
                   <div className="flex-shrink-0">
                     {openIndex === index ? (
-                      <ChevronUp className="h-5 w-5 text-slate-500" />
+                      <ChevronUp className="h-5 w-5 text-slate-500 dark:text-slate-400" />
                     ) : (
-                      <ChevronDown className="h-5 w-5 text-slate-500" />
+                      <ChevronDown className="h-5 w-5 text-slate-500 dark:text-slate-400" />
                     )}
                   </div>
                 </button>
                 {openIndex === index && (
-                  <div className="px-6 pb-5 bg-slate-50 border-t border-slate-200">
-                    <p className="text-slate-600 leading-relaxed pt-4">{faq.answer}</p>
+                  <div className="px-6 pb-5 bg-slate-50 dark:bg-slate-800 border-t border-slate-200 dark:border-slate-700">
+                    <p className="text-slate-600 dark:text-slate-300 leading-relaxed pt-4">{faq.answer}</p>
                   </div>
                 )}
               </div>
@@ -93,10 +93,10 @@ export const FAQ: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-slate-50 py-16">
+      <section className="bg-slate-50 dark:bg-slate-900 py-16">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-slate-800 mb-4">Still Have Questions?</h2>
-          <p className="text-lg text-slate-600 mb-8">
+          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-4">Still Have Questions?</h2>
+          <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
             Can't find what you're looking for? We're here to help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
@@ -110,16 +110,16 @@ export const FAQ: React.FC = () => {
         </div>
       </section>
 
-      <section className="bg-white py-12">
+      <section className="bg-white dark:bg-slate-950 py-12">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8">
-          <div className="bg-amber-50 border border-amber-200 rounded-lg p-6">
+          <div className="bg-amber-50 dark:bg-amber-900/20 border border-amber-200 dark:border-amber-800 rounded-lg p-6">
             <div className="flex items-start">
               <div className="flex-shrink-0">
                 <HelpCircle className="h-6 w-6 text-amber-600" />
               </div>
               <div className="ml-3">
-                <h3 className="text-lg font-semibold text-amber-800 mb-2">Important Reminder</h3>
-                <p className="text-amber-700 leading-relaxed">
+                <h3 className="text-lg font-semibold text-amber-800 dark:text-amber-300 mb-2">Important Reminder</h3>
+                <p className="text-amber-700 dark:text-amber-200 leading-relaxed">
                   This information is for educational purposes only and is not medical advice.
                   Always consult with your healthcare provider before making decisions about your medications.
                   Program terms may change without notice, and eligibility requirements vary by program.

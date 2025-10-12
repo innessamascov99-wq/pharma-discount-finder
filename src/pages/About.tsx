@@ -58,42 +58,42 @@ export const About: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <section className="bg-gradient-to-br from-slate-100 via-blue-50 to-slate-50 py-20 lg:py-28">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+      <section className="bg-gradient-to-br from-slate-100 via-blue-50 to-slate-50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 py-20 lg:py-28">
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
-            <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 mb-6 leading-tight">
+            <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 dark:text-slate-100 mb-6 leading-tight">
               Why We Built Pharma Discount Finder
             </h1>
-            <p className="text-xl text-slate-600 leading-relaxed max-w-3xl mx-auto">
+            <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl mx-auto">
               Prescription costs shouldn't be a barrier to health. We created this platform to make
               manufacturer discount programs accessible, transparent, and easy to understand for every
               patient.
             </p>
           </div>
 
-          <div className="bg-white rounded-2xl shadow-lg p-8 lg:p-12 border border-slate-200 transform hover:shadow-xl transition-shadow duration-300">
+          <div className="bg-white dark:bg-slate-800 rounded-2xl shadow-lg p-8 lg:p-12 border border-slate-200 dark:border-slate-700 transform hover:shadow-xl transition-shadow duration-300">
             <blockquote className="relative">
-              <div className="text-slate-700 text-lg leading-relaxed italic mb-6">
+              <div className="text-slate-700 dark:text-slate-300 text-lg leading-relaxed italic mb-6">
                 "Too many patients struggle to afford their medications, not knowing that help is available.
                 Manufacturer discount programs exist, but they're often buried in complex websites with
                 confusing terms. We believe every patient deserves clear, reliable information about their savings
                 options."
               </div>
-              <footer className="text-emerald-600 font-semibold text-base">
+              <footer className="text-emerald-600 dark:text-emerald-400 font-semibold text-base">
                 — The Pharma Discount Finder Team
               </footer>
-              <div className="absolute -top-4 -left-2 text-8xl text-slate-200 font-serif leading-none">"</div>
+              <div className="absolute -top-4 -left-2 text-8xl text-slate-200 dark:text-slate-700 font-serif leading-none">"</div>
             </blockquote>
           </div>
         </div>
       </section>
 
-      <section className="py-20 bg-white">
+      <section className="py-20 bg-white dark:bg-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-800 mb-4">Our Mission</h2>
-            <p className="text-xl text-slate-600">Three core principles guide everything we do</p>
+            <h2 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">Our Mission</h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300">Three core principles guide everything we do</p>
           </div>
 
           <div className="grid md:grid-cols-3 gap-8">
@@ -108,10 +108,10 @@ export const About: React.FC = () => {
                   onMouseEnter={() => setHoveredMission(index)}
                   onMouseLeave={() => setHoveredMission(null)}
                 >
-                  <div className={`bg-white rounded-2xl p-8 border-2 transition-all duration-300 h-full ${
+                  <div className={`bg-white dark:bg-slate-800 rounded-2xl p-8 border-2 transition-all duration-300 h-full ${
                     isHovered
                       ? 'border-transparent shadow-2xl -translate-y-2'
-                      : 'border-slate-200 shadow-md'
+                      : 'border-slate-200 dark:border-slate-700 shadow-md'
                   }`}>
                     <div className="flex flex-col items-center text-center space-y-6">
                       <div className={`w-20 h-20 rounded-full bg-gradient-to-br ${principle.color} flex items-center justify-center transform transition-transform duration-300 ${
@@ -120,11 +120,11 @@ export const About: React.FC = () => {
                         <Icon className="w-10 h-10 text-white" />
                       </div>
 
-                      <h3 className="text-2xl font-bold text-slate-800">
+                      <h3 className="text-2xl font-bold text-slate-800 dark:text-slate-100">
                         {principle.title}
                       </h3>
 
-                      <p className="text-slate-600 leading-relaxed">
+                      <p className="text-slate-600 dark:text-slate-300 leading-relaxed">
                         {principle.description}
                       </p>
                     </div>
@@ -136,11 +136,11 @@ export const About: React.FC = () => {
         </div>
       </section>
 
-      <section className="py-20 bg-gradient-to-b from-slate-50 to-white">
+      <section className="py-20 bg-gradient-to-b from-slate-50 to-white dark:from-slate-950 dark:to-slate-900">
         <div className="max-w-6xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-16">
-            <h2 className="text-4xl font-bold text-slate-800 mb-4">How We Make It Simple</h2>
-            <p className="text-xl text-slate-600">
+            <h2 className="text-4xl font-bold text-slate-800 dark:text-slate-100 mb-4">How We Make It Simple</h2>
+            <p className="text-xl text-slate-600 dark:text-slate-300">
               Our process turns complex program details into actionable information
             </p>
           </div>
@@ -157,10 +157,10 @@ export const About: React.FC = () => {
                   onMouseEnter={() => setHoveredStep(index)}
                   onMouseLeave={() => setHoveredStep(null)}
                 >
-                  <div className={`bg-white rounded-2xl p-8 border-2 transition-all duration-300 h-full ${
+                  <div className={`bg-white dark:bg-slate-800 rounded-2xl p-8 border-2 transition-all duration-300 h-full ${
                     isHovered
                       ? 'border-transparent shadow-2xl -translate-y-3'
-                      : 'border-slate-200 shadow-md'
+                      : 'border-slate-200 dark:border-slate-700 shadow-md'
                   }`}>
                     <div className="flex flex-col items-center text-center space-y-4">
                       <div className={`w-16 h-16 rounded-full ${step.bgColor} flex items-center justify-center transform transition-all duration-300 ${
@@ -169,11 +169,11 @@ export const About: React.FC = () => {
                         <Icon className={`w-8 h-8 ${step.color}`} />
                       </div>
 
-                      <h3 className="text-xl font-bold text-slate-800">
+                      <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100">
                         {step.step}
                       </h3>
 
-                      <p className="text-slate-600 leading-relaxed text-sm">
+                      <p className="text-slate-600 dark:text-slate-300 leading-relaxed text-sm">
                         {step.description}
                       </p>
                     </div>

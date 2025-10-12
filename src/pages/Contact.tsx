@@ -46,21 +46,21 @@ export const Contact: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white">
-      <section className="bg-gradient-to-br from-blue-50 via-slate-50 to-emerald-50 py-20 lg:py-28">
+    <div className="min-h-screen bg-gradient-to-b from-slate-50 to-white dark:from-slate-900 dark:to-slate-950">
+      <section className="bg-gradient-to-br from-blue-50 via-slate-50 to-emerald-50 dark:from-slate-800 dark:via-slate-900 dark:to-slate-800 py-20 lg:py-28">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="inline-flex items-center justify-center w-20 h-20 rounded-full bg-gradient-to-br from-blue-500 to-emerald-500 mb-8 shadow-lg animate-pulse">
             <Mail className="w-10 h-10 text-white" />
           </div>
 
-          <h1 className="text-5xl lg:text-6xl font-bold text-slate-800 mb-6 tracking-tight">
+          <h1 className="text-5xl lg:text-6xl font-bold text-slate-800 dark:text-slate-100 mb-6 tracking-tight">
             Get in Touch
           </h1>
 
-          <p className="text-xl text-slate-600 leading-relaxed mb-3">
+          <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed mb-3">
             Have questions about discount programs or need help with the site?
           </p>
-          <p className="text-xl text-slate-600 leading-relaxed">
+          <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed">
             We're here to help.
           </p>
         </div>
@@ -71,7 +71,7 @@ export const Contact: React.FC = () => {
           <div className="grid lg:grid-cols-2 gap-12">
             <div className="space-y-8">
               <div>
-                <h2 className="text-3xl font-bold text-slate-800 mb-6">Send us a message</h2>
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Send us a message</h2>
 
                 {submitStatus === 'success' && (
                   <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
@@ -92,7 +92,7 @@ export const Contact: React.FC = () => {
 
                 <form onSubmit={handleSubmit} className="space-y-6">
                   <div>
-                    <label htmlFor="fullName" className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label htmlFor="fullName" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       Full Name <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -113,7 +113,7 @@ export const Contact: React.FC = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="email" className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label htmlFor="email" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       Email Address <span className="text-red-500">*</span>
                     </label>
                     <Input
@@ -134,7 +134,7 @@ export const Contact: React.FC = () => {
                   </div>
 
                   <div>
-                    <label htmlFor="message" className="block text-sm font-semibold text-slate-700 mb-2">
+                    <label htmlFor="message" className="block text-sm font-semibold text-slate-700 dark:text-slate-300 mb-2">
                       Message <span className="text-red-500">*</span>
                     </label>
                     <textarea
@@ -146,7 +146,7 @@ export const Contact: React.FC = () => {
                       onBlur={() => setFocusedField(null)}
                       placeholder="Tell us how we can help you..."
                       rows={6}
-                      className={`w-full px-4 py-3 rounded-lg border-2 border-slate-200 bg-white text-slate-900 placeholder:text-slate-400 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 ${
+                      className={`w-full px-4 py-3 rounded-lg border-2 border-slate-200 dark:border-slate-700 bg-white dark:bg-slate-900 text-slate-900 dark:text-slate-100 placeholder:text-slate-400 dark:placeholder:text-slate-500 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none transition-all duration-200 ${
                         focusedField === 'message' ? 'ring-2 ring-blue-500' : ''
                       }`}
                       required
@@ -178,17 +178,17 @@ export const Contact: React.FC = () => {
 
             <div className="space-y-6">
               <div>
-                <h2 className="text-3xl font-bold text-slate-800 mb-6">Other ways to reach us</h2>
+                <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Other ways to reach us</h2>
 
                 <div className="space-y-4">
-                  <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-blue-300 hover:shadow-lg transition-all duration-200">
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-blue-300 dark:hover:border-blue-600 hover:shadow-lg transition-all duration-200">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-full bg-blue-100 flex items-center justify-center flex-shrink-0">
                         <Mail className="w-6 h-6 text-blue-600" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">Direct Email</h3>
-                        <p className="text-slate-600 text-sm mb-3 leading-relaxed">
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Direct Email</h3>
+                        <p className="text-slate-600 dark:text-slate-300 text-sm mb-3 leading-relaxed">
                           For urgent inquiries or detailed questions, you can email us directly:
                         </p>
                         <a
@@ -201,14 +201,14 @@ export const Contact: React.FC = () => {
                     </div>
                   </div>
 
-                  <div className="bg-white rounded-xl p-6 border-2 border-slate-200 hover:border-emerald-300 hover:shadow-lg transition-all duration-200">
+                  <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-200 dark:border-slate-700 hover:border-emerald-300 dark:hover:border-emerald-600 hover:shadow-lg transition-all duration-200">
                     <div className="flex items-start gap-4">
                       <div className="w-12 h-12 rounded-full bg-emerald-100 flex items-center justify-center flex-shrink-0">
                         <HelpCircle className="w-6 h-6 text-emerald-600" />
                       </div>
                       <div className="flex-1">
-                        <h3 className="text-xl font-bold text-slate-800 mb-2">Check Our FAQ First</h3>
-                        <p className="text-slate-600 text-sm mb-3 leading-relaxed">
+                        <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Check Our FAQ First</h3>
+                        <p className="text-slate-600 dark:text-slate-300 text-sm mb-3 leading-relaxed">
                           Many common questions are answered in our FAQ section. This might help you get answers faster.
                         </p>
                         <Link
@@ -223,26 +223,26 @@ export const Contact: React.FC = () => {
                 </div>
               </div>
 
-              <div className="bg-gradient-to-br from-slate-50 to-blue-50 rounded-xl p-6 border-2 border-slate-200">
+              <div className="bg-gradient-to-br from-slate-50 to-blue-50 dark:from-slate-800 dark:to-slate-900 rounded-xl p-6 border-2 border-slate-200 dark:border-slate-700">
                 <div className="flex items-start gap-3 mb-4">
-                  <Clock className="w-6 h-6 text-slate-700 flex-shrink-0 mt-1" />
+                  <Clock className="w-6 h-6 text-slate-700 dark:text-slate-300 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-2">Response Time</h3>
-                    <p className="text-slate-700 text-sm leading-relaxed">
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-2">Response Time</h3>
+                    <p className="text-slate-700 dark:text-slate-300 text-sm leading-relaxed">
                       We typically respond to all inquiries within 1-2 business days. For urgent matters related to prescription access, please contact your healthcare provider or pharmacist directly.
                     </p>
                   </div>
                 </div>
               </div>
 
-              <div className="bg-white rounded-xl p-6 border-2 border-slate-200">
+              <div className="bg-white dark:bg-slate-800 rounded-xl p-6 border-2 border-slate-200 dark:border-slate-700">
                 <div className="flex items-start gap-3 mb-4">
-                  <MessageCircle className="w-6 h-6 text-slate-700 flex-shrink-0 mt-1" />
+                  <MessageCircle className="w-6 h-6 text-slate-700 dark:text-slate-300 flex-shrink-0 mt-1" />
                   <div>
-                    <h3 className="text-xl font-bold text-slate-800 mb-3">Common Inquiries</h3>
+                    <h3 className="text-xl font-bold text-slate-800 dark:text-slate-100 mb-3">Common Inquiries</h3>
                     <ul className="space-y-2.5">
                       {commonInquiries.map((inquiry, index) => (
-                        <li key={index} className="flex items-start gap-2 text-slate-700 text-sm">
+                        <li key={index} className="flex items-start gap-2 text-slate-700 dark:text-slate-300 text-sm">
                           <span className="w-1.5 h-1.5 rounded-full bg-blue-500 flex-shrink-0 mt-2"></span>
                           <span>{inquiry}</span>
                         </li>

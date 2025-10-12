@@ -40,8 +40,8 @@ export const Header: React.FC = () => {
           {/* Logo */}
           <div className="flex flex-col">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
-                <Pill className="w-6 h-6 text-white drop-shadow-md" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg animate-pulse-glow" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
+                <Pill className="w-6 h-6 text-white drop-shadow-md animate-wiggle" />
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold tracking-tight">

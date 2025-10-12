@@ -29,7 +29,7 @@ export const SearchBar: React.FC = () => {
         <form onSubmit={handleSearch} className="relative">
           <div className="flex items-center gap-3">
             <div className="relative flex-1">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-primary animate-scale-pulse" />
               <Input
                 type="text"
                 value={searchQuery}

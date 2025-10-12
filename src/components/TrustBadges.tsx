@@ -32,10 +32,10 @@ export const TrustBadges: React.FC = () => {
           {badges.map((badge, index) => (
             <div
               key={index}
-              className="flex flex-col items-center text-center space-y-5 p-8 rounded-lg hover:bg-accent transition-colors"
+              className="flex flex-col items-center text-center space-y-5 p-8 rounded-lg hover:bg-accent transition-all group"
             >
-              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center">
-                <badge.icon className="w-10 h-10 text-primary" />
+              <div className="w-20 h-20 bg-primary/10 rounded-full flex items-center justify-center group-hover:bg-primary/20 transition-all group-hover:animate-scale-pulse shadow-md shadow-primary/10">
+                <badge.icon className="w-10 h-10 text-primary group-hover:animate-bounce-subtle drop-shadow-sm" />
               </div>
               <div className="space-y-3">
                 <h3 className="text-xl font-semibold tracking-tight">

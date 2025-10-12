@@ -45,10 +45,10 @@ export const FeaturesGrid: React.FC = () => {
 
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-6">
           {features.map((feature, index) => (
-            <Card key={index} className="text-center hover:shadow-lg transition-all hover:scale-105">
+            <Card key={index} className="text-center hover:shadow-lg transition-all hover:scale-105 group">
               <CardHeader>
-                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md shadow-primary/20">
-                  <feature.icon className="w-8 h-8 text-primary drop-shadow-sm" />
+                <div className="w-16 h-16 bg-primary/20 rounded-full flex items-center justify-center mx-auto mb-4 shadow-md shadow-primary/20 group-hover:animate-scale-pulse">
+                  <feature.icon className="w-8 h-8 text-primary drop-shadow-sm group-hover:animate-bounce-subtle" />
                 </div>
                 <CardTitle className="text-lg">{feature.title}</CardTitle>
               </CardHeader>

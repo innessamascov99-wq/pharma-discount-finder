@@ -39,13 +39,13 @@ export const HowItWorks: React.FC = () => {
           {steps.map((step, index) => (
             <div key={index} className="text-center relative">
               <div className="relative mb-10">
-                <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30">
+                <div className="w-24 h-24 bg-primary rounded-full flex items-center justify-center mx-auto mb-4 shadow-lg shadow-primary/30 animate-pulse-glow">
                   <span className="text-3xl font-bold text-primary-foreground drop-shadow-sm">
                     {step.number}
                   </span>
                 </div>
 
-                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/30">
+                <div className="absolute -bottom-2 left-1/2 transform -translate-x-1/2 w-14 h-14 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/30 animate-bounce-subtle">
                   <step.icon className="w-7 h-7 text-primary drop-shadow-sm" />
                 </div>
               </div>

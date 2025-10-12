@@ -21,7 +21,7 @@ export const TrustTransparency: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-3 text-lg">
-                  <Calendar className="w-6 h-6 text-primary" />
+                  <Calendar className="w-6 h-6 text-primary animate-spin-slow" />
                   Data Freshness Example
                 </CardTitle>
               </CardHeader>
@@ -43,13 +43,13 @@ export const TrustTransparency: React.FC = () => {
             </Card>
 
             <div className="flex justify-center gap-8">
-              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/20">
+              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/20 animate-pulse-glow">
                 <Shield className="w-8 h-8 text-primary drop-shadow-sm" />
               </div>
-              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/20">
+              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-primary/20 animate-bounce-subtle">
                 <FileCheck className="w-8 h-8 text-primary drop-shadow-sm" />
               </div>
-              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-warning/20">
+              <div className="w-16 h-16 bg-card rounded-full flex items-center justify-center shadow-lg border-2 border-warning/20 animate-wiggle">
                 <AlertTriangle className="w-8 h-8 text-warning drop-shadow-sm" />
               </div>
             </div>
@@ -60,7 +60,7 @@ export const TrustTransparency: React.FC = () => {
             <Card>
               <CardHeader>
                 <CardTitle className="flex items-center gap-2">
-                  <Shield className="w-6 h-6 text-primary" />
+                  <Shield className="w-6 h-6 text-primary animate-scale-pulse" />
                   Our Commitment
                 </CardTitle>
               </CardHeader>

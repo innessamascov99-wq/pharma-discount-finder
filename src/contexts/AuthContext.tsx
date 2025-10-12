@@ -39,8 +39,11 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setLoading(false);
     });
 
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       (() => {
+        if (event === 'SIGNED_IN') {
+          console.log('User signed in:', session?.user);
+        }
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);

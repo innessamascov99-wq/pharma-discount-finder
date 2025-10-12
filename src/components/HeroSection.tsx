@@ -37,7 +37,7 @@ export const HeroSection: React.FC = () => {
 
           {/* Main Headlines */}
           <div className="space-y-8">
-            <h1 className="text-5xl md:text-6xl lg:text-7xl font-bold leading-[1.1] tracking-tight">
+            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
               Save on Brand-Name
               <br />
               <span className="text-primary">Prescriptions</span>

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Menu, X, Pill } from 'lucide-react';
 import { Button } from './ui';
+import { ThemeToggle } from './ThemeToggle';
 
 export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -29,9 +30,9 @@ export const Header: React.FC = () => {
   return (
     <header 
       className={`fixed top-0 left-0 right-0 z-50 transition-all duration-300 ${
-        isScrolled 
-          ? 'bg-white/95 backdrop-blur-md shadow-md' 
-          : 'bg-white/90 backdrop-blur-sm'
+        isScrolled
+          ? 'bg-background/95 backdrop-blur-md shadow-md'
+          : 'bg-background/90 backdrop-blur-sm'
       }`}
     >
       <div className="max-w-7xl mx-auto px-6">
@@ -59,7 +60,7 @@ export const Header: React.FC = () => {
               <a
                 key={link.name}
                 href={link.href}
-                className="text-text hover:text-primary transition-colors duration-200 font-medium"
+                className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
               >
                 {link.name}
               </a>
@@ -68,6 +69,7 @@ export const Header: React.FC = () => {
 
           {/* Desktop Auth Buttons */}
           <div className="hidden md:flex items-center gap-4">
+            <ThemeToggle />
             <Button variant="ghost" size="sm">
               Login
             </Button>
@@ -83,9 +85,9 @@ export const Header: React.FC = () => {
             aria-label="Toggle menu"
           >
             {isMenuOpen ? (
-              <X className="w-6 h-6 text-text" />
+              <X className="w-6 h-6 text-foreground" />
             ) : (
-              <Menu className="w-6 h-6 text-text" />
+              <Menu className="w-6 h-6 text-foreground" />
             )}
           </button>
         </div>
@@ -112,8 +114,11 @@ export const Header: React.FC = () => {
               ))}
             </nav>
             
-            {/* Mobile Auth Buttons */}
+            {/* Mobile Theme Toggle and Auth Buttons */}
             <div className="flex flex-col gap-3 mt-6 pt-4 border-t border-gray-200">
+              <div className="flex justify-center mb-2">
+                <ThemeToggle />
+              </div>
               <Button variant="ghost" size="sm" className="w-full">
                 Login
               </Button>

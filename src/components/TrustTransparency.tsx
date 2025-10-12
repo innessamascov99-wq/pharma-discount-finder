@@ -7,7 +7,7 @@ export const TrustTransparency: React.FC = () => {
     <section className="py-24 bg-primary/5">
       <div className="max-w-7xl mx-auto px-6">
         <div className="text-center mb-16">
-          <h2 className="text-4xl md:text-5xl font-bold mb-6 tracking-tight">
+          <h2 className="text-3xl md:text-4xl font-bold mb-6 tracking-tight">
             Trust & Transparency
           </h2>
           <Badge variant="default" className="text-base px-6 py-3">

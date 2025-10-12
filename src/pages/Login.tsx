@@ -10,24 +10,11 @@ export const Login: React.FC = () => {
   const [staySignedIn, setStaySignedIn] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
-  const [showPasswordField, setShowPasswordField] = useState(false);
   const { signIn, signInWithGoogle } = useAuth();
   const navigate = useNavigate();
 
-  const handleNext = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email && !showPasswordField) {
-      setShowPasswordField(true);
-    }
-  };
-
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!showPasswordField) {
-      setShowPasswordField(true);
-      return;
-    }
-
     setError(null);
     setLoading(true);
 
@@ -102,27 +89,24 @@ export const Login: React.FC = () => {
               type="email"
               value={email}
               onChange={(e) => setEmail(e.target.value)}
-              placeholder="Username, email, or mobile"
+              placeholder="Email address"
               className="h-14 text-base"
               required
               disabled={loading}
             />
           </div>
 
-          {showPasswordField && (
-            <div>
-              <Input
-                type="password"
-                value={password}
-                onChange={(e) => setPassword(e.target.value)}
-                placeholder="Password"
-                className="h-14 text-base"
-                required
-                disabled={loading}
-                autoFocus
-              />
-            </div>
-          )}
+          <div>
+            <Input
+              type="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Password"
+              className="h-14 text-base"
+              required
+              disabled={loading}
+            />
+          </div>
 
           <Button
             type="submit"
@@ -136,10 +120,8 @@ export const Login: React.FC = () => {
                 <Loader2 className="w-5 h-5 mr-2 animate-spin" />
                 Signing in...
               </>
-            ) : showPasswordField ? (
-              'Sign In'
             ) : (
-              'Next'
+              'Sign In'
             )}
           </Button>
 

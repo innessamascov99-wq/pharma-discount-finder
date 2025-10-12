@@ -81,6 +81,9 @@ export const ForgotPassword: React.FC = () => {
                 <p className="text-sm text-muted-foreground">
                   We've sent a password reset link to <span className="font-medium text-foreground">{email}</span>
                 </p>
+                <p className="text-xs text-muted-foreground mt-2">
+                  Don't forget to check your spam folder if you don't see it.
+                </p>
               </div>
             </div>
 

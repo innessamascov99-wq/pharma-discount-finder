@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Pill, AlertCircle, Loader2 } from 'lucide-react';
+import { Pill, AlertCircle, Loader2, ArrowLeft } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -53,6 +53,16 @@ export const Login: React.FC = () => {
   return (
     <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
       <div className="w-full max-w-md">
+        <div className="mb-8">
+          <Link
+            to="/"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+          >
+            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
+            <span className="font-medium">Back to home</span>
+          </Link>
+        </div>
+
         <div className="text-center mb-12">
           <Link to="/" className="inline-flex items-center gap-3 mb-8">
             <div className="w-12 h-12 rounded-lg flex items-center justify-center shadow-lg animate-pulse-glow" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
@@ -199,15 +209,6 @@ export const Login: React.FC = () => {
             Sign in with Google
           </Button>
         </form>
-
-        <div className="mt-8 text-center">
-          <Link
-            to="/"
-            className="text-sm text-muted-foreground hover:text-primary transition-colors"
-          >
-            Back to home
-          </Link>
-        </div>
       </div>
     </div>
   );

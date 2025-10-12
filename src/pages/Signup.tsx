@@ -57,7 +57,11 @@ export const Signup: React.FC = () => {
       const { error } = await signInWithGoogle();
 
       if (error) {
-        setError(error.message);
+        if (error.message.includes('provider is not enabled')) {
+          setError('Google sign-in is not configured yet. Please use email and password to create an account.');
+        } else {
+          setError(error.message);
+        }
         setLoading(false);
       }
     } catch (err) {

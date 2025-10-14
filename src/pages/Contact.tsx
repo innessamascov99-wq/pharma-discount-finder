@@ -18,12 +18,33 @@ export const Contact: React.FC = () => {
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
-    await new Promise(resolve => setTimeout(resolve, 1500));
+    try {
+      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-email`;
 
-    if (formData.fullName && formData.email && formData.message) {
-      setSubmitStatus('success');
-      setFormData({ fullName: '', email: '', message: '' });
-    } else {
+      const response = await fetch(apiUrl, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+        },
+        body: JSON.stringify({
+          fullName: formData.fullName,
+          email: formData.email,
+          message: formData.message,
+        }),
+      });
+
+      const result = await response.json();
+
+      if (response.ok && result.success) {
+        setSubmitStatus('success');
+        setFormData({ fullName: '', email: '', message: '' });
+      } else {
+        console.error('Failed to send email:', result);
+        setSubmitStatus('error');
+      }
+    } catch (error) {
+      console.error('Error submitting form:', error);
       setSubmitStatus('error');
     }
 

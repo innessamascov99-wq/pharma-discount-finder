@@ -18,7 +18,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
         createChat({
           webhookUrl: 'https://creative-glider-excited.ngrok-free.app/webhook/32ecd779-a450-4f0a-82cc-d57e3ad66fed/chat',
           initialMessages: [
-            `Hi! I'm ${name}, your virtual assistant. How can I help you today?`
+            `Hi! I'm ${name}. Can I have your name to properly address you and assist you?`
           ],
           i18n: {
             en: {

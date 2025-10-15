@@ -73,7 +73,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     const { error } = await supabase.auth.signInWithOAuth({
       provider: 'google',
       options: {
-        redirectTo: 'https://pharmadiscount.bolt.host/',
+        redirectTo: `${window.location.origin}/dashboard`,
       },
     });
     return { error };
@@ -86,7 +86,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://pharmadiscount.bolt.host/login',
+      redirectTo: `${window.location.origin}/login`,
     });
     return { error };
   };

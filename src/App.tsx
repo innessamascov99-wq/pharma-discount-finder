@@ -10,6 +10,8 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { FAQ } from './pages/FAQ';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
+import { UserDashboard } from './pages/UserDashboard';
+import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
@@ -19,6 +21,7 @@ function AppContent() {
   const location = useLocation();
 
   const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password';
+  const isDashboardPage = location.pathname === '/dashboard' || location.pathname === '/admin';
 
   useEffect(() => {
     const visited = sessionStorage.getItem('hasVisited');
@@ -46,7 +49,8 @@ function AppContent() {
 
       {(showContent || isAuthPage) && (
         <div className="min-h-screen bg-background animate-in fade-in duration-700">
-          {!isAuthPage && <Header />}
+          {!isAuthPage && !isDashboardPage && <Header />}
+          {isDashboardPage && <Header />}
 
           <main>
             <Routes>
@@ -57,10 +61,12 @@ function AppContent() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/dashboard" element={<UserDashboard />} />
+              <Route path="/admin" element={<AdminDashboard />} />
             </Routes>
           </main>
 
-          {!isAuthPage && <Footer />}
+          {!isAuthPage && !isDashboardPage && <Footer />}
         </div>
       )}
     </>

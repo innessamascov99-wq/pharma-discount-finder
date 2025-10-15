@@ -19,30 +19,34 @@ export const Contact: React.FC = () => {
 
     if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
       setSubmitStatus('error');
+      setTimeout(() => setSubmitStatus('idle'), 3000);
       return;
     }
 
     setIsSubmitting(true);
 
-    const { error } = await supabase
-      .from('contact_submissions')
-      .insert({
-        full_name: formData.fullName.trim(),
-        email: formData.email.trim(),
-        message: formData.message.trim(),
-      });
+    try {
+      const { error } = await supabase
+        .from('contact_submissions')
+        .insert({
+          full_name: formData.fullName.trim(),
+          email: formData.email.trim(),
+          message: formData.message.trim(),
+        });
 
-    if (error) {
+      if (error) {
+        setSubmitStatus('error');
+        setTimeout(() => setSubmitStatus('idle'), 3000);
+      } else {
+        setSubmitStatus('success');
+        setFormData({ fullName: '', email: '', message: '' });
+        setTimeout(() => setSubmitStatus('idle'), 6000);
+      }
+    } catch (error) {
       setSubmitStatus('error');
+      setTimeout(() => setSubmitStatus('idle'), 3000);
+    } finally {
       setIsSubmitting(false);
-    } else {
-      setSubmitStatus('success');
-      setFormData({ fullName: '', email: '', message: '' });
-      setIsSubmitting(false);
-
-      setTimeout(() => {
-        setSubmitStatus('idle');
-      }, 5000);
     }
   };
 
@@ -90,15 +94,27 @@ export const Contact: React.FC = () => {
                 <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Send us a message</h2>
 
                 {submitStatus === 'success' && (
-                  <div className="mb-6 p-5 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-2 border-emerald-300 dark:border-emerald-600 rounded-xl flex items-start gap-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-lg">
-                    <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 animate-bounce">
-                      <CheckCircle2 className="w-6 h-6 text-white" />
-                    </div>
-                    <div>
-                      <p className="text-emerald-900 dark:text-emerald-100 font-bold text-lg">Message Sent Successfully!</p>
-                      <p className="text-emerald-800 dark:text-emerald-200 text-sm mt-1">
-                        Your message has been saved to our database. We'll get back to you within 1-2 business days.
-                      </p>
+                  <div className="mb-6 relative overflow-hidden">
+                    <div className="absolute inset-0 bg-gradient-to-r from-emerald-400 via-green-400 to-emerald-400 animate-pulse opacity-20 rounded-xl"></div>
+                    <div className="relative p-6 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/40 dark:to-green-900/40 border-2 border-emerald-400 dark:border-emerald-500 rounded-xl shadow-2xl">
+                      <div className="flex items-start gap-4">
+                        <div className="relative">
+                          <div className="absolute inset-0 bg-emerald-500 rounded-full animate-ping opacity-75"></div>
+                          <div className="relative w-12 h-12 rounded-full bg-gradient-to-br from-emerald-500 to-green-600 flex items-center justify-center flex-shrink-0 shadow-lg">
+                            <CheckCircle2 className="w-7 h-7 text-white animate-bounce" />
+                          </div>
+                        </div>
+                        <div className="flex-1">
+                          <p className="text-emerald-900 dark:text-emerald-100 font-bold text-xl mb-2">
+                            Message Successfully Sent!
+                          </p>
+                          <p className="text-emerald-800 dark:text-emerald-200 leading-relaxed">
+                            Thank you for reaching out! Your message has been received and saved to our database.
+                            We'll get back to you within 1-2 business days.
+                          </p>
+                        </div>
+                      </div>
+                      <div className="mt-4 h-1 bg-gradient-to-r from-emerald-500 via-green-500 to-emerald-500 rounded-full animate-pulse"></div>
                     </div>
                   </div>
                 )}

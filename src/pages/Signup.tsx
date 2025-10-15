@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Pill, AlertCircle, CheckCircle2, Loader2, ArrowLeft } from 'lucide-react';
+import { Pill, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -8,9 +8,12 @@ export const Signup: React.FC = () => {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
+  const [showPassword, setShowPassword] = useState(false);
+  const [showConfirmPassword, setShowConfirmPassword] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [focusedField, setFocusedField] = useState<string | null>(null);
   const { signUp, signInWithGoogle, user } = useAuth();
   const navigate = useNavigate();
 
@@ -77,129 +80,173 @@ export const Signup: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-background flex items-center justify-center px-6 py-12">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-blue-50/30 to-emerald-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 flex items-center justify-center px-4 py-12">
       <div className="w-full max-w-md">
-        <div className="mb-8">
+        <div className="mb-6">
           <Link
             to="/"
-            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-colors group"
+            className="inline-flex items-center gap-2 text-muted-foreground hover:text-primary transition-all duration-200 group"
           >
-            <ArrowLeft className="w-5 h-5 group-hover:-translate-x-1 transition-transform" />
-            <span className="font-medium">Back to home</span>
+            <ArrowLeft className="w-4 h-4 group-hover:-translate-x-1 transition-transform" />
+            <span className="text-sm font-medium">Back to home</span>
           </Link>
         </div>
 
-        <div className="text-center mb-12">
-          <Link to="/" className="inline-flex items-center gap-3 mb-8">
-            <div className="w-12 h-12 rounded-lg flex items-center justify-center shadow-lg animate-pulse-glow" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
-              <Pill className="w-7 h-7 text-white drop-shadow-md" />
-            </div>
-            <div className="text-left">
-              <div className="text-xl font-bold tracking-tight">
-                Pharma Discount Finder
+        <div className="bg-white dark:bg-slate-900 rounded-2xl shadow-xl border border-slate-200 dark:border-slate-800 p-8 md:p-10">
+          <div className="text-center mb-8">
+            <Link to="/" className="inline-flex items-center gap-3 mb-6 group">
+              <div className="w-12 h-12 rounded-xl flex items-center justify-center shadow-lg group-hover:scale-105 transition-transform duration-200" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
+                <Pill className="w-6 h-6 text-white" />
               </div>
-              <div className="text-xs text-muted-foreground font-medium">
-                Medication Made Affordable
+              <div className="text-left">
+                <div className="text-lg font-bold tracking-tight">
+                  Pharma Discount Finder
+                </div>
+                <div className="text-xs text-muted-foreground font-medium">
+                  Medication Made Affordable
+                </div>
               </div>
-            </div>
-          </Link>
+            </Link>
 
-          <h1 className="text-4xl md:text-5xl font-bold mb-3 tracking-tight">
-            Create an account
-          </h1>
-          <p className="text-lg text-muted-foreground">
-            Start saving on your medications
-          </p>
-        </div>
-
-        <form onSubmit={handleSubmit} className="space-y-6">
-          {error && (
-            <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 flex items-start gap-3">
-              <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-destructive">{error}</p>
-            </div>
-          )}
-
-          {success && (
-            <div className="bg-green-500/10 border border-green-500/20 rounded-lg p-4 flex items-start gap-3">
-              <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
-              <p className="text-sm text-green-600 dark:text-green-400">{success}</p>
-            </div>
-          )}
-
-          <div>
-            <Input
-              type="email"
-              value={email}
-              onChange={(e) => setEmail(e.target.value)}
-              placeholder="Email address"
-              className="h-14 text-base"
-              required
-              disabled={loading}
-            />
+            <h1 className="text-3xl md:text-4xl font-bold mb-2 tracking-tight">
+              Create your account
+            </h1>
+            <p className="text-base text-muted-foreground">
+              Start saving on your medications today
+            </p>
           </div>
 
-          <div>
-            <Input
-              type="password"
-              value={password}
-              onChange={(e) => setPassword(e.target.value)}
-              placeholder="Password (min. 6 characters)"
-              className="h-14 text-base"
-              required
-              disabled={loading}
-              minLength={6}
-            />
-          </div>
-
-          <div>
-            <Input
-              type="password"
-              value={confirmPassword}
-              onChange={(e) => setConfirmPassword(e.target.value)}
-              placeholder="Confirm password"
-              className="h-14 text-base"
-              required
-              disabled={loading}
-            />
-          </div>
-
-          <Button
-            type="submit"
-            variant="default"
-            size="lg"
-            className="w-full h-14 text-lg font-semibold"
-            disabled={loading}
-          >
-            {loading ? (
-              <>
-                <Loader2 className="w-5 h-5 mr-2 animate-spin" />
-                Creating account...
-              </>
-            ) : (
-              'Create Account'
+          <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <AlertCircle className="w-5 h-5 text-destructive flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-destructive leading-relaxed">{error}</p>
+              </div>
             )}
-          </Button>
 
-          <div className="relative py-6">
-            <div className="absolute inset-0 flex items-center">
-              <div className="w-full border-t border-border"></div>
-            </div>
-            <div className="relative flex justify-center text-sm">
-              <span className="px-4 bg-background text-muted-foreground">
-                or
-              </span>
-            </div>
-          </div>
+            {success && (
+              <div className="bg-green-500/10 border border-green-500/20 rounded-xl p-4 flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
+                <CheckCircle2 className="w-5 h-5 text-green-600 dark:text-green-400 flex-shrink-0 mt-0.5" />
+                <p className="text-sm text-green-600 dark:text-green-400 leading-relaxed">{success}</p>
+              </div>
+            )}
 
-          <Button
-            type="button"
-            variant="outline"
-            size="lg"
-            onClick={handleGoogleSignUp}
-            className="w-full h-14 text-lg font-medium border-2 hover:bg-accent"
-            disabled={loading}
-          >
+            <div className="space-y-2">
+              <label htmlFor="email" className="block text-sm font-semibold text-foreground">
+                Email address
+              </label>
+              <div className="relative">
+                <Mail className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="email"
+                  type="email"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
+                  onFocus={() => setFocusedField('email')}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="you@example.com"
+                  className={`h-12 pl-12 text-base transition-all duration-200 ${focusedField === 'email' ? 'ring-2 ring-primary border-primary' : ''}`}
+                  required
+                  disabled={loading}
+                />
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="password" className="block text-sm font-semibold text-foreground">
+                Password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="password"
+                  type={showPassword ? 'text' : 'password'}
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
+                  onFocus={() => setFocusedField('password')}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="Minimum 6 characters"
+                  className={`h-12 pl-12 pr-12 text-base transition-all duration-200 ${focusedField === 'password' ? 'ring-2 ring-primary border-primary' : ''}`}
+                  required
+                  disabled={loading}
+                  minLength={6}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={loading}
+                >
+                  {showPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <label htmlFor="confirmPassword" className="block text-sm font-semibold text-foreground">
+                Confirm password
+              </label>
+              <div className="relative">
+                <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                <Input
+                  id="confirmPassword"
+                  type={showConfirmPassword ? 'text' : 'password'}
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
+                  onFocus={() => setFocusedField('confirmPassword')}
+                  onBlur={() => setFocusedField(null)}
+                  placeholder="Re-enter your password"
+                  className={`h-12 pl-12 pr-12 text-base transition-all duration-200 ${focusedField === 'confirmPassword' ? 'ring-2 ring-primary border-primary' : ''}`}
+                  required
+                  disabled={loading}
+                />
+                <button
+                  type="button"
+                  onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-muted-foreground hover:text-foreground transition-colors"
+                  disabled={loading}
+                >
+                  {showConfirmPassword ? <EyeOff className="w-5 h-5" /> : <Eye className="w-5 h-5" />}
+                </button>
+              </div>
+            </div>
+
+            <Button
+              type="submit"
+              variant="default"
+              size="lg"
+              className="w-full h-12 text-base font-semibold shadow-lg hover:shadow-xl transition-all duration-200 mt-6"
+              disabled={loading}
+            >
+              {loading ? (
+                <>
+                  <Loader2 className="w-5 h-5 mr-2 animate-spin" />
+                  Creating account...
+                </>
+              ) : (
+                'Create account'
+              )}
+            </Button>
+
+            <div className="relative py-5">
+              <div className="absolute inset-0 flex items-center">
+                <div className="w-full border-t border-slate-200 dark:border-slate-700"></div>
+              </div>
+              <div className="relative flex justify-center text-xs">
+                <span className="px-3 bg-white dark:bg-slate-900 text-muted-foreground font-medium">
+                  OR CONTINUE WITH
+                </span>
+              </div>
+            </div>
+
+            <Button
+              type="button"
+              variant="outline"
+              size="lg"
+              onClick={handleGoogleSignUp}
+              className="w-full h-12 text-base font-medium hover:bg-slate-50 dark:hover:bg-slate-800 transition-all duration-200"
+              disabled={loading}
+            >
             <svg className="w-5 h-5 mr-3" viewBox="0 0 24 24">
               <path
                 fill="#4285F4"
@@ -217,21 +264,22 @@ export const Signup: React.FC = () => {
                 fill="#EA4335"
                 d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"
               />
-            </svg>
-            Sign up with Google
-          </Button>
-        </form>
+              </svg>
+              Google
+            </Button>
+          </form>
 
-        <div className="mt-8 text-center">
-          <p className="text-sm text-muted-foreground">
-            Already have an account?{' '}
-            <Link
-              to="/login"
-              className="text-primary font-medium hover:underline"
-            >
-              Sign in
-            </Link>
-          </p>
+          <div className="mt-6 text-center">
+            <p className="text-sm text-muted-foreground">
+              Already have an account?{' '}
+              <Link
+                to="/login"
+                className="text-primary font-semibold hover:underline transition-colors"
+              >
+                Sign in
+              </Link>
+            </p>
+          </div>
         </div>
       </div>
     </div>

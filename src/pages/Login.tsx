@@ -12,14 +12,18 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { signIn, signInWithGoogle, user } = useAuth();
+  const { signIn, signInWithGoogle, user, isAdmin } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
     if (user) {
-      navigate('/dashboard');
+      if (isAdmin) {
+        navigate('/admin');
+      } else {
+        navigate('/dashboard');
+      }
     }
-  }, [user, navigate]);
+  }, [user, isAdmin, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -40,10 +44,7 @@ export const Login: React.FC = () => {
         }
         setLoading(false);
       } else {
-        console.log('Login successful, navigating to dashboard...');
-        setTimeout(() => {
-          navigate('/dashboard');
-        }, 100);
+        console.log('Login successful, navigating...');
       }
     } catch (err) {
       console.error('Unexpected error during sign in:', err);

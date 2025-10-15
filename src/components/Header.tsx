@@ -9,7 +9,7 @@ export const Header: React.FC = () => {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const [isScrolled, setIsScrolled] = useState(false);
   const navigate = useNavigate();
-  const { user, signOut } = useAuth();
+  const { user, signOut, isAdmin } = useAuth();
 
   useEffect(() => {
     const handleScroll = () => {
@@ -91,10 +91,10 @@ export const Header: React.FC = () => {
             <ThemeToggle />
             {user ? (
               <>
-                <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent">
-                  <User className="w-4 h-4 text-primary" />
-                  <span className="text-sm font-medium">{user.email}</span>
-                </div>
+                <Button variant="ghost" size="sm" onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}>
+                  <User className="w-4 h-4 mr-2" />
+                  {isAdmin ? 'Admin' : 'Dashboard'}
+                </Button>
                 <Button variant="ghost" size="sm" onClick={handleSignOut}>
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -166,10 +166,10 @@ export const Header: React.FC = () => {
               </div>
               {user ? (
                 <>
-                  <div className="flex items-center gap-2 px-3 py-2 rounded-lg bg-accent justify-center">
-                    <User className="w-4 h-4 text-primary" />
-                    <span className="text-sm font-medium">{user.email}</span>
-                  </div>
+                  <Button variant="ghost" size="sm" className="w-full" onClick={() => { navigate(isAdmin ? '/admin' : '/dashboard'); setIsMenuOpen(false); }}>
+                    <User className="w-4 h-4 mr-2" />
+                    {isAdmin ? 'Admin' : 'Dashboard'}
+                  </Button>
                   <Button variant="ghost" size="sm" className="w-full" onClick={() => { handleSignOut(); setIsMenuOpen(false); }}>
                     <LogOut className="w-4 h-4 mr-2" />
                     Logout

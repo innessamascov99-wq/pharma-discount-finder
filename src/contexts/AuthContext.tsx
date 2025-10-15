@@ -6,6 +6,7 @@ interface AuthContextType {
   user: User | null;
   session: Session | null;
   loading: boolean;
+  isAdmin: boolean;
   signUp: (email: string, password: string) => Promise<{ data: any; error: AuthError | null }>;
   signIn: (email: string, password: string) => Promise<{ error: AuthError | null }>;
   signInWithGoogle: () => Promise<{ error: AuthError | null }>;
@@ -27,10 +28,13 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
+const ADMIN_EMAIL = 'pharmadiscountfinder@gmail.com';
+
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
+  const [isAdmin, setIsAdmin] = useState(false);
 
   useEffect(() => {
     console.log('AuthProvider: Initializing auth state');
@@ -43,6 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       setSession(session);
       setUser(session?.user ?? null);
+      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
       setLoading(false);
     });
 
@@ -60,6 +65,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         setSession(session);
         setUser(session?.user ?? null);
+        setIsAdmin(session?.user?.email === ADMIN_EMAIL);
         setLoading(false);
       })();
     });
@@ -152,6 +158,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     user,
     session,
     loading,
+    isAdmin,
     signUp,
     signIn,
     signInWithGoogle,

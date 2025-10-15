@@ -3,6 +3,8 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
+const ADMIN_EMAIL = 'pharmadiscountfinder@gmail.com';
+
 export const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -21,7 +23,8 @@ export const AuthCallback: React.FC = () => {
 
         if (data.session) {
           console.log('Session established:', data.session);
-          navigate('/dashboard');
+          const isAdmin = data.session.user.email === ADMIN_EMAIL;
+          navigate(isAdmin ? '/admin' : '/dashboard');
         } else {
           console.log('No session found, redirecting to login');
           navigate('/login');

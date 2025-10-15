@@ -16,6 +16,7 @@ export interface PharmaProgram {
   active: boolean;
   created_at: string;
   updated_at: string;
+  similarity?: number;
 }
 
 export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram[]> => {
@@ -23,29 +24,70 @@ export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram
     return [];
   }
 
-  const searchTerm = query.trim().toLowerCase();
+  const searchTerm = query.trim();
 
   try {
+    console.log('Performing vector search for:', searchTerm);
+
+    const { data: { session } } = await supabase.auth.getSession();
+
+    if (!session) {
+      console.error('No active session for vector search');
+      return fallbackTextSearch(searchTerm);
+    }
+
+    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pharma-search`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${session.access_token}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({ query: searchTerm, limit: 20 }),
+    });
+
+    if (!response.ok) {
+      console.error('Vector search failed, falling back to text search');
+      return fallbackTextSearch(searchTerm);
+    }
+
+    const { results, method } = await response.json();
+    console.log(`Search completed using: ${method}`);
+
+    return results || [];
+  } catch (err) {
+    console.error('Vector search error, using fallback:', err);
+    return fallbackTextSearch(searchTerm);
+  }
+};
+
+const fallbackTextSearch = async (searchTerm: string): Promise<PharmaProgram[]> => {
+  try {
+    const lowerSearchTerm = searchTerm.toLowerCase();
+
     const { data, error } = await supabase
       .from('pharma_programs')
       .select('*')
       .eq('active', true)
       .or(
-        `medication_name.ilike.%${searchTerm}%,` +
-        `generic_name.ilike.%${searchTerm}%,` +
-        `manufacturer.ilike.%${searchTerm}%,` +
-        `program_name.ilike.%${searchTerm}%`
+        `medication_name.ilike.%${lowerSearchTerm}%,` +
+        `generic_name.ilike.%${lowerSearchTerm}%,` +
+        `manufacturer.ilike.%${lowerSearchTerm}%,` +
+        `program_name.ilike.%${lowerSearchTerm}%,` +
+        `program_description.ilike.%${lowerSearchTerm}%`
       )
-      .order('medication_name', { ascending: true });
+      .order('medication_name', { ascending: true })
+      .limit(20);
 
     if (error) {
-      console.error('Search error:', error);
+      console.error('Fallback search error:', error);
       return [];
     }
 
     return data || [];
   } catch (err) {
-    console.error('Unexpected search error:', err);
+    console.error('Unexpected fallback search error:', err);
     return [];
   }
 };

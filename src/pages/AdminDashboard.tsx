@@ -14,11 +14,13 @@ import {
   Database,
   Settings,
   AlertTriangle,
-  CheckCircle2
+  CheckCircle2,
+  Sparkles
 } from 'lucide-react';
 import { Button, Card, Input, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
+import { generateEmbeddings } from '../utils/generateEmbeddings';
 
 interface ProgramStats {
   total_programs: number;
@@ -47,6 +49,8 @@ export const AdminDashboard: React.FC = () => {
   const [recentPrograms, setRecentPrograms] = useState<RecentProgram[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
   const [loading, setLoading] = useState(true);
+  const [generatingEmbeddings, setGeneratingEmbeddings] = useState(false);
+  const [embeddingMessage, setEmbeddingMessage] = useState('');
 
   useEffect(() => {
     if (!user) {
@@ -92,6 +96,20 @@ export const AdminDashboard: React.FC = () => {
     }
 
     setLoading(false);
+  };
+
+  const handleGenerateEmbeddings = async () => {
+    setGeneratingEmbeddings(true);
+    setEmbeddingMessage('Generating embeddings for all programs...');
+
+    const result = await generateEmbeddings(import.meta.env.VITE_SUPABASE_URL);
+
+    setGeneratingEmbeddings(false);
+    setEmbeddingMessage(result.message);
+
+    setTimeout(() => {
+      setEmbeddingMessage('');
+    }, 5000);
   };
 
   const handleDeleteProgram = async (programId: string) => {
@@ -165,6 +183,7 @@ export const AdminDashboard: React.FC = () => {
 
   const quickActions = [
     { icon: Plus, label: 'Add Program', action: () => {} },
+    { icon: Sparkles, label: 'Generate Embeddings', action: handleGenerateEmbeddings },
     { icon: Database, label: 'Manage Data', action: () => {} },
     { icon: BarChart3, label: 'View Analytics', action: () => {} },
     { icon: Settings, label: 'Settings', action: () => {} }
@@ -209,6 +228,19 @@ export const AdminDashboard: React.FC = () => {
           ))}
         </div>
 
+        {embeddingMessage && (
+          <Card className="p-4 mb-6 bg-primary/5 border-primary/20">
+            <div className="flex items-center gap-2">
+              {generatingEmbeddings ? (
+                <div className="w-4 h-4 border-2 border-primary border-t-transparent rounded-full animate-spin" />
+              ) : (
+                <CheckCircle2 className="w-4 h-4 text-primary" />
+              )}
+              <p className="text-sm">{embeddingMessage}</p>
+            </div>
+          </Card>
+        )}
+
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
           {quickActions.map((action, index) => (
             <Button
@@ -216,6 +248,7 @@ export const AdminDashboard: React.FC = () => {
               variant="outline"
               className="h-auto p-4 flex flex-col items-center gap-3"
               onClick={action.action}
+              disabled={index === 1 && generatingEmbeddings}
             >
               <action.icon className="w-8 h-8 text-primary" />
               <span className="font-semibold">{action.label}</span>

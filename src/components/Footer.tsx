@@ -44,12 +44,12 @@ export const Footer: React.FC = () => {
   return (
     <footer className="bg-slate-800 text-white">
       {/* Main Footer Content */}
-      <div className="max-w-7xl mx-auto px-6 py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12 lg:gap-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12 lg:gap-16">
           
           {/* Section 1: About Us */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white mb-4">
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
               About Pharma Discount Finder
             </h3>
             <div className="space-y-4 text-gray-300 leading-relaxed">
@@ -72,8 +72,8 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Section 2: Contact Information */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white mb-4">
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
               Get In Touch
             </h3>
             
@@ -137,8 +137,8 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Section 3: Quick FAQ */}
-          <div className="space-y-6">
-            <h3 className="text-xl font-bold text-white mb-4">
+          <div className="space-y-4 sm:space-y-6">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
               Frequently Asked Questions
             </h3>
             
@@ -177,9 +177,9 @@ export const Footer: React.FC = () => {
 
       {/* Bottom Section */}
       <div className="border-t border-slate-700">
-        <div className="max-w-7xl mx-auto px-6 py-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 py-6 sm:py-8">
           {/* Legal Links */}
-          <div className="flex flex-wrap justify-center gap-6 mb-6">
+          <div className="flex flex-wrap justify-center gap-3 sm:gap-6 mb-4 sm:mb-6 text-sm sm:text-base">
             <a href="#privacy" className="text-gray-400 hover:text-white transition-colors duration-200">
               Privacy Policy
             </a>
@@ -194,8 +194,8 @@ export const Footer: React.FC = () => {
           </div>
 
           {/* Tagline */}
-          <div className="text-center mb-6">
-            <p className="text-lg font-medium text-gray-300">
+          <div className="text-center mb-4 sm:mb-6">
+            <p className="text-base sm:text-lg font-medium text-gray-300">
               Pharma Discount Finder — Transparency for Patients
             </p>
           </div>

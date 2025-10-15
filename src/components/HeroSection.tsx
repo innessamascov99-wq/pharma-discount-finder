@@ -36,14 +36,14 @@ export const HeroSection: React.FC = () => {
           </div>
 
           {/* Main Headlines */}
-          <div className="space-y-8">
-            <h1 className="text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight">
+          <div className="space-y-6 md:space-y-8">
+            <h1 className="text-3xl sm:text-4xl md:text-5xl lg:text-6xl font-bold leading-[1.1] tracking-tight px-4">
               Save on Brand-Name
               <br />
               <span className="text-primary">Prescriptions</span>
             </h1>
 
-            <p className="text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto font-light leading-relaxed">
+            <p className="text-lg sm:text-xl md:text-2xl text-foreground/80 max-w-3xl mx-auto font-light leading-relaxed px-4">
               We turn complex manufacturer programs into clear, simple summaries you can trust
             </p>
           </div>
@@ -57,18 +57,18 @@ export const HeroSection: React.FC = () => {
           </div>
 
           {/* Visual Stats */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-12 pt-16 max-w-4xl mx-auto">
-            <div className="text-center space-y-3">
-              <div className="text-5xl font-bold text-primary">500+</div>
-              <div className="text-base text-foreground/70 font-medium">Verified Programs</div>
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-8 sm:gap-12 pt-12 sm:pt-16 max-w-4xl mx-auto px-4">
+            <div className="text-center space-y-2 sm:space-y-3">
+              <div className="text-4xl sm:text-5xl font-bold text-primary">500+</div>
+              <div className="text-sm sm:text-base text-foreground/70 font-medium">Verified Programs</div>
             </div>
-            <div className="text-center space-y-3">
-              <div className="text-5xl font-bold text-primary">$2.5B</div>
-              <div className="text-base text-foreground/70 font-medium">Potential Savings</div>
+            <div className="text-center space-y-2 sm:space-y-3">
+              <div className="text-4xl sm:text-5xl font-bold text-primary">$2.5B</div>
+              <div className="text-sm sm:text-base text-foreground/70 font-medium">Potential Savings</div>
             </div>
-            <div className="text-center space-y-3">
-              <div className="text-5xl font-bold text-primary">50K+</div>
-              <div className="text-base text-foreground/70 font-medium">Patients Helped</div>
+            <div className="text-center space-y-2 sm:space-y-3">
+              <div className="text-4xl sm:text-5xl font-bold text-primary">50K+</div>
+              <div className="text-sm sm:text-base text-foreground/70 font-medium">Patients Helped</div>
             </div>
           </div>
         </div>

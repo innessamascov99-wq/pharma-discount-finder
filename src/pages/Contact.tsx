@@ -23,38 +23,27 @@ export const Contact: React.FC = () => {
     }
 
     setIsSubmitting(true);
-    setSubmitStatus('idle');
 
-    try {
-      const { data, error } = await supabase
-        .from('contact_submissions')
-        .insert([
-          {
-            full_name: formData.fullName.trim(),
-            email: formData.email.trim(),
-            message: formData.message.trim(),
-          }
-        ])
-        .select();
+    const { error } = await supabase
+      .from('contact_submissions')
+      .insert({
+        full_name: formData.fullName.trim(),
+        email: formData.email.trim(),
+        message: formData.message.trim(),
+      });
 
-      if (error) {
-        console.error('Error saving contact submission:', error);
-        setSubmitStatus('error');
-      } else {
-        console.log('Contact submission saved successfully:', data);
-        setSubmitStatus('success');
-        setFormData({ fullName: '', email: '', message: '' });
-
-        setTimeout(() => {
-          setSubmitStatus('idle');
-        }, 5000);
-      }
-    } catch (error) {
-      console.error('Unexpected error submitting form:', error);
+    if (error) {
       setSubmitStatus('error');
-    }
+      setIsSubmitting(false);
+    } else {
+      setSubmitStatus('success');
+      setFormData({ fullName: '', email: '', message: '' });
+      setIsSubmitting(false);
 
-    setIsSubmitting(false);
+      setTimeout(() => {
+        setSubmitStatus('idle');
+      }, 5000);
+    }
   };
 
   const handleChange = (e: React.ChangeEvent<HTMLInputElement | HTMLTextAreaElement>) => {

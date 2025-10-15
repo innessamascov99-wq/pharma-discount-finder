@@ -33,6 +33,8 @@ export const Login: React.FC = () => {
         console.error('Sign in error:', error);
         setError(error.message);
         setLoading(false);
+      } else {
+        navigate('/dashboard');
       }
     } catch (err) {
       console.error('Unexpected error during sign in:', err);

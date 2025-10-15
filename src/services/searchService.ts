@@ -21,39 +21,17 @@ export interface PharmaProgram {
 
 export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram[]> => {
   if (!query || query.trim().length === 0) {
-    return [];
+    return getAllPharmaPrograms();
   }
 
   const searchTerm = query.trim();
 
   try {
-    console.log('Performing vector search for:', searchTerm);
-
-    const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pharma-search`;
-
-    const headers: HeadersInit = {
-      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-      'Content-Type': 'application/json',
-    };
-
-    const response = await fetch(apiUrl, {
-      method: 'POST',
-      headers,
-      body: JSON.stringify({ query: searchTerm, limit: 20 }),
-    });
-
-    if (!response.ok) {
-      console.error('Vector search failed, falling back to text search');
-      return fallbackTextSearch(searchTerm);
-    }
-
-    const { results, method } = await response.json();
-    console.log(`Search completed using: ${method}`);
-
-    return results || [];
+    console.log('Performing direct text search for:', searchTerm);
+    return await fallbackTextSearch(searchTerm);
   } catch (err) {
-    console.error('Vector search error, using fallback:', err);
-    return fallbackTextSearch(searchTerm);
+    console.error('Search error:', err);
+    return [];
   }
 };
 

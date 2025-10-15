@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ExternalLink, Phone, FileText, Loader2 } from 'lucide-react';
 import { Button, Card, Input } from '../components/ui';
-import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
+import { getAllPharmaPrograms, PharmaProgram } from '../services/searchService';
 
 export const Programs: React.FC = () => {
   const [programs, setPrograms] = useState<PharmaProgram[]>([]);
@@ -31,7 +31,7 @@ export const Programs: React.FC = () => {
   const loadPrograms = async () => {
     setLoading(true);
     try {
-      const results = await searchPharmaPrograms('');
+      const results = await getAllPharmaPrograms();
       setPrograms(results);
       setFilteredPrograms(results);
     } catch (error) {

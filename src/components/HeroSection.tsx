@@ -48,23 +48,6 @@ export const HeroSection: React.FC = () => {
             </p>
           </div>
 
-          {/* Call-to-Action Buttons */}
-          <div className="flex flex-col sm:flex-row items-center justify-center gap-4 pt-4">
-            <Button
-              variant="default"
-              size="lg"
-              className="w-full sm:w-auto text-lg h-14 px-10"
-            >
-              Find Discounts
-            </Button>
-            <Button
-              variant="outline"
-              size="lg"
-              className="w-full sm:w-auto text-lg h-14 px-10"
-            >
-              Create Account
-            </Button>
-          </div>
 
           {/* Supporting Information */}
           <div className="pt-8 text-center">

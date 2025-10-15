@@ -2,6 +2,7 @@ import React, { useState } from 'react';
 import { Link } from 'react-router-dom';
 import { Mail, Send, HelpCircle, Clock, MessageCircle, CheckCircle2, AlertCircle } from 'lucide-react';
 import { Button, Input } from '../components/ui';
+import { supabase } from '../lib/supabase';
 
 export const Contact: React.FC = () => {
   const [formData, setFormData] = useState({
@@ -15,36 +16,41 @@ export const Contact: React.FC = () => {
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
+      setSubmitStatus('error');
+      return;
+    }
+
     setIsSubmitting(true);
     setSubmitStatus('idle');
 
     try {
-      const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/send-contact-email`;
+      const { data, error } = await supabase
+        .from('contact_submissions')
+        .insert([
+          {
+            full_name: formData.fullName.trim(),
+            email: formData.email.trim(),
+            message: formData.message.trim(),
+          }
+        ])
+        .select();
 
-      const response = await fetch(apiUrl, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
-        },
-        body: JSON.stringify({
-          fullName: formData.fullName,
-          email: formData.email,
-          message: formData.message,
-        }),
-      });
-
-      const result = await response.json();
-
-      if (response.ok && result.success) {
+      if (error) {
+        console.error('Error saving contact submission:', error);
+        setSubmitStatus('error');
+      } else {
+        console.log('Contact submission saved successfully:', data);
         setSubmitStatus('success');
         setFormData({ fullName: '', email: '', message: '' });
-      } else {
-        console.error('Failed to send email:', result);
-        setSubmitStatus('error');
+
+        setTimeout(() => {
+          setSubmitStatus('idle');
+        }, 5000);
       }
     } catch (error) {
-      console.error('Error submitting form:', error);
+      console.error('Unexpected error submitting form:', error);
       setSubmitStatus('error');
     }
 
@@ -95,19 +101,26 @@ export const Contact: React.FC = () => {
                 <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-6">Send us a message</h2>
 
                 {submitStatus === 'success' && (
-                  <div className="mb-6 p-4 bg-emerald-50 border border-emerald-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <CheckCircle2 className="w-5 h-5 text-emerald-600 flex-shrink-0 mt-0.5" />
+                  <div className="mb-6 p-5 bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-900/30 dark:to-green-900/30 border-2 border-emerald-300 dark:border-emerald-600 rounded-xl flex items-start gap-4 animate-in fade-in slide-in-from-top-4 duration-500 shadow-lg">
+                    <div className="w-10 h-10 rounded-full bg-emerald-500 flex items-center justify-center flex-shrink-0 animate-bounce">
+                      <CheckCircle2 className="w-6 h-6 text-white" />
+                    </div>
                     <div>
-                      <p className="text-emerald-800 font-medium">Message sent successfully!</p>
-                      <p className="text-emerald-700 text-sm mt-1">We'll get back to you within 1-2 business days.</p>
+                      <p className="text-emerald-900 dark:text-emerald-100 font-bold text-lg">Message Sent Successfully!</p>
+                      <p className="text-emerald-800 dark:text-emerald-200 text-sm mt-1">
+                        Your message has been saved to our database. We'll get back to you within 1-2 business days.
+                      </p>
                     </div>
                   </div>
                 )}
 
                 {submitStatus === 'error' && (
-                  <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300">
-                    <AlertCircle className="w-5 h-5 text-red-600 flex-shrink-0 mt-0.5" />
-                    <p className="text-red-800 text-sm">Please fill in all required fields.</p>
+                  <div className="mb-6 p-4 bg-red-50 dark:bg-red-900/20 border-2 border-red-300 dark:border-red-600 rounded-xl flex items-start gap-3 animate-in fade-in slide-in-from-top-2 duration-300 shadow-lg">
+                    <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
+                    <div>
+                      <p className="text-red-900 dark:text-red-100 font-semibold">Error</p>
+                      <p className="text-red-800 dark:text-red-200 text-sm mt-1">Please fill in all required fields correctly.</p>
+                    </div>
                   </div>
                 )}
 

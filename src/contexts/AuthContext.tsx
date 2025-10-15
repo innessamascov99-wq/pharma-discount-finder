@@ -33,7 +33,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    console.log('AuthProvider: Initializing auth state');
+
+    supabase.auth.getSession().then(({ data: { session }, error }) => {
+      if (error) {
+        console.error('Error getting session:', error);
+      } else {
+        console.log('Initial session:', session ? 'Found' : 'None');
+      }
       setSession(session);
       setUser(session?.user ?? null);
       setLoading(false);
@@ -41,9 +48,16 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
       (() => {
+        console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
+
         if (event === 'SIGNED_IN') {
-          console.log('User signed in:', session?.user);
+          console.log('User signed in:', session?.user?.email);
+        } else if (event === 'SIGNED_OUT') {
+          console.log('User signed out');
+        } else if (event === 'TOKEN_REFRESHED') {
+          console.log('Token refreshed');
         }
+
         setSession(session);
         setUser(session?.user ?? null);
         setLoading(false);
@@ -82,10 +96,15 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
+      const redirectUrl = `${window.location.origin}/auth/callback`;
+      console.log('Initiating Google OAuth with redirect:', redirectUrl);
+      console.log('Current origin:', window.location.origin);
+      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',
         options: {
-          redirectTo: `${window.location.origin}/auth/callback`,
+          redirectTo: redirectUrl,
           queryParams: {
             access_type: 'offline',
             prompt: 'consent',
@@ -94,14 +113,25 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       });
 
       if (error) {
-        console.error('Google sign-in error:', error);
+        console.error('Google sign-in error:', {
+          message: error.message,
+          status: error.status,
+          name: error.name,
+        });
         return { error };
       }
 
-      console.log('Google OAuth initiated:', data);
+      console.log('Google OAuth data:', {
+        provider: data.provider,
+        url: data.url ? 'Generated' : 'Missing',
+      });
+
       return { error: null };
-    } catch (err) {
-      console.error('Unexpected Google sign-in error:', err);
+    } catch (err: any) {
+      console.error('Unexpected Google sign-in error:', {
+        message: err?.message,
+        stack: err?.stack,
+      });
       return { error: err as any };
     }
   };

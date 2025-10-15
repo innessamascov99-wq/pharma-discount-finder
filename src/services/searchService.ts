@@ -29,21 +29,16 @@ export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram
   try {
     console.log('Performing vector search for:', searchTerm);
 
-    const { data: { session } } = await supabase.auth.getSession();
-
-    if (!session) {
-      console.error('No active session for vector search');
-      return fallbackTextSearch(searchTerm);
-    }
-
     const apiUrl = `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/pharma-search`;
+
+    const headers: HeadersInit = {
+      'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
+      'Content-Type': 'application/json',
+    };
 
     const response = await fetch(apiUrl, {
       method: 'POST',
-      headers: {
-        'Authorization': `Bearer ${session.access_token}`,
-        'Content-Type': 'application/json',
-      },
+      headers,
       body: JSON.stringify({ query: searchTerm, limit: 20 }),
     });
 

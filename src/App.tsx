@@ -15,6 +15,7 @@ import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthCallback } from './pages/AuthCallback';
 import { AuthProvider } from './contexts/AuthContext';
+import { clearOldSupabaseCache } from './utils/clearOldCache';
 
 function AppContent() {
   const [showAnimation, setShowAnimation] = useState(true);
@@ -26,6 +27,8 @@ function AppContent() {
   const isDashboardPage = location.pathname === '/dashboard' || location.pathname === '/admin';
 
   useEffect(() => {
+    clearOldSupabaseCache();
+
     const visited = sessionStorage.getItem('hasVisited');
     if (visited || isAuthPage) {
       setShowAnimation(false);

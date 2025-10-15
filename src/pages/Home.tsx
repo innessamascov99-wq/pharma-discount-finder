@@ -12,11 +12,11 @@ export const Home: React.FC = () => {
   return (
     <>
       <HeroSection />
-      <TrustBadges />
       <SearchBar />
+      <ProgramPreview />
+      <TrustBadges />
       <HowItWorks />
       <FeaturesGrid />
-      <ProgramPreview />
       <TrustTransparency />
       <ChatBot name="Jack" />
     </>

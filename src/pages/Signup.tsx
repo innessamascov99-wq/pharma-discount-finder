@@ -91,15 +91,22 @@ export const Signup: React.FC = () => {
       const { error } = await signInWithGoogle();
 
       if (error) {
-        if (error.message.includes('provider is not enabled')) {
-          setError('Google sign-in is not configured yet. Please use email and password to create an account.');
+        console.error('Google sign-up error details:', error);
+
+        if (error.message?.includes('provider is not enabled') || error.message?.includes('not configured')) {
+          setError('Google sign-up is currently unavailable. Please create an account with your email and password, or contact support if you need assistance setting up Google authentication.');
+        } else if (error.message?.includes('popup') || error.message?.includes('blocked')) {
+          setError('Pop-up was blocked. Please allow pop-ups for this site and try again.');
         } else {
-          setError(error.message);
+          setError(`Authentication error: ${error.message || 'Unable to sign up with Google at this time.'}`);
         }
         setLoading(false);
+      } else {
+        console.log('Google OAuth redirect initiated successfully');
       }
     } catch (err) {
-      setError('An unexpected error occurred');
+      console.error('Unexpected Google sign-up error:', err);
+      setError('An unexpected error occurred. Please try signing up with email and password instead.');
       setLoading(false);
     }
   };

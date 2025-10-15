@@ -13,6 +13,7 @@ import { Contact } from './pages/Contact';
 import { Programs } from './pages/Programs';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
+import { AuthCallback } from './pages/AuthCallback';
 import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
@@ -21,7 +22,7 @@ function AppContent() {
   const [hasVisited, setHasVisited] = useState(false);
   const location = useLocation();
 
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password' || location.pathname === '/auth/callback';
   const isDashboardPage = location.pathname === '/dashboard' || location.pathname === '/admin';
 
   useEffect(() => {
@@ -59,6 +60,7 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />

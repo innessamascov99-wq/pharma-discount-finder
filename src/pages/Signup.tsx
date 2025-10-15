@@ -1,10 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Pill, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Mail, Lock, Eye, EyeOff } from 'lucide-react';
+import { Pill, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export const Signup: React.FC = () => {
+  const [firstName, setFirstName] = useState('');
+  const [lastName, setLastName] = useState('');
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
@@ -28,6 +31,11 @@ export const Signup: React.FC = () => {
     setError(null);
     setSuccess(null);
 
+    if (!firstName.trim() || !lastName.trim()) {
+      setError('Please enter your first and last name');
+      return;
+    }
+
     if (password !== confirmPassword) {
       setError('Passwords do not match');
       return;
@@ -41,17 +49,34 @@ export const Signup: React.FC = () => {
     setLoading(true);
 
     try {
-      const { error } = await signUp(email, password);
+      const { data, error } = await signUp(email, password);
 
       if (error) {
         setError(error.message);
-      } else {
-        setSuccess('Account created successfully! Redirecting to home...');
-        setTimeout(() => {
-          navigate('/');
-        }, 2000);
+        setLoading(false);
+        return;
       }
+
+      if (data.user) {
+        const { error: profileError } = await supabase
+          .from('user_profiles')
+          .insert({
+            user_id: data.user.id,
+            first_name: firstName.trim(),
+            last_name: lastName.trim(),
+          });
+
+        if (profileError) {
+          console.error('Failed to create profile:', profileError);
+        }
+      }
+
+      setSuccess('Account created successfully! Redirecting to home...');
+      setTimeout(() => {
+        navigate('/');
+      }, 2000);
     } catch (err) {
+      console.error('Unexpected error:', err);
       setError('An unexpected error occurred');
     } finally {
       setLoading(false);
@@ -130,6 +155,50 @@ export const Signup: React.FC = () => {
                 <p className="text-sm text-green-600 dark:text-green-400 leading-relaxed">{success}</p>
               </div>
             )}
+
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div className="space-y-2">
+                <label htmlFor="firstName" className="block text-sm font-semibold text-foreground">
+                  First name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="firstName"
+                    type="text"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
+                    onFocus={() => setFocusedField('firstName')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="John"
+                    className={`h-12 pl-12 text-base transition-all duration-200 ${focusedField === 'firstName' ? 'ring-2 ring-primary border-primary' : ''}`}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-2">
+                <label htmlFor="lastName" className="block text-sm font-semibold text-foreground">
+                  Last name
+                </label>
+                <div className="relative">
+                  <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    id="lastName"
+                    type="text"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
+                    onFocus={() => setFocusedField('lastName')}
+                    onBlur={() => setFocusedField(null)}
+                    placeholder="Doe"
+                    className={`h-12 pl-12 text-base transition-all duration-200 ${focusedField === 'lastName' ? 'ring-2 ring-primary border-primary' : ''}`}
+                    required
+                    disabled={loading}
+                  />
+                </div>
+              </div>
+            </div>
 
             <div className="space-y-2">
               <label htmlFor="email" className="block text-sm font-semibold text-foreground">

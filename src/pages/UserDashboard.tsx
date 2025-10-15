@@ -34,11 +34,17 @@ interface Activity {
   created_at: string;
 }
 
+interface UserProfile {
+  first_name: string;
+  last_name: string;
+}
+
 export const UserDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [savedPrograms, setSavedPrograms] = useState<SavedProgram[]>([]);
   const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -53,6 +59,16 @@ export const UserDashboard: React.FC = () => {
     if (!user) return;
 
     setLoading(true);
+
+    const { data: profile } = await supabase
+      .from('user_profiles')
+      .select('first_name, last_name')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (profile) {
+      setUserProfile(profile);
+    }
 
     const { data: saved, error: savedError } = await supabase
       .from('saved_programs')
@@ -120,6 +136,11 @@ export const UserDashboard: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6 py-8">
         <div className="mb-8">
           <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
+          {userProfile && (
+            <p className="text-xl font-semibold text-foreground mb-1">
+              {userProfile.first_name} {userProfile.last_name}
+            </p>
+          )}
           <p className="text-muted-foreground">{user?.email}</p>
         </div>
 

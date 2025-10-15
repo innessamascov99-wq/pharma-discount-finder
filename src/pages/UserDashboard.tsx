@@ -18,42 +18,102 @@ import { supabase } from '../lib/supabase';
 
 interface SavedProgram {
   id: string;
+  program_id: string;
+  created_at: string;
+  pharma_programs: {
+    medication_name: string;
+    manufacturer: string;
+    discount_amount: string;
+  };
+}
+
+interface Activity {
+  id: string;
   medication_name: string;
-  manufacturer: string;
-  discount_amount: string;
-  saved_at: string;
+  action_type: string;
+  created_at: string;
 }
 
 export const UserDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
   const [savedPrograms, setSavedPrograms] = useState<SavedProgram[]>([]);
-  const [searchQuery, setSearchQuery] = useState('');
+  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
       navigate('/login');
+      return;
     }
+    loadDashboardData();
   }, [user, navigate]);
 
+  const loadDashboardData = async () => {
+    if (!user) return;
+
+    setLoading(true);
+
+    const { data: saved, error: savedError } = await supabase
+      .from('saved_programs')
+      .select(`
+        id,
+        program_id,
+        created_at,
+        pharma_programs (
+          medication_name,
+          manufacturer,
+          discount_amount
+        )
+      `)
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false });
+
+    if (!savedError && saved) {
+      setSavedPrograms(saved as SavedProgram[]);
+    }
+
+    const { data: activity, error: activityError } = await supabase
+      .from('user_activity')
+      .select('id, medication_name, action_type, created_at')
+      .eq('user_id', user.id)
+      .order('created_at', { ascending: false })
+      .limit(5);
+
+    if (!activityError && activity) {
+      setRecentActivity(activity);
+    }
+
+    setLoading(false);
+  };
+
+  const getTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
+    return `${Math.floor(seconds / 604800)} weeks ago`;
+  };
+
   const quickActions = [
-    { icon: Search, label: 'Search Programs', action: () => navigate('/') },
+    { icon: Search, label: 'Search Programs', action: () => navigate('/'), count: undefined },
     { icon: Heart, label: 'Saved Programs', count: savedPrograms.length },
     { icon: FileText, label: 'Documents', count: 0 },
-    { icon: Clock, label: 'Recent Searches', count: 0 }
+    { icon: Clock, label: 'Recent Searches', count: recentActivity.length }
   ];
 
-  const recentActivity = [
-    { medication: 'Mounjaro', action: 'Viewed savings program', time: '2 hours ago' },
-    { medication: 'Ozempic', action: 'Saved to favorites', time: '1 day ago' },
-    { medication: 'Januvia', action: 'Downloaded information', time: '3 days ago' }
-  ];
-
-  const savingsEstimate = {
-    monthly: 450,
-    yearly: 5400,
-    programs: 3
+  const calculateSavings = () => {
+    const averageSavingsPerProgram = 150;
+    const monthly = savedPrograms.length * averageSavingsPerProgram;
+    const yearly = monthly * 12;
+    return { monthly, yearly, programs: savedPrograms.length };
   };
+
+  const savingsEstimate = calculateSavings();
 
   return (
     <div className="min-h-screen bg-muted/30 pt-20">
@@ -136,23 +196,40 @@ export const UserDashboard: React.FC = () => {
               <h2 className="text-xl font-bold">Recent Activity</h2>
               <Button variant="ghost" size="sm">View All</Button>
             </div>
-            <div className="space-y-4">
-              {recentActivity.map((activity, index) => (
-                <div key={index} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                  <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                    <Pill className="w-5 h-5 text-primary" />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <h4 className="font-semibold mb-1">{activity.medication}</h4>
-                    <p className="text-sm text-muted-foreground mb-1">{activity.action}</p>
-                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                      <Clock className="w-3 h-3" />
-                      <span>{activity.time}</span>
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            ) : recentActivity.length === 0 ? (
+              <div className="text-center py-12">
+                <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">No activity yet</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Start searching for medications to see your activity
+                </p>
+              </div>
+            ) : (
+              <div className="space-y-4">
+                {recentActivity.map((activity) => (
+                  <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
+                      <Pill className="w-5 h-5 text-primary" />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <h4 className="font-semibold mb-1">{activity.medication_name}</h4>
+                      <p className="text-sm text-muted-foreground mb-1">
+                        {activity.action_type === 'viewed' && 'Viewed savings program'}
+                        {activity.action_type === 'saved' && 'Saved to favorites'}
+                        {activity.action_type === 'downloaded' && 'Downloaded information'}
+                        {activity.action_type === 'searched' && 'Searched for program'}
+                      </p>
+                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                        <Clock className="w-3 h-3" />
+                        <span>{getTimeAgo(activity.created_at)}</span>
+                      </div>
                     </div>
                   </div>
-                </div>
-              ))}
-            </div>
+                ))}
+              </div>
+            )}
           </Card>
 
           <Card className="p-6">
@@ -160,7 +237,9 @@ export const UserDashboard: React.FC = () => {
               <h2 className="text-xl font-bold">Saved Programs</h2>
               <Button variant="ghost" size="sm">Manage</Button>
             </div>
-            {savedPrograms.length === 0 ? (
+            {loading ? (
+              <div className="text-center py-12 text-muted-foreground">Loading...</div>
+            ) : savedPrograms.length === 0 ? (
               <div className="text-center py-12">
                 <Heart className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
                 <h3 className="font-semibold mb-2">No saved programs yet</h3>
@@ -174,12 +253,12 @@ export const UserDashboard: React.FC = () => {
             ) : (
               <div className="space-y-4">
                 {savedPrograms.map((program) => (
-                  <div key={program.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50">
-                    <div>
-                      <h4 className="font-semibold">{program.medication_name}</h4>
-                      <p className="text-sm text-muted-foreground">{program.manufacturer}</p>
+                  <div key={program.id} className="flex items-center justify-between p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="flex-1">
+                      <h4 className="font-semibold">{program.pharma_programs.medication_name}</h4>
+                      <p className="text-sm text-muted-foreground">{program.pharma_programs.manufacturer}</p>
                       <p className="text-sm text-primary font-medium mt-1">
-                        {program.discount_amount}
+                        {program.pharma_programs.discount_amount || 'Contact for details'}
                       </p>
                     </div>
                     <Button variant="ghost" size="sm">
@@ -192,23 +271,25 @@ export const UserDashboard: React.FC = () => {
           </Card>
         </div>
 
-        <Card className="p-6 mt-6 border-primary/20 bg-primary/5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <AlertCircle className="w-5 h-5 text-primary" />
+        {savedPrograms.length > 0 && (
+          <Card className="p-6 mt-6 border-primary/20 bg-primary/5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <AlertCircle className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-2">Keep Your Programs Active</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Some discount programs require periodic renewal. Check with each program for their specific requirements.
+                </p>
+                <Button variant="default" size="sm">
+                  <Calendar className="w-4 h-4 mr-2" />
+                  View Saved Programs
+                </Button>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold mb-2">Upcoming Renewals</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                You have 2 program enrollments expiring soon. Review and renew to continue saving.
-              </p>
-              <Button variant="default" size="sm">
-                <Calendar className="w-4 h-4 mr-2" />
-                View Renewals
-              </Button>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
       </div>
     </div>
   );

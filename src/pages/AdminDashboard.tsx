@@ -46,6 +46,7 @@ export const AdminDashboard: React.FC = () => {
   });
   const [recentPrograms, setRecentPrograms] = useState<RecentProgram[]>([]);
   const [searchQuery, setSearchQuery] = useState('');
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     if (!user) {
@@ -56,34 +57,54 @@ export const AdminDashboard: React.FC = () => {
   }, [user, navigate]);
 
   const loadDashboardData = async () => {
-    const { data: programs, error: programsError } = await supabase
-      .from('pharma_programs')
-      .select('id, active');
+    setLoading(true);
 
-    if (!programsError && programs) {
+    const [programsResult, usersResult, activityResult, recentProgsResult] = await Promise.all([
+      supabase.from('pharma_programs').select('id, active', { count: 'exact' }),
+      supabase.from('customer').select('*', { count: 'exact', head: true }),
+      supabase.from('user_activity').select('*', { count: 'exact', head: true }),
+      supabase
+        .from('pharma_programs')
+        .select('id, medication_name, manufacturer, active, created_at')
+        .order('created_at', { ascending: false })
+        .limit(10)
+    ]);
+
+    if (!programsResult.error && programsResult.data) {
+      const activeCount = programsResult.data.filter(p => p.active).length;
       setStats(prev => ({
         ...prev,
-        total_programs: programs.length,
-        active_programs: programs.filter(p => p.active).length
+        total_programs: programsResult.count || 0,
+        active_programs: activeCount
       }));
     }
 
-    const { data: recentProgs, error: recentError } = await supabase
-      .from('pharma_programs')
-      .select('id, medication_name, manufacturer, active, created_at')
-      .order('created_at', { ascending: false })
-      .limit(5);
-
-    if (!recentError && recentProgs) {
-      setRecentPrograms(recentProgs);
+    if (usersResult.count !== null) {
+      setStats(prev => ({ ...prev, total_users: usersResult.count || 0 }));
     }
 
-    const { count: userCount } = await supabase
-      .from('customer')
-      .select('*', { count: 'exact', head: true });
+    if (activityResult.count !== null) {
+      setStats(prev => ({ ...prev, total_searches: activityResult.count || 0 }));
+    }
 
-    if (userCount !== null) {
-      setStats(prev => ({ ...prev, total_users: userCount }));
+    if (!recentProgsResult.error && recentProgsResult.data) {
+      setRecentPrograms(recentProgsResult.data);
+    }
+
+    setLoading(false);
+  };
+
+  const handleDeleteProgram = async (programId: string) => {
+    if (!confirm('Are you sure you want to delete this program?')) return;
+
+    const { error } = await supabase
+      .from('pharma_programs')
+      .delete()
+      .eq('id', programId);
+
+    if (!error) {
+      setRecentPrograms(prev => prev.filter(p => p.id !== programId));
+      setStats(prev => ({ ...prev, total_programs: prev.total_programs - 1 }));
     }
   };
 
@@ -115,12 +136,32 @@ export const AdminDashboard: React.FC = () => {
     {
       icon: TrendingUp,
       label: 'Total Searches',
-      value: stats.total_searches || 1247,
+      value: stats.total_searches,
       change: '+34%',
       positive: true,
       color: 'secondary'
     }
   ];
+
+  const filteredPrograms = recentPrograms.filter(program =>
+    program.medication_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+    program.manufacturer.toLowerCase().includes(searchQuery.toLowerCase())
+  );
+
+  const calculateCoverage = () => {
+    const totalPossible = 1000;
+    return Math.round((stats.total_programs / totalPossible) * 100);
+  };
+
+  const calculateEngagement = () => {
+    if (stats.total_users === 0) return 0;
+    return Math.round((stats.total_searches / stats.total_users) * 10);
+  };
+
+  const calculateSuccessRate = () => {
+    if (stats.total_searches === 0) return 0;
+    return Math.round((stats.active_programs / stats.total_programs) * 100);
+  };
 
   const quickActions = [
     { icon: Plus, label: 'Add Program', action: () => {} },
@@ -143,6 +184,10 @@ export const AdminDashboard: React.FC = () => {
           </Button>
         </div>
 
+        {loading ? (
+          <div className="text-center py-12 text-muted-foreground">Loading dashboard data...</div>
+        ) : (
+          <>
         <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
           {statCards.map((stat, index) => (
             <Card key={index} className="p-6">
@@ -196,6 +241,20 @@ export const AdminDashboard: React.FC = () => {
               </div>
             </div>
 
+            {filteredPrograms.length === 0 ? (
+              <div className="text-center py-12">
+                <Database className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
+                <h3 className="font-semibold mb-2">
+                  {searchQuery ? 'No programs found' : 'No programs yet'}
+                </h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {searchQuery
+                    ? 'Try adjusting your search query'
+                    : 'Add programs to see them listed here'}
+                </p>
+              </div>
+            ) : (
+              <>
             <div className="overflow-x-auto">
               <table className="w-full">
                 <thead>
@@ -207,7 +266,7 @@ export const AdminDashboard: React.FC = () => {
                   </tr>
                 </thead>
                 <tbody>
-                  {recentPrograms.map((program) => (
+                  {filteredPrograms.map((program) => (
                     <tr key={program.id} className="border-b hover:bg-muted/50 transition-colors">
                       <td className="py-4 px-4">
                         <div className="flex items-center gap-3">
@@ -237,7 +296,12 @@ export const AdminDashboard: React.FC = () => {
                           <Button variant="ghost" size="sm">
                             <Edit className="w-4 h-4" />
                           </Button>
-                          <Button variant="ghost" size="sm">
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => handleDeleteProgram(program.id)}
+                            title="Delete"
+                          >
                             <Trash2 className="w-4 h-4 text-destructive" />
                           </Button>
                         </div>
@@ -250,13 +314,15 @@ export const AdminDashboard: React.FC = () => {
 
             <div className="flex items-center justify-between mt-6 pt-4 border-t">
               <p className="text-sm text-muted-foreground">
-                Showing {recentPrograms.length} of {stats.total_programs} programs
+                Showing {filteredPrograms.length} of {stats.total_programs} programs
               </p>
               <div className="flex items-center gap-2">
                 <Button variant="outline" size="sm">Previous</Button>
                 <Button variant="outline" size="sm">Next</Button>
               </div>
             </div>
+            </>
+            )}
           </Card>
 
           <div className="space-y-6">
@@ -293,28 +359,37 @@ export const AdminDashboard: React.FC = () => {
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">Program Coverage</span>
-                    <span className="text-sm font-semibold">87%</span>
+                    <span className="text-sm font-semibold">{calculateCoverage()}%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-[87%]"></div>
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{ width: `${calculateCoverage()}%` }}
+                    ></div>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
                     <span className="text-sm text-muted-foreground">User Engagement</span>
-                    <span className="text-sm font-semibold">92%</span>
+                    <span className="text-sm font-semibold">{Math.min(calculateEngagement(), 100)}%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-secondary w-[92%]"></div>
+                    <div
+                      className="h-full bg-secondary transition-all duration-500"
+                      style={{ width: `${Math.min(calculateEngagement(), 100)}%` }}
+                    ></div>
                   </div>
                 </div>
                 <div>
                   <div className="flex items-center justify-between mb-2">
-                    <span className="text-sm text-muted-foreground">Search Success</span>
-                    <span className="text-sm font-semibold">95%</span>
+                    <span className="text-sm text-muted-foreground">Active Programs</span>
+                    <span className="text-sm font-semibold">{calculateSuccessRate()}%</span>
                   </div>
                   <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
-                    <div className="h-full bg-primary w-[95%]"></div>
+                    <div
+                      className="h-full bg-primary transition-all duration-500"
+                      style={{ width: `${calculateSuccessRate()}%` }}
+                    ></div>
                   </div>
                 </div>
               </div>
@@ -322,22 +397,26 @@ export const AdminDashboard: React.FC = () => {
           </div>
         </div>
 
-        <Card className="p-6 border-primary/20 bg-primary/5">
-          <div className="flex items-start gap-4">
-            <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
-              <AlertTriangle className="w-5 h-5 text-primary" />
+        {stats.active_programs < stats.total_programs && (
+          <Card className="p-6 border-primary/20 bg-primary/5">
+            <div className="flex items-start gap-4">
+              <div className="w-10 h-10 rounded-lg bg-primary/20 flex items-center justify-center flex-shrink-0">
+                <AlertTriangle className="w-5 h-5 text-primary" />
+              </div>
+              <div className="flex-1">
+                <h3 className="font-semibold mb-2">Action Required</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  {stats.total_programs - stats.active_programs} programs are inactive. Review and update them to ensure accuracy.
+                </p>
+                <Button variant="default" size="sm">
+                  Review Programs
+                </Button>
+              </div>
             </div>
-            <div className="flex-1">
-              <h3 className="font-semibold mb-2">Action Required</h3>
-              <p className="text-sm text-muted-foreground mb-4">
-                3 programs need verification. Review manufacturer websites to ensure accuracy.
-              </p>
-              <Button variant="default" size="sm">
-                Review Programs
-              </Button>
-            </div>
-          </div>
-        </Card>
+          </Card>
+        )}
+          </>
+        )}
       </div>
     </div>
   );

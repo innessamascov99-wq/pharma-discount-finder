@@ -62,10 +62,21 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   };
 
   const signIn = async (email: string, password: string) => {
-    const { error } = await supabase.auth.signInWithPassword({
+    const { data, error } = await supabase.auth.signInWithPassword({
       email,
       password,
     });
+
+    if (data.session) {
+      console.log('Sign in successful, session created:', data.session);
+      setSession(data.session);
+      setUser(data.session.user);
+    }
+
+    if (error) {
+      console.error('Sign in error in AuthContext:', error);
+    }
+
     return { error };
   };
 

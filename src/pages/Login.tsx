@@ -30,13 +30,13 @@ export const Login: React.FC = () => {
       const { error } = await signIn(email, password);
 
       if (error) {
+        console.error('Sign in error:', error);
         setError(error.message);
-      } else {
-        navigate('/dashboard');
+        setLoading(false);
       }
     } catch (err) {
+      console.error('Unexpected error during sign in:', err);
       setError('An unexpected error occurred');
-    } finally {
       setLoading(false);
     }
   };

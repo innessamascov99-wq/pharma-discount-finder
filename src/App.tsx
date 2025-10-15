@@ -10,6 +10,7 @@ import { ForgotPassword } from './pages/ForgotPassword';
 import { FAQ } from './pages/FAQ';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
+import { Programs } from './pages/Programs';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthProvider } from './contexts/AuthContext';
@@ -61,6 +62,7 @@ function AppContent() {
               <Route path="/faq" element={<FAQ />} />
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
+              <Route path="/programs" element={<Programs />} />
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
             </Routes>

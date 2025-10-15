@@ -31,14 +31,23 @@ export const Login: React.FC = () => {
 
       if (error) {
         console.error('Sign in error:', error);
-        setError(error.message);
+        if (error.message.includes('Invalid login credentials')) {
+          setError('Invalid email or password. Please check your credentials and try again.');
+        } else if (error.message.includes('Email not confirmed')) {
+          setError('Please verify your email address before signing in.');
+        } else {
+          setError(error.message);
+        }
         setLoading(false);
       } else {
-        navigate('/dashboard');
+        console.log('Login successful, navigating to dashboard...');
+        setTimeout(() => {
+          navigate('/dashboard');
+        }, 100);
       }
     } catch (err) {
       console.error('Unexpected error during sign in:', err);
-      setError('An unexpected error occurred');
+      setError('An unexpected error occurred. Please try again.');
       setLoading(false);
     }
   };

@@ -50,7 +50,7 @@ export const UserDashboard: React.FC = () => {
       return;
     }
     loadDashboardData();
-  }, [user, navigate]);
+  }, [user]);
 
   const loadDashboardData = async () => {
     if (!user) return;

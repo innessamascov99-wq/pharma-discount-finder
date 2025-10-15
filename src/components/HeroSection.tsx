@@ -4,7 +4,7 @@ import { Button, Badge } from './ui';
 
 export const HeroSection: React.FC = () => {
   return (
-    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-20">
+    <section className="relative min-h-screen flex items-center justify-center overflow-hidden pt-24 md:pt-20">
       {/* Modern Gradient Background */}
       <div className="absolute inset-0 bg-gradient-to-br from-primary-50 via-white to-secondary-50">
         {/* Subtle Pattern Overlay */}
@@ -16,7 +16,7 @@ export const HeroSection: React.FC = () => {
       </div>
 
       {/* Main Content */}
-      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 text-center">
+      <div className="relative z-10 max-w-7xl mx-auto px-6 py-20 md:py-20 text-center">
         <div className="max-w-5xl mx-auto space-y-12">
           
           {/* Trust Indicators */}

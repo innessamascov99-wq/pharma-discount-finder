@@ -27,7 +27,7 @@ export const InitialAnimation: React.FC<InitialAnimationProps> = ({ onComplete }
 
   return (
     <div
-      className={`fixed inset-0 z-[100] bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center transition-opacity duration-500 ${
+      className={`fixed inset-0 z-[100] bg-gradient-to-br from-primary/10 via-background to-primary/5 flex items-center justify-center transition-opacity duration-500 pt-20 md:pt-0 ${
         stage === 4 ? 'opacity-0 pointer-events-none' : 'opacity-100'
       }`}
     >

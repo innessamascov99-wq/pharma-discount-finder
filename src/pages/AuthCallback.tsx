@@ -23,7 +23,39 @@ export const AuthCallback: React.FC = () => {
 
         if (data.session) {
           console.log('Session established:', data.session);
-          const isAdmin = data.session.user.email === ADMIN_EMAIL;
+          const user = data.session.user;
+
+          // Check if user profile exists, if not create one
+          const { data: existingProfile } = await supabase
+            .from('user_profiles')
+            .select('id')
+            .eq('user_id', user.id)
+            .maybeSingle();
+
+          if (!existingProfile) {
+            console.log('Creating user profile for OAuth user');
+            // Extract name from user metadata (Google OAuth provides this)
+            const fullName = user.user_metadata?.full_name || '';
+            const nameParts = fullName.split(' ');
+            const firstName = nameParts[0] || user.email?.split('@')[0] || '';
+            const lastName = nameParts.slice(1).join(' ') || '';
+
+            const { error: profileError } = await supabase
+              .from('user_profiles')
+              .insert({
+                user_id: user.id,
+                first_name: firstName,
+                last_name: lastName,
+              });
+
+            if (profileError) {
+              console.error('Failed to create profile:', profileError);
+            } else {
+              console.log('User profile created successfully');
+            }
+          }
+
+          const isAdmin = user.email === ADMIN_EMAIL;
           navigate(isAdmin ? '/admin' : '/dashboard');
         } else {
           console.log('No session found, redirecting to login');

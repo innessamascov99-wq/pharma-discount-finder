@@ -27,11 +27,34 @@ export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram
   const searchTerm = query.trim();
 
   try {
-    console.log('Performing direct text search for:', searchTerm);
-    return await fallbackTextSearch(searchTerm);
+    console.log('Performing optimized search for:', searchTerm);
+    return await optimizedSearch(searchTerm);
   } catch (err) {
     console.error('Search error:', err);
-    return [];
+    return await fallbackTextSearch(searchTerm);
+  }
+};
+
+const optimizedSearch = async (searchTerm: string): Promise<PharmaProgram[]> => {
+  try {
+    const { data, error } = await supabase
+      .rpc('search_pharma_programs_optimized', {
+        search_query: searchTerm,
+        result_limit: 20
+      });
+
+    if (error) {
+      console.error('Optimized search error:', error);
+      throw error;
+    }
+
+    return (data || []).map((item: any) => ({
+      ...item,
+      similarity: item.relevance
+    }));
+  } catch (err) {
+    console.error('Unexpected optimized search error:', err);
+    throw err;
   }
 };
 

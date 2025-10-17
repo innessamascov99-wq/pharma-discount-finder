@@ -14,7 +14,7 @@ import {
 import { Button, Card, Input } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
+import { searchDrugs, Drug } from '../services/searchService';
 
 interface Activity {
   id: string;
@@ -41,7 +41,7 @@ export const UserDashboard: React.FC = () => {
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
-  const [searchResults, setSearchResults] = useState<PharmaProgram[]>([]);
+  const [searchResults, setSearchResults] = useState<Drug[]>([]);
   const [searching, setSearching] = useState(false);
 
   useEffect(() => {
@@ -104,7 +104,7 @@ export const UserDashboard: React.FC = () => {
 
     setSearching(true);
     try {
-      const results = await searchPharmaPrograms(searchQuery);
+      const results = await searchDrugs(searchQuery);
       setSearchResults(results);
 
       if (user && searchQuery.trim()) {

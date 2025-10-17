@@ -2,16 +2,16 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ExternalLink, Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge } from './ui';
-import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
+import { searchDrugs, Drug } from '../services/searchService';
 
 interface ProgramCardProps {
-  program: PharmaProgram;
+  program: Drug;
   onViewDetails: () => void;
 }
 
 const ProgramCard: React.FC<ProgramCardProps> = ({ program, onViewDetails }) => {
-  const eligibilityPoints = program.eligibility_criteria
-    ? program.eligibility_criteria.split('.').filter(s => s.trim()).slice(0, 4)
+  const indicationPoints = program.indication
+    ? program.indication.split(',').filter(s => s.trim()).slice(0, 3)
     : [];
   const isRecent = program.updated_at
     ? (new Date().getTime() - new Date(program.updated_at).getTime()) / (1000 * 60 * 60 * 24) < 60
@@ -26,11 +26,11 @@ const ProgramCard: React.FC<ProgramCardProps> = ({ program, onViewDetails }) => 
               {program.medication_name}
             </CardTitle>
             <CardDescription className="text-base">
-              {program.program_name}
+              {program.generic_name} - {program.drug_class}
             </CardDescription>
-            {program.discount_amount && (
+            {program.typical_retail_price && (
               <p className="text-sm text-primary font-semibold mt-2">
-                {program.discount_amount}
+                Typical Price: {program.typical_retail_price}
               </p>
             )}
           </div>
@@ -48,8 +48,8 @@ const ProgramCard: React.FC<ProgramCardProps> = ({ program, onViewDetails }) => 
 
       <CardContent className="flex-1">
         <div className="space-y-3">
-          {eligibilityPoints.length > 0 ? (
-            eligibilityPoints.map((item, index) => (
+          {indicationPoints.length > 0 ? (
+            indicationPoints.map((item, index) => (
               <div key={index} className="flex items-start gap-3">
                 <div className="w-2 h-2 bg-primary rounded-full mt-2 flex-shrink-0"></div>
                 <p className="text-base text-foreground/80 leading-relaxed">
@@ -59,24 +59,16 @@ const ProgramCard: React.FC<ProgramCardProps> = ({ program, onViewDetails }) => 
             ))
           ) : (
             <p className="text-base text-foreground/80 leading-relaxed">
-              {program.program_description || 'Contact for eligibility details'}
+              {program.description || 'Contact for details'}
             </p>
           )}
         </div>
       </CardContent>
 
       <CardFooter className="flex items-center justify-between">
-        {program.program_url && (
-          <Button
-            variant="link"
-            size="sm"
-            className="p-0 h-auto gap-1"
-            onClick={() => window.open(program.program_url, '_blank')}
-          >
-            <ExternalLink className="w-4 h-4" />
-            Source
-          </Button>
-        )}
+        <div className="text-sm text-foreground/60">
+          by {program.manufacturer}
+        </div>
 
         <Button variant="default" size="sm" onClick={onViewDetails}>
           View Details
@@ -87,7 +79,7 @@ const ProgramCard: React.FC<ProgramCardProps> = ({ program, onViewDetails }) => 
 };
 
 export const ProgramPreview: React.FC = () => {
-  const [programs, setPrograms] = useState<PharmaProgram[]>([]);
+  const [programs, setPrograms] = useState<Drug[]>([]);
   const [loading, setLoading] = useState(true);
   const navigate = useNavigate();
 
@@ -98,7 +90,7 @@ export const ProgramPreview: React.FC = () => {
   const loadPrograms = async () => {
     setLoading(true);
     try {
-      const results = await searchPharmaPrograms('');
+      const results = await searchDrugs('diabetes');
       setPrograms(results.slice(0, 3));
     } catch (error) {
       console.error('Failed to load programs:', error);

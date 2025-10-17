@@ -10,10 +10,10 @@ import {
   Building2,
   CheckCircle2
 } from 'lucide-react';
-import { PharmaProgram } from '../services/searchService';
+import { Drug } from '../services/searchService';
 
 interface SearchResultsProps {
-  results: PharmaProgram[];
+  results: Drug[];
   isLoading: boolean;
   searchQuery: string;
 }

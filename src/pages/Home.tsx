@@ -9,10 +9,10 @@ import { ProgramPreview } from '../components/ProgramPreview';
 import { TrustTransparency } from '../components/TrustTransparency';
 import { ChatBot } from '../components/ChatBot';
 import { DatabaseStatus } from '../components/DatabaseStatus';
-import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
+import { searchDrugs, Drug } from '../services/searchService';
 
 export const Home: React.FC = () => {
-  const [results, setResults] = useState<PharmaProgram[]>([]);
+  const [results, setResults] = useState<Drug[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -30,8 +30,8 @@ export const Home: React.FC = () => {
     setError(null);
 
     try {
-      const programs = await searchPharmaPrograms(query);
-      setResults(programs);
+      const drugs = await searchDrugs(query);
+      setResults(drugs);
     } catch (err: any) {
       console.error('Search error:', err);
       setError(err.message || 'Failed to search programs');

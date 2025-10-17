@@ -1,10 +1,10 @@
 import React, { useState, useCallback } from 'react';
 import { SearchBar } from '../components/SearchBar';
 import { SearchResults } from '../components/SearchResults';
-import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
+import { searchDrugs, Drug } from '../services/searchService';
 
 export const Search: React.FC = () => {
-  const [results, setResults] = useState<PharmaProgram[]>([]);
+  const [results, setResults] = useState<Drug[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +22,7 @@ export const Search: React.FC = () => {
     setError(null);
 
     try {
-      const programs = await searchPharmaPrograms(query);
+      const programs = await searchDrugs(query);
       setResults(programs);
     } catch (err: any) {
       console.error('Search error:', err);

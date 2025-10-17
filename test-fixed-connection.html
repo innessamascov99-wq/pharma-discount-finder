@@ -1,0 +1,338 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>✅ FIXED - Search Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 30px;
+    }
+    .container {
+      max-width: 900px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #1a202c;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    .fix-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #48bb78 0%, #38a169 100%);
+      color: white;
+      padding: 6px 16px;
+      border-radius: 20px;
+      font-size: 14px;
+      font-weight: 700;
+      margin-left: 12px;
+    }
+    .subtitle {
+      color: #718096;
+      margin-bottom: 30px;
+      font-size: 16px;
+    }
+    .config-box {
+      background: #edf2f7;
+      border-left: 4px solid #667eea;
+      padding: 20px;
+      border-radius: 8px;
+      margin-bottom: 30px;
+      font-family: 'Courier New', monospace;
+      font-size: 14px;
+    }
+    .config-box .label {
+      font-weight: 700;
+      color: #2d3748;
+      margin-bottom: 6px;
+    }
+    .config-box .value {
+      color: #4a5568;
+      word-break: break-all;
+    }
+    button {
+      padding: 14px 28px;
+      font-size: 16px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 10px;
+      cursor: pointer;
+      margin: 8px 8px 8px 0;
+      transition: all 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .status {
+      padding: 16px;
+      border-radius: 8px;
+      margin: 15px 0;
+      font-size: 15px;
+    }
+    .status.success {
+      background: #c6f6d5;
+      color: #22543d;
+      border-left: 4px solid #38a169;
+    }
+    .status.error {
+      background: #fed7d7;
+      color: #742a2a;
+      border-left: 4px solid #e53e3e;
+    }
+    .status.info {
+      background: #bee3f8;
+      color: #2c5282;
+      border-left: 4px solid #3182ce;
+    }
+    .result-card {
+      border: 1px solid #e2e8f0;
+      padding: 20px;
+      margin: 12px 0;
+      border-radius: 10px;
+      background: #f7fafc;
+    }
+    .result-card h3 {
+      color: #2d3748;
+      font-size: 20px;
+      margin-bottom: 8px;
+    }
+    .result-card .info {
+      color: #4a5568;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .result-card .discount {
+      display: inline-block;
+      background: #48bb78;
+      color: white;
+      padding: 6px 14px;
+      border-radius: 6px;
+      font-weight: 700;
+      margin-top: 10px;
+      font-size: 14px;
+    }
+    #results {
+      margin-top: 20px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Fixed Search Test<span class="fix-badge">✅ CORRECTED URL</span></h1>
+    <p class="subtitle">Now using the correct Supabase project with all data</p>
+
+    <div class="config-box">
+      <div class="label">Connected to:</div>
+      <div class="value" id="currentUrl">Loading...</div>
+      <div class="label" style="margin-top: 10px;">Project Ref:</div>
+      <div class="value" id="projectRef">Loading...</div>
+    </div>
+
+    <div>
+      <button onclick="testConnection()">1. Test Connection</button>
+      <button onclick="countPrograms()">2. Count Programs</button>
+      <button onclick="searchMounjaro()">3. Search Mounjaro</button>
+      <button onclick="searchInsulin()">4. Search Insulin</button>
+      <button onclick="searchHumira()">5. Search Humira</button>
+    </div>
+
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const CORRECT_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const CORRECT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(CORRECT_URL, CORRECT_KEY);
+
+    document.getElementById('currentUrl').textContent = CORRECT_URL;
+    document.getElementById('projectRef').textContent = 'nuhfqkhplldontxtoxkg';
+
+    function showStatus(message, type = 'info') {
+      document.getElementById('status').innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+
+    function showResults(html) {
+      document.getElementById('results').innerHTML = html;
+    }
+
+    async function testConnection() {
+      showStatus('🔄 Testing connection...', 'info');
+      showResults('');
+
+      try {
+        const { data, error } = await supabase
+          .from('pharma_programs')
+          .select('medication_name')
+          .limit(1);
+
+        if (error) {
+          showStatus(`❌ Connection failed: ${error.message}`, 'error');
+          return;
+        }
+
+        showStatus('✅ Connection successful! Database is accessible.', 'success');
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function countPrograms() {
+      showStatus('🔄 Counting programs...', 'info');
+      showResults('');
+
+      try {
+        const { count, error } = await supabase
+          .from('pharma_programs')
+          .select('*', { count: 'exact', head: true })
+          .eq('active', true);
+
+        if (error) {
+          showStatus(`❌ Count failed: ${error.message}`, 'error');
+          return;
+        }
+
+        showStatus(`✅ Found ${count} active programs in database!`, 'success');
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function searchMounjaro() {
+      showStatus('🔍 Searching for Mounjaro...', 'info');
+      showResults('');
+
+      try {
+        const { data, error } = await supabase.rpc('search_pharma_programs', {
+          search_query: 'mounjaro',
+          result_limit: 5
+        });
+
+        if (error) {
+          showStatus(`❌ Search failed: ${error.message}`, 'error');
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          showStatus('⚠️ No results found', 'error');
+          return;
+        }
+
+        showStatus(`✅ Found ${data.length} result(s)`, 'success');
+
+        let html = '';
+        data.forEach((prog, i) => {
+          const relevance = (prog.similarity * 100).toFixed(0);
+          html += `
+            <div class="result-card">
+              <h3>${i + 1}. ${prog.medication_name} (${relevance}% Match)</h3>
+              <div class="info">
+                <strong>Generic:</strong> ${prog.generic_name}<br>
+                <strong>Manufacturer:</strong> ${prog.manufacturer}<br>
+                <strong>Program:</strong> ${prog.program_name}
+              </div>
+              <div class="discount">💰 ${prog.discount_amount}</div>
+            </div>
+          `;
+        });
+        showResults(html);
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function searchInsulin() {
+      showStatus('🔍 Searching for insulin products...', 'info');
+      showResults('');
+
+      try {
+        const { data, error } = await supabase.rpc('search_pharma_programs', {
+          search_query: 'insulin',
+          result_limit: 10
+        });
+
+        if (error) {
+          showStatus(`❌ Search failed: ${error.message}`, 'error');
+          return;
+        }
+
+        showStatus(`✅ Found ${data.length} insulin products`, 'success');
+
+        let html = '';
+        data.forEach((prog, i) => {
+          html += `
+            <div class="result-card">
+              <h3>${i + 1}. ${prog.medication_name}</h3>
+              <div class="info">
+                <strong>Manufacturer:</strong> ${prog.manufacturer}
+              </div>
+              <div class="discount">💰 ${prog.discount_amount}</div>
+            </div>
+          `;
+        });
+        showResults(html);
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    async function searchHumira() {
+      showStatus('🔍 Searching for Humira...', 'info');
+      showResults('');
+
+      try {
+        const { data, error } = await supabase.rpc('search_pharma_programs', {
+          search_query: 'humira',
+          result_limit: 5
+        });
+
+        if (error) {
+          showStatus(`❌ Search failed: ${error.message}`, 'error');
+          return;
+        }
+
+        showStatus(`✅ Found ${data.length} result(s)`, 'success');
+
+        let html = '';
+        data.forEach((prog, i) => {
+          html += `
+            <div class="result-card">
+              <h3>${i + 1}. ${prog.medication_name}</h3>
+              <div class="info">
+                <strong>Generic:</strong> ${prog.generic_name}<br>
+                <strong>Program:</strong> ${prog.program_name}<br>
+                <strong>Savings:</strong> ${prog.discount_amount}
+              </div>
+            </div>
+          `;
+        });
+        showResults(html);
+      } catch (err) {
+        showStatus(`❌ Error: ${err.message}`, 'error');
+      }
+    }
+
+    window.addEventListener('load', () => {
+      showStatus('✅ Page loaded. Using correct Supabase project URL. Click buttons to test!', 'success');
+    });
+  </script>
+</body>
+</html>

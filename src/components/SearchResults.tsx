@@ -8,7 +8,6 @@ import {
   ChevronDown,
   ChevronUp,
   Building2,
-  CheckCircle2,
   AlertCircle,
   Sparkles,
   Info,

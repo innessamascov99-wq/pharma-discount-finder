@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ExternalLink, Clock, CheckCircle, Loader2 } from 'lucide-react';
+import { Clock, CheckCircle, Loader2 } from 'lucide-react';
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, CardFooter, Badge } from './ui';
 import { searchDrugs, Drug } from '../services/searchService';
 

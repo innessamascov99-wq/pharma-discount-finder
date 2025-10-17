@@ -4,9 +4,7 @@ import {
   Search,
   Clock,
   FileText,
-  ExternalLink,
   Pill,
-  Phone,
   Loader2,
   BarChart3,
   TrendingUp
@@ -187,65 +185,58 @@ export const UserDashboard: React.FC = () => {
             <div className="mt-8 space-y-4">
               <h3 className="text-lg font-semibold">Search Results ({searchResults.length})</h3>
               <div className="grid gap-4 max-h-[600px] overflow-y-auto pr-2">
-                {searchResults.map((program) => (
-                  <Card key={program.id} className="p-6 hover:shadow-lg transition-shadow">
+                {searchResults.map((drug) => (
+                  <Card key={drug.id} className="p-6 hover:shadow-lg transition-shadow">
                     <div className="space-y-4">
                       <div className="flex items-start justify-between gap-4">
                         <div className="flex-1">
                           <h3 className="text-2xl font-bold text-primary mb-1">
-                            {program.medication_name}
+                            {drug.medication_name}
                           </h3>
-                          {program.generic_name && (
+                          {drug.generic_name && (
                             <p className="text-sm text-muted-foreground mb-2">
-                              Generic: {program.generic_name}
+                              Generic: {drug.generic_name}
                             </p>
                           )}
-                          <p className="text-lg font-semibold text-foreground mb-1">
-                            {program.program_name}
+                          <p className="text-sm text-muted-foreground">
+                            Manufacturer: {drug.manufacturer}
                           </p>
                           <p className="text-sm text-muted-foreground">
-                            by {program.manufacturer}
+                            Drug Class: {drug.drug_class}
                           </p>
                         </div>
-                        {program.discount_amount && (
+                        {drug.typical_retail_price && (
                           <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-center">
-                            <p className="text-sm font-medium">Savings</p>
+                            <p className="text-sm font-medium">Typical Price</p>
                             <p className="text-lg font-bold whitespace-nowrap">
-                              {program.discount_amount}
+                              {drug.typical_retail_price}
                             </p>
                           </div>
                         )}
                       </div>
 
-                      {program.program_description && (
+                      {drug.indication && (
                         <p className="text-foreground/80">
-                          {program.program_description}
+                          <span className="font-semibold">Used for:</span> {drug.indication}
+                        </p>
+                      )}
+
+                      {drug.description && (
+                        <p className="text-foreground/80 text-sm">
+                          {drug.description}
                         </p>
                       )}
 
                       <div className="flex flex-wrap gap-3 pt-2">
-                        {program.program_url && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => window.open(program.program_url, '_blank')}
-                            className="gap-2"
-                          >
-                            <ExternalLink className="w-4 h-4" />
-                            Visit Program Website
-                          </Button>
-                        )}
-                        {program.phone_number && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(`tel:${program.phone_number}`, '_self')}
-                            className="gap-2"
-                          >
-                            <Phone className="w-4 h-4" />
-                            {program.phone_number}
-                          </Button>
-                        )}
+                        <Button
+                          variant="default"
+                          size="sm"
+                          onClick={() => navigate('/search')}
+                          className="gap-2"
+                        >
+                          <Search className="w-4 h-4" />
+                          Find Assistance Programs
+                        </Button>
                       </div>
                     </div>
                   </Card>

@@ -2,11 +2,11 @@ import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Search, ExternalLink, Phone, FileText, Loader2 } from 'lucide-react';
 import { Button, Card, Input } from '../components/ui';
-import { getAllDrugs, Drug } from '../services/searchService';
+import { getAllPrograms, Program } from '../services/searchService';
 
 export const Programs: React.FC = () => {
-  const [programs, setPrograms] = useState<Drug[]>([]);
-  const [filteredPrograms, setFilteredPrograms] = useState<Drug[]>([]);
+  const [programs, setPrograms] = useState<Program[]>([]);
+  const [filteredPrograms, setFilteredPrograms] = useState<Program[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const navigate = useNavigate();
@@ -18,9 +18,9 @@ export const Programs: React.FC = () => {
   useEffect(() => {
     if (searchQuery.trim()) {
       const filtered = programs.filter(program =>
-        program.medication_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+        program.program_name.toLowerCase().includes(searchQuery.toLowerCase()) ||
         program.manufacturer.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        program.program_name.toLowerCase().includes(searchQuery.toLowerCase())
+        program.description.toLowerCase().includes(searchQuery.toLowerCase())
       );
       setFilteredPrograms(filtered);
     } else {
@@ -31,7 +31,7 @@ export const Programs: React.FC = () => {
   const loadPrograms = async () => {
     setLoading(true);
     try {
-      const results = await getAllDrugs();
+      const results = await getAllPrograms();
       setPrograms(results);
       setFilteredPrograms(results);
     } catch (error) {
@@ -91,33 +91,28 @@ export const Programs: React.FC = () => {
                     <div className="flex items-start justify-between gap-4">
                       <div className="flex-1">
                         <h3 className="text-2xl font-bold text-primary mb-1">
-                          {program.medication_name}
-                        </h3>
-                        {program.generic_name && (
-                          <p className="text-sm text-muted-foreground mb-2">
-                            Generic: {program.generic_name}
-                          </p>
-                        )}
-                        <p className="text-lg font-semibold text-foreground mb-1">
                           {program.program_name}
+                        </h3>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          {program.program_type.replace('_', ' ').toUpperCase()}
                         </p>
                         <p className="text-sm text-muted-foreground">
                           by {program.manufacturer}
                         </p>
                       </div>
-                      {program.discount_amount && (
+                      {program.discount_details && (
                         <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-center">
                           <p className="text-sm font-medium">Savings</p>
                           <p className="text-lg font-bold whitespace-nowrap">
-                            {program.discount_amount}
+                            {program.discount_details}
                           </p>
                         </div>
                       )}
                     </div>
 
-                    {program.program_description && (
+                    {program.description && (
                       <p className="text-foreground/80">
-                        {program.program_description}
+                        {program.description}
                       </p>
                     )}
 

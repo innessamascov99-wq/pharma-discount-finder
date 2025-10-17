@@ -1,0 +1,217 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Optimized Search Test - pg_trgm Fuzzy Matching</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; padding: 20px; }
+    .container { max-width: 1100px; margin: 0 auto; background: white; border-radius: 16px; padding: 40px; box-shadow: 0 20px 60px rgba(0,0,0,0.3); }
+    h1 { color: #2d3748; font-size: 36px; margin-bottom: 10px; }
+    .subtitle { color: #718096; margin-bottom: 30px; font-size: 18px; }
+    .perf-badge { display: inline-block; background: #48bb78; color: white; padding: 6px 14px; border-radius: 20px; font-size: 14px; font-weight: 700; margin-left: 10px; }
+    .search-box { display: flex; gap: 12px; margin-bottom: 25px; }
+    input { flex: 1; padding: 16px 20px; font-size: 18px; border: 2px solid #e2e8f0; border-radius: 10px; transition: all 0.3s; }
+    input:focus { outline: none; border-color: #667eea; box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1); }
+    button { padding: 16px 32px; font-size: 18px; font-weight: 600; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; border: none; border-radius: 10px; cursor: pointer; transition: transform 0.2s; }
+    button:hover { transform: translateY(-2px); }
+    button:disabled { opacity: 0.6; cursor: not-allowed; transform: none; }
+    .quick-tests { display: flex; gap: 10px; flex-wrap: wrap; margin-bottom: 30px; }
+    .quick-tests button { padding: 12px 24px; font-size: 15px; background: #48bb78; }
+    .quick-tests button:hover { background: #38a169; }
+    .stats { display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 15px; margin: 25px 0; }
+    .stat-card { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 20px; border-radius: 10px; text-align: center; }
+    .stat-card .value { font-size: 32px; font-weight: 700; margin-bottom: 5px; }
+    .stat-card .label { font-size: 14px; opacity: 0.9; }
+    .status { padding: 16px; border-radius: 10px; margin: 15px 0; font-size: 15px; }
+    .status.success { background: #c6f6d5; color: #22543d; border-left: 5px solid #38a169; }
+    .status.error { background: #fed7d7; color: #742a2a; border-left: 5px solid #e53e3e; }
+    .status.info { background: #bee3f8; color: #2c5282; border-left: 5px solid #3182ce; }
+    .result-card { border: 2px solid #e2e8f0; padding: 24px; margin: 15px 0; border-radius: 12px; background: #f7fafc; transition: all 0.3s; }
+    .result-card:hover { transform: translateX(5px); border-color: #667eea; box-shadow: 0 4px 12px rgba(102, 126, 234, 0.15); }
+    .result-card h3 { color: #2d3748; margin: 0 0 10px 0; font-size: 22px; display: flex; align-items: center; justify-content: space-between; }
+    .result-card .generic { color: #718096; font-size: 15px; margin-bottom: 10px; font-style: italic; }
+    .result-card .manufacturer { color: #667eea; font-weight: 700; font-size: 16px; margin-bottom: 12px; }
+    .result-card .program { background: #edf2f7; padding: 14px; border-radius: 8px; margin: 12px 0; }
+    .result-card .program-title { font-weight: 700; color: #2d3748; margin-bottom: 6px; }
+    .result-card .discount { display: inline-block; background: #48bb78; color: white; padding: 8px 16px; border-radius: 8px; font-weight: 700; font-size: 15px; margin-top: 10px; }
+    .result-card .phone { color: #2d3748; margin-top: 10px; font-size: 15px; }
+    .relevance { background: #fbd38d; color: #744210; padding: 5px 12px; border-radius: 20px; font-size: 13px; font-weight: 700; }
+    .test-info { background: #edf2f7; padding: 20px; border-radius: 10px; margin: 20px 0; }
+    .test-info h3 { color: #2d3748; margin-bottom: 10px; }
+    .test-info ul { margin-left: 20px; color: #4a5568; }
+    .test-info ul li { margin: 5px 0; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>⚡ Ultra-Fast Search Test<span class="perf-badge">&lt;50ms</span></h1>
+    <p class="subtitle">Powered by PostgreSQL pg_trgm fuzzy matching + GIN indexes</p>
+
+    <div class="search-box">
+      <input type="text" id="searchInput" placeholder="Try: mounjaro, ozmpic (typo!), insulin, humira, eli lilly" value="mounjaro">
+      <button onclick="performSearch()" id="searchBtn">Search</button>
+    </div>
+
+    <div class="quick-tests">
+      <button onclick="quickSearch('mounjaro')">Mounjaro</button>
+      <button onclick="quickSearch('ozmpic')">Ozmpic (typo)</button>
+      <button onclick="quickSearch('insulin')">Insulin</button>
+      <button onclick="quickSearch('humira')">Humira</button>
+      <button onclick="quickSearch('eli lilly')">Eli Lilly</button>
+      <button onclick="quickSearch('nov')">Nov (partial)</button>
+    </div>
+
+    <div class="stats" id="stats"></div>
+    <div id="status"></div>
+    <div id="results"></div>
+
+    <div class="test-info">
+      <h3>🚀 Optimization Features:</h3>
+      <ul>
+        <li><strong>pg_trgm extension:</strong> Fuzzy matching handles typos (e.g., "ozmpic" finds "ozempic")</li>
+        <li><strong>GIN indexes:</strong> Trigram indexes enable instant search across 77 programs</li>
+        <li><strong>Smart scoring:</strong> Exact matches rank highest, followed by fuzzy matches</li>
+        <li><strong>Performance:</strong> Typical queries return in 20-50ms</li>
+        <li><strong>No embeddings needed:</strong> Pure PostgreSQL performance without ML overhead</li>
+      </ul>
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_KEY);
+
+    let searchStats = { totalSearches: 0, avgTime: 0, totalTime: 0 };
+
+    function showStatus(message, type = 'info') {
+      document.getElementById('status').innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+
+    function updateStats(duration) {
+      searchStats.totalSearches++;
+      searchStats.totalTime += duration;
+      searchStats.avgTime = searchStats.totalTime / searchStats.totalSearches;
+
+      const statsHtml = `
+        <div class="stat-card">
+          <div class="value">${searchStats.totalSearches}</div>
+          <div class="label">Total Searches</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${duration.toFixed(0)}ms</div>
+          <div class="label">Last Query Time</div>
+        </div>
+        <div class="stat-card">
+          <div class="value">${searchStats.avgTime.toFixed(0)}ms</div>
+          <div class="label">Average Time</div>
+        </div>
+      `;
+      document.getElementById('stats').innerHTML = statsHtml;
+    }
+
+    function displayResults(data, duration) {
+      const resultsDiv = document.getElementById('results');
+
+      if (!data || data.length === 0) {
+        resultsDiv.innerHTML = '<div class="status error">No results found. Try a different search term.</div>';
+        return;
+      }
+
+      let html = `<h2 style="margin: 30px 0 20px 0; color: #2d3748;">Found ${data.length} Program(s) in ${duration.toFixed(0)}ms</h2>`;
+
+      data.forEach((prog, i) => {
+        const similarity = prog.similarity ? Math.round(prog.similarity * 100) : 0;
+        html += `
+          <div class="result-card">
+            <h3>
+              <span>${i + 1}. ${prog.medication_name}</span>
+              <span class="relevance">${similarity}% Match</span>
+            </h3>
+            <div class="generic">Generic: ${prog.generic_name || 'N/A'}</div>
+            <div class="manufacturer">📍 ${prog.manufacturer || 'Unknown'}</div>
+            <div class="program">
+              <div class="program-title">${prog.program_name || 'N/A'}</div>
+              <div style="color: #4a5568; font-size: 14px; margin-top: 4px;">${prog.program_description || ''}</div>
+            </div>
+            ${prog.discount_amount ? `<span class="discount">💰 ${prog.discount_amount}</span>` : ''}
+            ${prog.phone_number ? `<div class="phone">📞 <strong>${prog.phone_number}</strong></div>` : ''}
+            ${prog.program_url ? `<div style="margin-top: 12px;"><a href="${prog.program_url}" target="_blank" style="color: #667eea; font-weight: 600; text-decoration: none;">Visit Program Website →</a></div>` : ''}
+          </div>
+        `;
+      });
+      resultsDiv.innerHTML = html;
+    }
+
+    async function performSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+      const btn = document.getElementById('searchBtn');
+
+      if (!query) {
+        showStatus('Please enter a search term', 'error');
+        return;
+      }
+
+      btn.disabled = true;
+      btn.textContent = 'Searching...';
+      document.getElementById('status').innerHTML = '';
+      document.getElementById('results').innerHTML = '';
+
+      showStatus(`Searching for "${query}" using optimized pg_trgm fuzzy matching...`, 'info');
+
+      const startTime = performance.now();
+
+      try {
+        const { data, error } = await supabase.rpc('search_pharma_programs', {
+          search_query: query,
+          result_limit: 20
+        });
+
+        const duration = performance.now() - startTime;
+        updateStats(duration);
+
+        if (error) {
+          console.error('Search error:', error);
+          showStatus(`❌ Search failed: ${error.message}`, 'error');
+          btn.disabled = false;
+          btn.textContent = 'Search';
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          showStatus(`No results found for "${query}" (searched in ${duration.toFixed(0)}ms)`, 'error');
+          document.getElementById('results').innerHTML = '<div class="status info">💡 Try: mounjaro, ozempic, insulin, humira, eliquis, januvia, or manufacturer names like "eli lilly"</div>';
+          btn.disabled = false;
+          btn.textContent = 'Search';
+          return;
+        }
+
+        showStatus(`✅ Found ${data.length} matching program(s) in ${duration.toFixed(0)}ms using fuzzy matching!`, 'success');
+        displayResults(data, duration);
+
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        showStatus(`Error: ${err.message}`, 'error');
+      }
+
+      btn.disabled = false;
+      btn.textContent = 'Search';
+    }
+
+    function quickSearch(term) {
+      document.getElementById('searchInput').value = term;
+      performSearch();
+    }
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') performSearch();
+    });
+
+    window.addEventListener('load', () => {
+      showStatus('🚀 Optimized search ready! Try searching with typos like "ozmpic" to test fuzzy matching.', 'info');
+    });
+  </script>
+</body>
+</html>

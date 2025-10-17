@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, X } from 'lucide-react';
-import { Button, Input, Card } from './ui';
+import { Button, Input } from './ui';
 import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
 import { SearchResults } from './SearchResults';
 

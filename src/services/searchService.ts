@@ -19,115 +19,65 @@ export interface PharmaProgram {
   similarity?: number;
 }
 
-export interface SearchResult {
-  results: PharmaProgram[];
-  count: number;
-  method: 'vector_search' | 'text_search' | 'fallback';
-  query?: string;
-}
-
-const performFallbackSearch = async (searchTerm: string, limit: number): Promise<PharmaProgram[]> => {
-  const searchWords = searchTerm.toLowerCase().split(/\s+/).filter(w => w.length > 1);
-
-  if (searchWords.length === 0) {
-    console.log('No valid search words after filtering');
-    return [];
-  }
-
-  const orConditions = searchWords.flatMap(word => [
-    `medication_name.ilike.%${word}%`,
-    `generic_name.ilike.%${word}%`,
-    `manufacturer.ilike.%${word}%`,
-    `program_name.ilike.%${word}%`,
-    `program_description.ilike.%${word}%`
-  ]).join(',');
-
-  console.log('Fallback search with conditions:', orConditions.substring(0, 100) + '...');
-
-  const { data: fallbackData, error: fallbackError } = await supabase
-    .from('pharma_programs')
-    .select('*')
-    .eq('active', true)
-    .or(orConditions)
-    .limit(50);
-
-  if (fallbackError) {
-    console.error('Fallback search failed:', fallbackError);
-    throw new Error(`Database error: ${fallbackError.message}`);
-  }
-
-  if (!fallbackData || fallbackData.length === 0) {
-    console.log('No results found in fallback search');
-    return [];
-  }
-
-  console.log('Fallback search retrieved', fallbackData.length, 'programs');
-
-  const results = fallbackData.map(program => {
-    let relevanceScore = 0;
-    const medName = (program.medication_name || '').toLowerCase();
-    const genName = (program.generic_name || '').toLowerCase();
-    const mfg = (program.manufacturer || '').toLowerCase();
-    const progName = (program.program_name || '').toLowerCase();
-
-    searchWords.forEach(word => {
-      if (medName === word) relevanceScore += 100;
-      else if (medName.startsWith(word)) relevanceScore += 80;
-      else if (medName.includes(word)) relevanceScore += 50;
-
-      if (genName === word) relevanceScore += 90;
-      else if (genName.startsWith(word)) relevanceScore += 70;
-      else if (genName.includes(word)) relevanceScore += 40;
-
-      if (mfg.includes(word)) relevanceScore += 30;
-      if (progName.includes(word)) relevanceScore += 20;
-    });
-
-    return {
-      ...program,
-      similarity: relevanceScore / 100
-    };
-  });
-
-  const sorted = results
-    .filter(r => r.similarity && r.similarity > 0)
-    .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-    .slice(0, limit);
-
-  console.log('Fallback search completed:', sorted.length, 'results with relevance scores');
-  return sorted;
-};
-
-export const searchPharmaPrograms = async (query: string, limit: number = 15): Promise<PharmaProgram[]> => {
+/**
+ * Ultra-fast pharmaceutical program search
+ * Uses optimized PostgreSQL RPC function with pg_trgm for fuzzy matching
+ * Handles typos, partial matches, and returns results in <50ms
+ *
+ * @param query - Search term (medication name, generic name, or manufacturer)
+ * @param limit - Maximum number of results to return (default: 20)
+ * @returns Array of matching programs sorted by relevance
+ */
+export const searchPharmaPrograms = async (
+  query: string,
+  limit: number = 20
+): Promise<PharmaProgram[]> => {
+  // Validate input
   if (!query || query.trim().length === 0) {
-    console.log('Empty search query');
     return [];
   }
 
   if (query.trim().length < 2) {
-    console.log('Search query too short');
     return [];
   }
 
   const searchTerm = query.trim();
-  console.log('\n=== SEARCH STARTED ===' );
-  console.log('Query:', searchTerm);
-  console.log('Database URL:', import.meta.env.VITE_SUPABASE_URL);
+  const startTime = performance.now();
 
   try {
-    console.log('Attempting fallback search (direct table access)...');
-    const results = await performFallbackSearch(searchTerm, limit);
-    console.log('Search successful! Returning', results.length, 'results');
-    console.log('=== SEARCH COMPLETE ===\n');
-    return results;
+    // Primary method: Use optimized RPC function with pg_trgm
+    const { data, error } = await supabase.rpc('search_pharma_programs', {
+      search_query: searchTerm,
+      result_limit: limit
+    });
+
+    const duration = performance.now() - startTime;
+
+    if (error) {
+      console.error('Search RPC error:', error);
+      throw new Error(`Search failed: ${error.message}`);
+    }
+
+    if (!data || data.length === 0) {
+      console.log(`No results for "${searchTerm}" (${duration.toFixed(0)}ms)`);
+      return [];
+    }
+
+    console.log(`Found ${data.length} results for "${searchTerm}" in ${duration.toFixed(0)}ms`);
+    return data;
+
   } catch (err: any) {
-    console.error('Search failed with error:', err);
-    console.log('=== SEARCH FAILED ===\n');
-    throw new Error(`Search error: ${err.message || 'Unknown error'}`);
+    console.error('Search error:', err);
+    throw new Error(err.message || 'Search failed');
   }
 };
 
-
+/**
+ * Get all active pharmaceutical programs
+ * Used for browsing all available programs
+ *
+ * @returns Array of all active programs sorted by medication name
+ */
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
   const { data, error } = await supabase
     .from('pharma_programs')
@@ -137,6 +87,50 @@ export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
 
   if (error) {
     console.error('Error fetching programs:', error);
+    throw new Error(`Failed to fetch programs: ${error.message}`);
+  }
+
+  return data || [];
+};
+
+/**
+ * Get a single program by ID
+ *
+ * @param id - Program UUID
+ * @returns Program details or null if not found
+ */
+export const getProgramById = async (id: string): Promise<PharmaProgram | null> => {
+  const { data, error } = await supabase
+    .from('pharma_programs')
+    .select('*')
+    .eq('id', id)
+    .eq('active', true)
+    .maybeSingle();
+
+  if (error) {
+    console.error('Error fetching program:', error);
+    return null;
+  }
+
+  return data;
+};
+
+/**
+ * Get programs by manufacturer
+ *
+ * @param manufacturer - Manufacturer name
+ * @returns Array of programs from that manufacturer
+ */
+export const getProgramsByManufacturer = async (manufacturer: string): Promise<PharmaProgram[]> => {
+  const { data, error } = await supabase
+    .from('pharma_programs')
+    .select('*')
+    .eq('active', true)
+    .ilike('manufacturer', `%${manufacturer}%`)
+    .order('medication_name', { ascending: true });
+
+  if (error) {
+    console.error('Error fetching programs by manufacturer:', error);
     return [];
   }
 

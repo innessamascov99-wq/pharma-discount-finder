@@ -34,21 +34,15 @@ export const SearchBar: React.FC = () => {
     setSearchMethod('');
 
     try {
-      console.log(`Searching for: "${query}"`);
       const results = await searchPharmaPrograms(query, 20);
       setSearchResults(results);
       setShowResults(true);
-
-      if (results.length > 0) {
-        setSearchMethod('Vector search with semantic matching');
-      } else {
-        setSearchMethod('No results found');
-      }
+      setSearchMethod(results.length > 0 ? 'Vector similarity search' : '');
     } catch (error) {
       console.error('Search failed:', error);
-      setSearchError('Search temporarily unavailable. Please try again.');
+      setSearchError('Search is temporarily unavailable. Please try again.');
       setSearchResults([]);
-      setSearchMethod('Error occurred');
+      setSearchMethod('');
     } finally {
       setIsSearching(false);
     }
@@ -165,40 +159,19 @@ export const SearchBar: React.FC = () => {
               </Button>
             </div>
 
-            {searchError && (
-              <Card className="p-4 mb-6 bg-destructive/10 border-destructive/20">
-                <p className="text-sm text-destructive">{searchError}</p>
-              </Card>
+{searchError && (
+              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
+                <p className="text-sm text-destructive font-medium">{searchError}</p>
+              </div>
             )}
 
-            {searchResults.length === 0 && !searchError ? (
-              <Card className="p-6 sm:p-8 text-center">
-                <p className="text-base sm:text-lg text-muted-foreground mb-3">
-                  No programs found for "{searchQuery}".
-                </p>
-                <p className="text-sm text-muted-foreground">
-                  Try searching for:
-                </p>
-                <div className="flex flex-wrap justify-center gap-2 mt-4">
-                  {suggestions.slice(0, 6).map((drug, index) => (
-                    <Button
-                      key={index}
-                      variant="outline"
-                      size="sm"
-                      onClick={() => handleSuggestionClick(drug)}
-                    >
-                      {drug}
-                    </Button>
-                  ))}
-                </div>
-              </Card>
-            ) : searchResults.length > 0 ? (
+            {!searchError && (
               <SearchResults
                 results={searchResults}
                 isLoading={isSearching}
                 searchMethod={searchMethod}
               />
-            ) : null}
+            )}
           </div>
         )}
       </div>

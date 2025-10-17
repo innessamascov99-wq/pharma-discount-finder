@@ -5,9 +5,43 @@
     <link rel="icon" type="image/svg+xml" href="/vite.svg" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Pharma Discount Finder - Find the Best Drug Discounts</title>
+    <link href="https://cdn.jsdelivr.net/npm/@n8n/chat/dist/style.css" rel="stylesheet" />
+    <style>
+      .n8n-chat {
+        --chat--color-primary: #ec4899 !important;
+        --chat--color-primary-shade-50: #fdf2f8 !important;
+        --chat--color-primary-shade-100: #fce7f3 !important;
+      }
+      .n8n-chat button[data-key="toggle"] {
+        background-color: #ec4899 !important;
+      }
+      .n8n-chat button[data-key="toggle"]:hover {
+        background-color: #db2777 !important;
+      }
+    </style>
   </head>
   <body>
     <div id="root"></div>
     <script type="module" src="/src/main.tsx"></script>
+    <script type="module">
+      import { createChat } from 'https://cdn.jsdelivr.net/npm/@n8n/chat/dist/chat.bundle.es.js';
+
+      createChat({
+        webhookUrl: 'https://creative-glider-excited.ngrok-free.app/webhook/32ecd779-a450-4f0a-82cc-d57e3ad66fed/chat',
+        initialMessages: [
+          'Hi there! 👋',
+          'I\'m Jack, your pharmaceutical assistance guide. How can I help you today?'
+        ],
+        i18n: {
+          en: {
+            title: 'Chat with Jack',
+            subtitle: 'Your Pharma Assistant',
+            footer: '',
+            getStarted: 'Start chatting',
+            inputPlaceholder: 'Type your message...'
+          }
+        }
+      });
+    </script>
   </body>
 </html>

@@ -1,0 +1,194 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Connection Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: system-ui, -apple-system, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .test-box {
+            background: white;
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+            margin-bottom: 20px;
+        }
+        input {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            border: 2px solid #e0e0e0;
+            border-radius: 8px;
+            margin-bottom: 15px;
+        }
+        button {
+            width: 100%;
+            padding: 15px;
+            font-size: 16px;
+            background: #2563eb;
+            color: white;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: 600;
+        }
+        button:hover {
+            background: #1d4ed8;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f9ff;
+            border-left: 4px solid #2563eb;
+            border-radius: 4px;
+        }
+        .error {
+            background: #fee;
+            border-left-color: #dc2626;
+        }
+        .success {
+            background: #f0fdf4;
+            border-left-color: #16a34a;
+        }
+        pre {
+            background: #1e293b;
+            color: #e2e8f0;
+            padding: 15px;
+            border-radius: 8px;
+            overflow-x: auto;
+            font-size: 13px;
+        }
+        .card {
+            background: white;
+            padding: 15px;
+            margin: 10px 0;
+            border-radius: 8px;
+            border: 1px solid #e0e0e0;
+        }
+    </style>
+</head>
+<body>
+    <div class="test-box">
+        <h1>🔍 Supabase Search Connection Test</h1>
+        <p>Testing the search_pharma_simple RPC function</p>
+
+        <input
+            type="text"
+            id="searchInput"
+            placeholder="Enter medication name (e.g., Mounjaro)"
+            value="Mounjaro"
+        />
+        <button onclick="testSearch()">Search Programs</button>
+
+        <div id="results"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        console.log('✅ Supabase client initialized:', SUPABASE_URL);
+
+        async function testSearch() {
+            const resultsDiv = document.getElementById('results');
+            const searchQuery = document.getElementById('searchInput').value.trim();
+
+            if (!searchQuery) {
+                resultsDiv.innerHTML = '<div class="result error">Please enter a search term</div>';
+                return;
+            }
+
+            resultsDiv.innerHTML = '<div class="result">🔄 Searching...</div>';
+
+            const startTime = performance.now();
+
+            try {
+                console.log('Calling RPC function with query:', searchQuery);
+
+                const { data, error } = await supabase.rpc('search_pharma_simple', {
+                    search_query: searchQuery
+                });
+
+                const duration = (performance.now() - startTime).toFixed(0);
+
+                if (error) {
+                    console.error('RPC Error:', error);
+                    resultsDiv.innerHTML = `
+                        <div class="result error">
+                            <strong>❌ Error:</strong> ${error.message}
+                            <pre>${JSON.stringify(error, null, 2)}</pre>
+                        </div>
+                    `;
+                    return;
+                }
+
+                console.log('Search results:', data);
+
+                if (!data || data.length === 0) {
+                    resultsDiv.innerHTML = `
+                        <div class="result">
+                            <strong>No results found</strong> for "${searchQuery}" (${duration}ms)
+                        </div>
+                    `;
+                    return;
+                }
+
+                let html = `
+                    <div class="result success">
+                        <strong>✅ Found ${data.length} programs</strong> in ${duration}ms
+                    </div>
+                `;
+
+                data.forEach((program, index) => {
+                    html += `
+                        <div class="card">
+                            <h3 style="margin: 0 0 10px 0; color: #1e293b;">
+                                ${index + 1}. ${program.medication_name}
+                            </h3>
+                            <p style="margin: 5px 0; color: #64748b;">
+                                <strong>Generic:</strong> ${program.generic_name}
+                            </p>
+                            <p style="margin: 5px 0; color: #64748b;">
+                                <strong>Manufacturer:</strong> ${program.manufacturer}
+                            </p>
+                            <p style="margin: 10px 0; padding: 10px; background: #f8fafc; border-radius: 4px;">
+                                ${program.program_description}
+                            </p>
+                            <p style="margin: 5px 0; color: #16a34a; font-weight: 600;">
+                                💰 ${program.discount_amount}
+                            </p>
+                            <p style="margin: 5px 0; font-size: 12px; color: #94a3b8;">
+                                Similarity: ${program.similarity}
+                            </p>
+                        </div>
+                    `;
+                });
+
+                resultsDiv.innerHTML = html;
+
+            } catch (err) {
+                console.error('Unexpected error:', err);
+                resultsDiv.innerHTML = `
+                    <div class="result error">
+                        <strong>❌ Unexpected Error:</strong> ${err.message}
+                    </div>
+                `;
+            }
+        }
+
+        // Test on page load
+        window.addEventListener('DOMContentLoaded', () => {
+            console.log('Page loaded, ready to test search');
+        });
+    </script>
+</body>
+</html>

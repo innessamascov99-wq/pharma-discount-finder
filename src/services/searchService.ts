@@ -32,44 +32,60 @@ export const searchPharmaPrograms = async (
   query: string,
   _limit: number = 20
 ): Promise<PharmaProgram[]> => {
-  // Validate input
+  console.log('🔍 searchPharmaPrograms called with query:', query);
+
   if (!query || query.trim().length === 0) {
+    console.log('⚠️ Empty query, returning empty array');
     return [];
   }
 
   if (query.trim().length < 2) {
+    console.log('⚠️ Query too short (< 2 chars), returning empty array');
     return [];
   }
 
   const searchTerm = query.trim();
   const startTime = performance.now();
 
+  console.log('📡 Calling supabase.rpc with search_query:', searchTerm);
+
   try {
-    // Use simplified RPC function with NO caching
     const { data, error } = await supabase.rpc('search_pharma_simple', {
       search_query: searchTerm
-    }, {
-      head: false,
-      count: null,
     });
 
     const duration = performance.now() - startTime;
 
+    console.log('📊 RPC Response:', {
+      hasData: !!data,
+      dataLength: data?.length,
+      hasError: !!error,
+      duration: `${duration.toFixed(0)}ms`
+    });
+
     if (error) {
-      console.error('Search RPC error:', error);
+      console.error('❌ Search RPC error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       throw new Error(`Search failed: ${error.message}`);
     }
 
     if (!data || data.length === 0) {
-      console.log(`No results for "${searchTerm}" (${duration.toFixed(0)}ms)`);
+      console.log(`📭 No results for "${searchTerm}" (${duration.toFixed(0)}ms)`);
       return [];
     }
 
-    console.log(`Found ${data.length} results for "${searchTerm}" in ${duration.toFixed(0)}ms`);
+    console.log(`✅ Found ${data.length} results for "${searchTerm}" in ${duration.toFixed(0)}ms`);
+    console.log('First result:', data[0]);
     return data;
 
   } catch (err: any) {
-    console.error('Search error:', err);
+    console.error('💥 Search error caught:', err);
+    console.error('Error stack:', err.stack);
     throw new Error(err.message || 'Search failed');
   }
 };

@@ -27,54 +27,77 @@ const results: CheckResult[] = [];
 
 function checkAndFixEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
+  const envLocalPath = join(process.cwd(), '.env.local');
+  const correctContent = `VITE_SUPABASE_URL=${CORRECT_URL}\nVITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}\n`;
 
   if (!existsSync(envPath)) {
-    const content = `VITE_SUPABASE_URL=${CORRECT_URL}\nVITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}\n`;
-    writeFileSync(envPath, content);
+    writeFileSync(envPath, correctContent);
     results.push({
       file: '.env',
       status: 'fixed',
       message: 'Created .env file with correct configuration'
     });
-    return;
+  } else {
+    let content = readFileSync(envPath, 'utf-8');
+    let modified = false;
+
+    const urlRegex = /VITE_SUPABASE_URL=.*/;
+    if (!content.match(urlRegex)) {
+      content += `\nVITE_SUPABASE_URL=${CORRECT_URL}\n`;
+      modified = true;
+    } else if (!content.includes(`VITE_SUPABASE_URL=${CORRECT_URL}`)) {
+      content = content.replace(urlRegex, `VITE_SUPABASE_URL=${CORRECT_URL}`);
+      modified = true;
+    }
+
+    const keyRegex = /VITE_SUPABASE_ANON_KEY=.*/;
+    if (!content.match(keyRegex)) {
+      content += `VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}\n`;
+      modified = true;
+    } else if (!content.includes(`VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}`)) {
+      content = content.replace(keyRegex, `VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}`);
+      modified = true;
+    }
+
+    if (modified) {
+      writeFileSync(envPath, content);
+      results.push({
+        file: '.env',
+        status: 'fixed',
+        message: 'Fixed database URL and/or API key'
+      });
+    } else {
+      results.push({
+        file: '.env',
+        status: 'ok',
+        message: 'Configuration is correct'
+      });
+    }
   }
 
-  let content = readFileSync(envPath, 'utf-8');
-  let modified = false;
-
-  // Check VITE_SUPABASE_URL
-  const urlRegex = /VITE_SUPABASE_URL=.*/;
-  if (!content.match(urlRegex)) {
-    content += `\nVITE_SUPABASE_URL=${CORRECT_URL}\n`;
-    modified = true;
-  } else if (!content.includes(`VITE_SUPABASE_URL=${CORRECT_URL}`)) {
-    content = content.replace(urlRegex, `VITE_SUPABASE_URL=${CORRECT_URL}`);
-    modified = true;
-  }
-
-  // Check VITE_SUPABASE_ANON_KEY
-  const keyRegex = /VITE_SUPABASE_ANON_KEY=.*/;
-  if (!content.match(keyRegex)) {
-    content += `VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}\n`;
-    modified = true;
-  } else if (!content.includes(`VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}`)) {
-    content = content.replace(keyRegex, `VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}`);
-    modified = true;
-  }
-
-  if (modified) {
-    writeFileSync(envPath, content);
+  if (!existsSync(envLocalPath)) {
+    writeFileSync(envLocalPath, correctContent);
     results.push({
-      file: '.env',
+      file: '.env.local',
       status: 'fixed',
-      message: 'Fixed database URL and/or API key'
+      message: 'Created override file (takes priority over .env)'
     });
   } else {
-    results.push({
-      file: '.env',
-      status: 'ok',
-      message: 'Configuration is correct'
-    });
+    const localContent = readFileSync(envLocalPath, 'utf-8');
+    if (localContent.includes(CORRECT_URL)) {
+      results.push({
+        file: '.env.local',
+        status: 'ok',
+        message: 'Override file exists with correct configuration'
+      });
+    } else {
+      writeFileSync(envLocalPath, correctContent);
+      results.push({
+        file: '.env.local',
+        status: 'fixed',
+        message: 'Fixed override file configuration'
+      });
+    }
   }
 }
 

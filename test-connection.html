@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Connection Test</title>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 1000px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    .test { margin: 20px 0; padding: 15px; border: 1px solid #ddd; }
+    .success { background: #d4edda; border-color: #c3e6cb; }
+    .error { background: #f8d7da; border-color: #f5c6cb; }
+    pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+    button { padding: 10px 20px; margin: 10px 5px; cursor: pointer; }
+  </style>
+</head>
+<body>
+  <h1>Supabase Connection Test</h1>
+
+  <div>
+    <h2>Configuration</h2>
+    <p><strong>URL:</strong> https://nuhfqkhplldontxtoxkg.supabase.co</p>
+    <p><strong>Key:</strong> eyJhbGc...28Nn (from .env file)</p>
+  </div>
+
+  <button onclick="testConnection()">Test Connection</button>
+  <button onclick="testSearch()">Test Search</button>
+  <button onclick="getAllPrograms()">Get All Programs</button>
+
+  <div id="results"></div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // Using the exact credentials from .env file
+    const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    function showResult(title, data, isError = false) {
+      const div = document.createElement('div');
+      div.className = 'test ' + (isError ? 'error' : 'success');
+      div.innerHTML = `<h3>${title}</h3><pre>${JSON.stringify(data, null, 2)}</pre>`;
+      document.getElementById('results').appendChild(div);
+    }
+
+    window.testConnection = async function() {
+      document.getElementById('results').innerHTML = '';
+      try {
+        const { data, error, count } = await supabase
+          .from('pharma_programs')
+          .select('id, medication_name', { count: 'exact' })
+          .limit(1);
+
+        if (error) {
+          showResult('❌ Connection Test Failed', error, true);
+        } else {
+          showResult('✅ Connection Successful', {
+            count: count,
+            sample: data
+          });
+        }
+      } catch (err) {
+        showResult('❌ Exception', { message: err.message }, true);
+      }
+    };
+
+    window.testSearch = async function() {
+      document.getElementById('results').innerHTML = '';
+      try {
+        const query = 'Ozempic';
+        const { data, error } = await supabase
+          .from('pharma_programs')
+          .select('*')
+          .eq('active', true)
+          .or(`medication_name.ilike.%${query}%,generic_name.ilike.%${query}%`);
+
+        if (error) {
+          showResult('❌ Search Failed', error, true);
+        } else {
+          showResult(`✅ Search Results for "${query}"`, {
+            count: data.length,
+            results: data
+          });
+        }
+      } catch (err) {
+        showResult('❌ Exception', { message: err.message }, true);
+      }
+    };
+
+    window.getAllPrograms = async function() {
+      document.getElementById('results').innerHTML = '';
+      try {
+        const { data, error, count } = await supabase
+          .from('pharma_programs')
+          .select('medication_name, manufacturer, program_name', { count: 'exact' })
+          .eq('active', true)
+          .order('medication_name');
+
+        if (error) {
+          showResult('❌ Failed to Get Programs', error, true);
+        } else {
+          showResult('✅ All Active Programs', {
+            total: count,
+            programs: data
+          });
+        }
+      } catch (err) {
+        showResult('❌ Exception', { message: err.message }, true);
+      }
+    };
+  </script>
+</body>
+</html>

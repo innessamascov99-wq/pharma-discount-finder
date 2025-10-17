@@ -28,6 +28,7 @@ export interface SearchResult {
 
 export const searchPharmaPrograms = async (query: string, limit: number = 15): Promise<PharmaProgram[]> => {
   if (!query || query.trim().length === 0) {
+    console.log('Empty query, returning all programs');
     return getAllPharmaPrograms();
   }
 
@@ -35,16 +36,17 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
 
   console.log('🔍 Searching for:', searchTerm);
   console.log('📊 Database URL:', import.meta.env.VITE_SUPABASE_URL);
+  console.log('📊 Has API Key:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
 
-  // Try direct text search first (edge function may not be deployed)
+  // Try direct text search first (most reliable)
   try {
     const results = await fallbackTextSearch(searchTerm, limit);
+    console.log('✅ Text search returned:', results.length, 'results');
     if (results.length > 0) {
-      console.log('✅ Found', results.length, 'results via text search');
       return results;
     }
   } catch (err) {
-    console.error('Text search error:', err);
+    console.error('❌ Text search error:', err);
   }
 
   // Try vector search if text search returns nothing
@@ -52,7 +54,8 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
     console.log('Attempting vector search...');
     return await vectorSearch(searchTerm, limit);
   } catch (err) {
-    console.error('Vector search failed:', err);
+    console.error('❌ Vector search failed:', err);
+    // Return empty array instead of throwing
     return [];
   }
 };
@@ -195,20 +198,29 @@ export const searchPharmaWithFullText = async (query: string): Promise<PharmaPro
 
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
   try {
-    const { data, error } = await supabase
+    console.log('📊 Fetching all programs from:', import.meta.env.VITE_SUPABASE_URL);
+
+    const { data, error, count } = await supabase
       .from('pharma_programs')
-      .select('*')
+      .select('*', { count: 'exact' })
       .eq('active', true)
       .order('medication_name', { ascending: true });
 
     if (error) {
-      console.error('Error fetching all programs:', error);
+      console.error('❌ Error fetching all programs:', error);
+      console.error('Error details:', {
+        message: error.message,
+        details: error.details,
+        hint: error.hint,
+        code: error.code
+      });
       return [];
     }
 
+    console.log(`✅ Successfully fetched ${count} active programs`);
     return data || [];
   } catch (err) {
-    console.error('Unexpected error fetching programs:', err);
+    console.error('❌ Unexpected error fetching programs:', err);
     return [];
   }
 };

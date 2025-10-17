@@ -7,7 +7,6 @@ import { HowItWorks } from '../components/HowItWorks';
 import { FeaturesGrid } from '../components/FeaturesGrid';
 import { ProgramPreview } from '../components/ProgramPreview';
 import { TrustTransparency } from '../components/TrustTransparency';
-import { ChatBot } from '../components/ChatBot';
 import { DatabaseStatus } from '../components/DatabaseStatus';
 import { searchDrugs, Drug } from '../services/searchService';
 
@@ -85,7 +84,6 @@ export const Home: React.FC = () => {
       <HowItWorks />
       <FeaturesGrid />
       <TrustTransparency />
-      <ChatBot name="Jack" />
       <DatabaseStatus />
     </>
   );

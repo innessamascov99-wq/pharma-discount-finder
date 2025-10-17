@@ -32,18 +32,12 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
   }
 
   const searchTerm = query.trim();
-  console.log('Searching for:', searchTerm);
 
   try {
-    return await vectorSearch(searchTerm, limit);
+    return await fallbackTextSearch(searchTerm, limit);
   } catch (err) {
-    console.error('Vector search failed, using text fallback:', err);
-    try {
-      return await fallbackTextSearch(searchTerm, limit);
-    } catch (fallbackErr) {
-      console.error('All search methods failed:', fallbackErr);
-      return [];
-    }
+    console.error('Search failed:', err);
+    return [];
   }
 };
 

@@ -37,34 +37,19 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
     return [];
   }
 
-  const searchTerm = query.trim().toLowerCase();
+  const searchTerm = query.trim();
   console.log('Searching for:', searchTerm);
 
   try {
-    const searchWords = searchTerm.split(/\s+/).filter(w => w.length > 1);
-
-    if (searchWords.length === 0) {
-      return [];
-    }
-
-    const orConditions = searchWords.flatMap(word => [
-      `medication_name.ilike.%${word}%`,
-      `generic_name.ilike.%${word}%`,
-      `manufacturer.ilike.%${word}%`,
-      `program_name.ilike.%${word}%`,
-      `program_description.ilike.%${word}%`
-    ]).join(',');
-
-    const { data, error } = await supabase
-      .from('pharma_programs')
-      .select('*')
-      .eq('active', true)
-      .or(orConditions)
-      .limit(50);
+    const { data, error } = await supabase.rpc('search_pharma_programs', {
+      search_query: searchTerm,
+      result_limit: limit
+    });
 
     if (error) {
-      console.error('Database error:', error);
-      throw error;
+      console.error('RPC search error:', error);
+      console.log('Note: If you see a schema cache error, the Supabase project needs to be restarted from the dashboard');
+      return [];
     }
 
     if (!data || data.length === 0) {
@@ -72,42 +57,11 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
       return [];
     }
 
-    const results = data.map(program => {
-      let relevanceScore = 0;
-      const medName = program.medication_name?.toLowerCase() || '';
-      const genName = program.generic_name?.toLowerCase() || '';
-      const mfg = program.manufacturer?.toLowerCase() || '';
-      const progName = program.program_name?.toLowerCase() || '';
-
-      searchWords.forEach(word => {
-        if (medName === word) relevanceScore += 100;
-        else if (medName.startsWith(word)) relevanceScore += 80;
-        else if (medName.includes(word)) relevanceScore += 50;
-
-        if (genName === word) relevanceScore += 90;
-        else if (genName.startsWith(word)) relevanceScore += 70;
-        else if (genName.includes(word)) relevanceScore += 40;
-
-        if (mfg.includes(word)) relevanceScore += 30;
-        if (progName.includes(word)) relevanceScore += 20;
-      });
-
-      return {
-        ...program,
-        similarity: relevanceScore / 100
-      };
-    });
-
-    const sorted = results
-      .filter(r => r.similarity && r.similarity > 0)
-      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-      .slice(0, limit);
-
-    console.log('Search completed:', sorted.length, 'results returned');
-    return sorted;
+    console.log('Search completed:', data.length, 'results returned');
+    return data;
   } catch (err) {
     console.error('Search failed with error:', err);
-    throw err;
+    return [];
   }
 };
 

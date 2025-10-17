@@ -1,0 +1,257 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Frontend to Supabase Connection</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 24px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      margin-bottom: 20px;
+    }
+    h1 { color: #333; margin-top: 0; }
+    h2 { color: #555; border-bottom: 2px solid #e0e0e0; padding-bottom: 8px; }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      margin-right: 8px;
+    }
+    button:hover { background: #2563eb; }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .result {
+      background: #f0f9ff;
+      border: 1px solid #bfdbfe;
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .result h3 {
+      margin: 0 0 8px 0;
+      color: #1e40af;
+    }
+    .error {
+      background: #fee;
+      border: 1px solid #fcc;
+      color: #c00;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .success {
+      background: #efe;
+      border: 1px solid #cfc;
+      color: #060;
+      padding: 16px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+    }
+    .info {
+      background: #f0f9ff;
+      border: 1px solid #bfdbfe;
+      padding: 12px;
+      border-radius: 8px;
+      margin-bottom: 12px;
+      font-size: 14px;
+    }
+    pre {
+      background: #1e293b;
+      color: #e2e8f0;
+      padding: 16px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+    .loading {
+      color: #3b82f6;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🧪 Frontend to Supabase Search Test</h1>
+    <div class="info">
+      <strong>Database:</strong> https://nuhfqkhplldontxtoxkg.supabase.co<br>
+      <strong>Function:</strong> search_pharma_simple(search_query)<br>
+      <strong>Expected Results:</strong> 39 active pharmaceutical programs
+    </div>
+  </div>
+
+  <div class="container">
+    <h2>Test Search Connection</h2>
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Enter medication name (e.g., Mounjaro, Ozempic, insulin)"
+      value="Mounjaro"
+    >
+    <div>
+      <button onclick="testSearch()">🔍 Search Programs</button>
+      <button onclick="testConnection()">🔌 Test Connection</button>
+      <button onclick="clearResults()">🧹 Clear</button>
+    </div>
+    <div id="status" style="margin-top: 12px;"></div>
+  </div>
+
+  <div class="container">
+    <h2>Results</h2>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const { createClient } = supabase;
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    console.log('✅ Supabase client initialized:', SUPABASE_URL);
+
+    function setStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('status');
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'loading';
+      statusDiv.innerHTML = `<div class="${className}">${message}</div>`;
+    }
+
+    function setResults(html) {
+      document.getElementById('results').innerHTML = html;
+    }
+
+    function clearResults() {
+      setResults('');
+      setStatus('');
+    }
+
+    async function testConnection() {
+      setStatus('Testing connection to Supabase...', 'loading');
+      setResults('');
+
+      try {
+        console.log('Testing connection...');
+
+        const { count, error } = await client
+          .from('pharma_programs')
+          .select('*', { count: 'exact', head: true })
+          .eq('active', true);
+
+        if (error) {
+          console.error('Connection error:', error);
+          setStatus(`❌ Connection failed: ${error.message}`, 'error');
+          setResults(`<pre>${JSON.stringify(error, null, 2)}</pre>`);
+          return;
+        }
+
+        console.log('Connection successful! Count:', count);
+        setStatus(`✅ Connection successful! Found ${count} active programs`, 'success');
+        setResults(`
+          <div class="success">
+            <strong>Database:</strong> Connected<br>
+            <strong>Active Programs:</strong> ${count}<br>
+            <strong>Status:</strong> Ready for search
+          </div>
+        `);
+      } catch (err) {
+        console.error('Exception:', err);
+        setStatus(`❌ Exception: ${err.message}`, 'error');
+        setResults(`<pre>${err.stack}</pre>`);
+      }
+    }
+
+    async function testSearch() {
+      const query = document.getElementById('searchInput').value.trim();
+
+      if (!query) {
+        setStatus('❌ Please enter a search term', 'error');
+        return;
+      }
+
+      setStatus(`🔍 Searching for "${query}"...`, 'loading');
+      setResults('');
+
+      try {
+        console.log('Calling search_pharma_simple with query:', query);
+        const startTime = performance.now();
+
+        const { data, error } = await client.rpc('search_pharma_simple', {
+          search_query: query
+        });
+
+        const duration = (performance.now() - startTime).toFixed(0);
+
+        if (error) {
+          console.error('Search error:', error);
+          setStatus(`❌ Search failed: ${error.message}`, 'error');
+          setResults(`<pre>${JSON.stringify(error, null, 2)}</pre>`);
+          return;
+        }
+
+        console.log('Search results:', data);
+
+        if (!data || data.length === 0) {
+          setStatus(`📭 No results found for "${query}" (${duration}ms)`, 'info');
+          setResults('<div class="info">No programs match your search. Try a different medication name.</div>');
+          return;
+        }
+
+        setStatus(`✅ Found ${data.length} results in ${duration}ms`, 'success');
+
+        let html = '';
+        data.forEach((program, index) => {
+          html += `
+            <div class="result">
+              <h3>${index + 1}. ${program.medication_name}</h3>
+              <p><strong>Generic:</strong> ${program.generic_name}</p>
+              <p><strong>Manufacturer:</strong> ${program.manufacturer}</p>
+              <p><strong>Program:</strong> ${program.program_name}</p>
+              <p><strong>Discount:</strong> ${program.discount_amount}</p>
+              <p><strong>Eligibility:</strong> ${program.eligibility_criteria}</p>
+              <p><strong>Phone:</strong> ${program.phone_number}</p>
+              <p><strong>Similarity Score:</strong> ${program.similarity}</p>
+            </div>
+          `;
+        });
+
+        setResults(html);
+
+      } catch (err) {
+        console.error('Exception:', err);
+        setStatus(`❌ Exception: ${err.message}`, 'error');
+        setResults(`<pre>${err.stack}</pre>`);
+      }
+    }
+
+    // Test connection on load
+    window.addEventListener('load', () => {
+      console.log('Page loaded, testing connection...');
+      testConnection();
+    });
+  </script>
+</body>
+</html>

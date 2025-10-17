@@ -61,3 +61,47 @@ When users ask about programs:
 - If database query fails, apologize and suggest searching via the website
 - Never provide medical advice or recommend specific medications
 - Always maintain user privacy and data security
+
+## Database Tables Reference
+
+The search tool queries two Supabase database tables:
+
+### drugs table
+Contains comprehensive medication information:
+- medication_name (brand name)
+- generic_name
+- manufacturer
+- drug_class
+- indication (what it treats)
+- dosage_forms
+- common_dosages
+- typical_retail_price
+- fda_approval_date
+- description
+- side_effects
+- warnings
+- active (boolean status)
+
+### programs table
+Contains assistance program details:
+- program_name
+- program_type (copay cards, patient assistance, discount programs)
+- description
+- manufacturer (sponsor)
+- eligibility_criteria
+- income_requirements
+- insurance_requirements
+- discount_details
+- program_url
+- phone_number
+- email
+- enrollment_process
+- required_documents
+- coverage_duration
+- renewal_required (boolean)
+- active (boolean status)
+
+### Available Search Functions
+- search_drugs(query) - Searches medications by name
+- search_programs(query) - Searches assistance programs
+- get_programs_for_drug(drug_id) - Finds programs for specific medications

@@ -3,7 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import {
   Users,
   Pill,
-  TrendingUp,
   Activity,
   Search,
   Edit,

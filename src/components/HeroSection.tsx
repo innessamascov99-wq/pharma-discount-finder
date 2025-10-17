@@ -1,6 +1,6 @@
 import React from 'react';
 import { Search, Shield, Users } from 'lucide-react';
-import { Button, Badge } from './ui';
+import { Badge } from './ui';
 
 export const HeroSection: React.FC = () => {
   return (

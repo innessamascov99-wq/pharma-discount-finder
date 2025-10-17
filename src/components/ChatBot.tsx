@@ -27,6 +27,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
               footer: '',
               getStarted: 'Start chatting',
               inputPlaceholder: 'Type your message...',
+              closeButtonTooltip: 'Close chat',
             },
           },
         });

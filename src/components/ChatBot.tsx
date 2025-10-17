@@ -52,6 +52,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
+            'ngrok-skip-browser-warning': 'true',
           },
           body: JSON.stringify({
             message: inputValue,

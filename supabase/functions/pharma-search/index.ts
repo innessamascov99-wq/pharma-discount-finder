@@ -1,9 +1,10 @@
-import { createClient } from 'npm:@supabase/supabase-js@2.57.4';
+import "jsr:@supabase/functions-js/edge-runtime.d.ts";
+import { createClient } from "npm:@supabase/supabase-js@2.57.4";
 
 const corsHeaders = {
-  'Access-Control-Allow-Origin': '*',
-  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
-  'Access-Control-Allow-Headers': 'Content-Type, Authorization, X-Client-Info, Apikey',
+  "Access-Control-Allow-Origin": "*",
+  "Access-Control-Allow-Methods": "GET, POST, OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type, Authorization, X-Client-Info, Apikey",
 };
 
 interface SearchRequest {
@@ -12,7 +13,7 @@ interface SearchRequest {
 }
 
 Deno.serve(async (req: Request) => {
-  if (req.method === 'OPTIONS') {
+  if (req.method === "OPTIONS") {
     return new Response(null, {
       status: 200,
       headers: corsHeaders,
@@ -20,106 +21,103 @@ Deno.serve(async (req: Request) => {
   }
 
   try {
-    const supabaseUrl = Deno.env.get('SUPABASE_URL')!;
-    const supabaseKey = Deno.env.get('SUPABASE_ANON_KEY')!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
-
-    if (req.method === 'POST') {
-      const { query, limit = 15 }: SearchRequest = await req.json();
-
-      if (!query) {
-        return new Response(
-          JSON.stringify({ error: 'Query parameter is required' }),
-          {
-            status: 400,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      console.log('Searching for:', query);
-
-      // Generate embedding using Supabase AI
-      const model = new Supabase.ai.Session('gte-small');
-      const embedding = await model.run(query, { mean_pool: true, normalize: true });
-
-      console.log('Generated embedding, length:', embedding.length);
-
-      // Perform vector similarity search with optimized parameters
-      const { data: vectorResults, error: vectorError } = await supabase
-        .rpc('search_pharma_programs_vector', {
-          query_embedding: embedding,
-          match_threshold: 0.7,
-          match_count: limit || 15,
-        });
-
-      if (vectorError) {
-        console.error('Vector search error:', vectorError);
-        
-        // Fallback to text search if vector search fails
-        const searchTerms = query.toLowerCase().split(' ').filter(term => term.length > 2);
-        const { data: fallbackData, error: fallbackError } = await supabase
-          .from('pharma_programs')
-          .select('*')
-          .eq('active', true)
-          .or(
-            searchTerms
-              .map(term => 
-                `medication_name.ilike.%${term}%,` +
-                `generic_name.ilike.%${term}%,` +
-                `manufacturer.ilike.%${term}%,` +
-                `program_name.ilike.%${term}%`
-              )
-              .join(',')
-          )
-          .limit(limit);
-
-        if (fallbackError) {
-          throw fallbackError;
-        }
-
-        return new Response(
-          JSON.stringify({ 
-            results: fallbackData || [], 
-            count: fallbackData?.length || 0,
-            method: 'text_search'
-          }),
-          {
-            status: 200,
-            headers: { ...corsHeaders, 'Content-Type': 'application/json' },
-          }
-        );
-      }
-
-      console.log('Vector search results:', vectorResults?.length || 0);
-
+    if (req.method !== "POST") {
       return new Response(
-        JSON.stringify({ 
-          results: vectorResults || [], 
-          count: vectorResults?.length || 0,
-          method: 'vector_search'
-        }),
+        JSON.stringify({ error: "Method not allowed" }),
         {
-          status: 200,
-          headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+          status: 405,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
         }
       );
     }
 
+    const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
+    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    const { query, limit = 15 }: SearchRequest = await req.json();
+
+    if (!query) {
+      return new Response(
+        JSON.stringify({ error: "Query parameter is required" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Searching for:", query);
+
+    const model = new Supabase.ai.Session("gte-small");
+    const embedding = await model.run(query, { mean_pool: true, normalize: true });
+
+    console.log("Generated embedding, length:", embedding.length);
+
+    const { data: vectorResults, error: vectorError } = await supabase
+      .rpc("search_pharma_programs_vector", {
+        query_embedding: embedding,
+        match_threshold: 0.7,
+        match_count: limit,
+      });
+
+    if (vectorError) {
+      console.error("Vector search error:", vectorError);
+      
+      const searchTerms = query.toLowerCase().split(" ").filter(term => term.length > 2);
+      const { data: fallbackData, error: fallbackError } = await supabase
+        .from("pharma_programs")
+        .select("*")
+        .eq("active", true)
+        .or(
+          searchTerms
+            .map(term => 
+              `medication_name.ilike.%${term}%,` +
+              `generic_name.ilike.%${term}%,` +
+              `manufacturer.ilike.%${term}%,` +
+              `program_name.ilike.%${term}%`
+            )
+            .join(",")
+        )
+        .limit(limit);
+
+      if (fallbackError) {
+        throw fallbackError;
+      }
+
+      return new Response(
+        JSON.stringify({ 
+          results: fallbackData || [], 
+          count: fallbackData?.length || 0,
+          method: "text_search"
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    console.log("Vector search results:", vectorResults?.length || 0);
+
     return new Response(
-      JSON.stringify({ error: 'Method not allowed' }),
+      JSON.stringify({ 
+        results: vectorResults || [], 
+        count: vectorResults?.length || 0,
+        method: "vector_search"
+      }),
       {
-        status: 405,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        status: 200,
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   } catch (error) {
-    console.error('Error:', error);
+    console.error("Error:", error);
     return new Response(
-      JSON.stringify({ error: error.message || 'Internal server error' }),
+      JSON.stringify({ error: error.message || "Internal server error" }),
       {
         status: 500,
-        headers: { ...corsHeaders, 'Content-Type': 'application/json' },
+        headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );
   }

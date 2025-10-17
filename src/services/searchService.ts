@@ -54,6 +54,11 @@ const textSearch = async (searchTerm: string, limit: number = 20): Promise<Pharm
   const lowerSearchTerm = searchTerm.toLowerCase().trim();
   const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 1);
 
+  console.log('=== Search Debug ===');
+  console.log('Original term:', searchTerm);
+  console.log('Lowercase term:', lowerSearchTerm);
+  console.log('Search words:', searchWords);
+
   if (searchWords.length === 0) {
     console.log('No valid search words after filtering');
     return [];
@@ -67,7 +72,8 @@ const textSearch = async (searchTerm: string, limit: number = 20): Promise<Pharm
     `program_description.ilike.%${word}%`
   ]).join(',');
 
-  console.log('Searching with terms:', searchWords);
+  console.log('OR conditions:', orConditions);
+  console.log('Supabase URL:', supabase.supabaseUrl);
 
   const { data, error } = await supabase
     .from('pharma_programs')
@@ -76,12 +82,21 @@ const textSearch = async (searchTerm: string, limit: number = 20): Promise<Pharm
     .or(orConditions)
     .limit(50);
 
+  console.log('Query response - Error:', error);
+  console.log('Query response - Data length:', data?.length || 0);
+
   if (error) {
-    console.error('Database error:', error);
+    console.error('Database error details:', JSON.stringify(error, null, 2));
     throw error;
   }
 
-  console.log('Found:', data?.length || 0, 'programs');
+  if (data && data.length > 0) {
+    console.log('First result sample:', {
+      medication: data[0].medication_name,
+      generic: data[0].generic_name,
+      manufacturer: data[0].manufacturer
+    });
+  }
 
   if (!data || data.length === 0) {
     return [];

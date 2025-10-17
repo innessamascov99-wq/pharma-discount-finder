@@ -1,0 +1,167 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Supabase Connection Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+    }
+    .result {
+      background: #f5f5f5;
+      padding: 1rem;
+      border-radius: 8px;
+      margin: 1rem 0;
+      white-space: pre-wrap;
+      word-break: break-word;
+    }
+    .error {
+      background: #fee;
+      border: 1px solid #c33;
+    }
+    .success {
+      background: #efe;
+      border: 1px solid #3c3;
+    }
+    button {
+      background: #0066cc;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 1rem;
+      margin: 0.5rem 0.5rem 0.5rem 0;
+    }
+    button:hover {
+      background: #0052a3;
+    }
+    input {
+      padding: 0.5rem;
+      border: 1px solid #ccc;
+      border-radius: 4px;
+      width: 300px;
+    }
+  </style>
+</head>
+<body>
+  <h1>Supabase Connection Test</h1>
+
+  <div>
+    <h2>Test 1: Get All Programs</h2>
+    <button onclick="testGetAll()">Get All Programs</button>
+    <div id="result1" class="result"></div>
+  </div>
+
+  <div>
+    <h2>Test 2: Search with ILIKE</h2>
+    <input type="text" id="searchInput" placeholder="Search term (e.g., Humira)" value="Humira">
+    <button onclick="testSearch()">Search</button>
+    <div id="result2" class="result"></div>
+  </div>
+
+  <div>
+    <h2>Test 3: Count Records</h2>
+    <button onclick="testCount()">Count Records</button>
+    <div id="result3" class="result"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    async function testGetAll() {
+      const resultDiv = document.getElementById('result1');
+      resultDiv.textContent = 'Loading...';
+      resultDiv.className = 'result';
+
+      try {
+        const { data, error } = await supabase
+          .from('pharma_programs')
+          .select('medication_name, generic_name, manufacturer, program_name')
+          .eq('active', true)
+          .limit(5);
+
+        if (error) {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = `Error: ${JSON.stringify(error, null, 2)}`;
+        } else {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = `Success! Found ${data.length} programs:\n\n${JSON.stringify(data, null, 2)}`;
+        }
+      } catch (err) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = `Exception: ${err.message}`;
+      }
+    }
+
+    async function testSearch() {
+      const resultDiv = document.getElementById('result2');
+      const searchTerm = document.getElementById('searchInput').value;
+      resultDiv.textContent = 'Searching...';
+      resultDiv.className = 'result';
+
+      try {
+        const { data, error } = await supabase
+          .from('pharma_programs')
+          .select('*')
+          .eq('active', true)
+          .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%`)
+          .limit(10);
+
+        if (error) {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = `Error: ${JSON.stringify(error, null, 2)}`;
+        } else {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = `Success! Found ${data.length} programs for "${searchTerm}":\n\n${JSON.stringify(data.map(p => ({
+            medication: p.medication_name,
+            generic: p.generic_name,
+            manufacturer: p.manufacturer,
+            program: p.program_name
+          })), null, 2)}`;
+        }
+      } catch (err) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = `Exception: ${err.message}`;
+      }
+    }
+
+    async function testCount() {
+      const resultDiv = document.getElementById('result3');
+      resultDiv.textContent = 'Counting...';
+      resultDiv.className = 'result';
+
+      try {
+        const { count, error } = await supabase
+          .from('pharma_programs')
+          .select('*', { count: 'exact', head: true })
+          .eq('active', true);
+
+        if (error) {
+          resultDiv.className = 'result error';
+          resultDiv.textContent = `Error: ${JSON.stringify(error, null, 2)}`;
+        } else {
+          resultDiv.className = 'result success';
+          resultDiv.textContent = `Success! Total active programs: ${count}`;
+        }
+      } catch (err) {
+        resultDiv.className = 'result error';
+        resultDiv.textContent = `Exception: ${err.message}`;
+      }
+    }
+
+    // Auto-run first test on load
+    window.addEventListener('load', () => {
+      testGetAll();
+    });
+  </script>
+</body>
+</html>

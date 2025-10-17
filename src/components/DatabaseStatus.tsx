@@ -18,7 +18,7 @@ export const DatabaseStatus: React.FC = () => {
 
     try {
       const { count, error: countError } = await supabase
-        .from('pharma_programs')
+        .from('programs')
         .select('count', { count: 'exact', head: true })
         .eq('active', true);
 

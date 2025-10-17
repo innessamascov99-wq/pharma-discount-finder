@@ -1,0 +1,36 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Generate Embeddings</title>
+</head>
+<body>
+    <h1>Generate Embeddings</h1>
+    <button id="generate">Generate Embeddings</button>
+    <pre id="output"></pre>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        document.getElementById('generate').addEventListener('click', async () => {
+            const output = document.getElementById('output');
+            output.textContent = 'Generating embeddings...\n';
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/generate-embeddings`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${ANON_KEY}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const result = await response.json();
+                output.textContent += JSON.stringify(result, null, 2);
+            } catch (error) {
+                output.textContent += 'Error: ' + error.message;
+            }
+        });
+    </script>
+</body>
+</html>

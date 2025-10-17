@@ -32,11 +32,16 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
     return [];
   }
 
+  if (query.trim().length < 2) {
+    console.log('Search query too short');
+    return [];
+  }
+
   const searchTerm = query.trim();
   console.log('Searching for:', searchTerm);
 
   try {
-    const results = await fallbackTextSearch(searchTerm, limit);
+    const results = await textSearch(searchTerm, limit);
     console.log('Search completed:', results.length, 'results returned');
     return results;
   } catch (err) {
@@ -45,10 +50,9 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
   }
 };
 
-const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promise<PharmaProgram[]> => {
+const textSearch = async (searchTerm: string, limit: number = 20): Promise<PharmaProgram[]> => {
   const lowerSearchTerm = searchTerm.toLowerCase().trim();
-
-  const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 0);
+  const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 1);
 
   if (searchWords.length === 0) {
     console.log('No valid search words after filtering');
@@ -63,8 +67,7 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promi
     `program_description.ilike.%${word}%`
   ]).join(',');
 
-  console.log('Search words:', searchWords);
-  console.log('OR conditions:', orConditions);
+  console.log('Searching with terms:', searchWords);
 
   const { data, error } = await supabase
     .from('pharma_programs')
@@ -74,11 +77,11 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promi
     .limit(50);
 
   if (error) {
-    console.error('Supabase query error:', error);
+    console.error('Database error:', error);
     throw error;
   }
 
-  console.log('Raw search results:', data?.length || 0, 'programs found');
+  console.log('Found:', data?.length || 0, 'programs');
 
   if (!data || data.length === 0) {
     return [];
@@ -110,8 +113,12 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promi
     };
   });
 
-  const sorted = results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
-  return sorted.slice(0, limit);
+  const sorted = results
+    .filter(r => r.similarity && r.similarity > 0)
+    .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
+    .slice(0, limit);
+
+  return sorted;
 };
 
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {

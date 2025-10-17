@@ -37,10 +37,10 @@ export const SearchBar: React.FC = () => {
       const results = await searchPharmaPrograms(query, 20);
       setSearchResults(results);
       setShowResults(true);
-      setSearchMethod(results.length > 0 ? 'Vector similarity search' : '');
+      setSearchMethod(results.length > 0 ? 'Smart text search' : 'No results found');
     } catch (error) {
       console.error('Search failed:', error);
-      setSearchError('Search is temporarily unavailable. Please try again.');
+      setSearchError('Search failed. Please try again.');
       setSearchResults([]);
       setSearchMethod('');
     } finally {

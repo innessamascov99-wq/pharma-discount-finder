@@ -13,7 +13,6 @@
     "prebuild": "tsx scripts/verify-db-config.ts"
   },
   "dependencies": {
-    "@n8n/chat": "^0.60.0",
     "@supabase/supabase-js": "^2.57.4",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",

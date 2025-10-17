@@ -105,7 +105,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Initiating Google OAuth with redirect:', redirectUrl);
       console.log('Current origin:', window.location.origin);
-      console.log('Supabase URL:', import.meta.env.VITE_SUPABASE_URL);
+      console.log('Supabase URL:', 'https://nuhfqkhplldontxtoxkg.supabase.co');
 
       const { data, error } = await supabase.auth.signInWithOAuth({
         provider: 'google',

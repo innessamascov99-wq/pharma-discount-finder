@@ -35,8 +35,8 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
   const searchTerm = query.trim();
 
   console.log('🔍 Searching for:', searchTerm);
-  console.log('📊 Database URL:', import.meta.env.VITE_SUPABASE_URL);
-  console.log('📊 Has API Key:', !!import.meta.env.VITE_SUPABASE_ANON_KEY);
+  console.log('📊 Database URL:', 'https://nuhfqkhplldontxtoxkg.supabase.co');
+  console.log('📊 Has API Key:', true);
 
   // Try direct text search first (most reliable)
   try {
@@ -62,13 +62,8 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
 
 const vectorSearch = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-    if (!supabaseUrl || !supabaseKey) {
-      console.warn('Supabase credentials not configured, using fallback search');
-      throw new Error('Missing Supabase credentials');
-    }
+    const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
 
     console.log('Calling pharma-search edge function...');
 
@@ -198,7 +193,7 @@ export const searchPharmaWithFullText = async (query: string): Promise<PharmaPro
 
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
   try {
-    console.log('📊 Fetching all programs from:', import.meta.env.VITE_SUPABASE_URL);
+    console.log('📊 Fetching all programs from:', 'https://nuhfqkhplldontxtoxkg.supabase.co');
 
     const { data, error, count } = await supabase
       .from('pharma_programs')

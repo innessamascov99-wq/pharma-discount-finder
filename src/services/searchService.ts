@@ -65,19 +65,25 @@ const vectorSearch = async (searchTerm: string, limit: number = 15): Promise<Pha
   return result.results || [];
 };
 
-const fallbackTextSearch = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
-  const lowerSearchTerm = searchTerm.toLowerCase();
+const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promise<PharmaProgram[]> => {
+  const lowerSearchTerm = searchTerm.toLowerCase().trim();
+
+  const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 0);
+
+  const orConditions = searchWords.flatMap(word => [
+    `medication_name.ilike.%${word}%`,
+    `generic_name.ilike.%${word}%`,
+    `manufacturer.ilike.%${word}%`,
+    `program_name.ilike.%${word}%`,
+    `program_description.ilike.%${word}%`
+  ]).join(',');
 
   const { data, error } = await supabase
     .from('pharma_programs')
     .select('*')
     .eq('active', true)
-    .or(
-      `medication_name.ilike.%${lowerSearchTerm}%,` +
-      `generic_name.ilike.%${lowerSearchTerm}%,` +
-      `manufacturer.ilike.%${lowerSearchTerm}%`
-    )
-    .limit(limit);
+    .or(orConditions)
+    .limit(50);
 
   if (error) {
     throw error;
@@ -89,17 +95,23 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 15): Promi
 
   const results = data.map(program => {
     let relevanceScore = 0;
-    const term = lowerSearchTerm;
     const medName = program.medication_name?.toLowerCase() || '';
     const genName = program.generic_name?.toLowerCase() || '';
+    const mfg = program.manufacturer?.toLowerCase() || '';
+    const progName = program.program_name?.toLowerCase() || '';
 
-    if (medName === term) relevanceScore += 100;
-    else if (medName.startsWith(term)) relevanceScore += 80;
-    else if (medName.includes(term)) relevanceScore += 40;
+    searchWords.forEach(word => {
+      if (medName === word) relevanceScore += 100;
+      else if (medName.startsWith(word)) relevanceScore += 80;
+      else if (medName.includes(word)) relevanceScore += 50;
 
-    if (genName === term) relevanceScore += 90;
-    else if (genName.startsWith(term)) relevanceScore += 70;
-    else if (genName.includes(term)) relevanceScore += 35;
+      if (genName === word) relevanceScore += 90;
+      else if (genName.startsWith(word)) relevanceScore += 70;
+      else if (genName.includes(word)) relevanceScore += 40;
+
+      if (mfg.includes(word)) relevanceScore += 30;
+      if (progName.includes(word)) relevanceScore += 20;
+    });
 
     return {
       ...program,
@@ -107,7 +119,8 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 15): Promi
     };
   });
 
-  return results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+  const sorted = results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+  return sorted.slice(0, limit);
 };
 
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {

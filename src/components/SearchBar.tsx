@@ -1,13 +1,16 @@
 import React, { useState, useEffect } from 'react';
-import { Search, ExternalLink, Phone, FileText, X } from 'lucide-react';
+import { Search, X } from 'lucide-react';
 import { Button, Input, Card } from './ui';
 import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
+import { SearchResults } from './SearchResults';
 
 export const SearchBar: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<PharmaProgram[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [showResults, setShowResults] = useState(false);
+  const [searchMethod, setSearchMethod] = useState<string>('');
+  const [searchError, setSearchError] = useState<string | null>(null);
   const [suggestions] = useState([
     'Mounjaro', 'Januvia', 'Ozempic', 'Humira', 'Eliquis', 'Xarelto', 'Trulicity', 'Jardiance'
   ]);
@@ -27,13 +30,25 @@ export const SearchBar: React.FC = () => {
 
   const performSearch = async (query: string) => {
     setIsSearching(true);
+    setSearchError(null);
+    setSearchMethod('');
+
     try {
-      const results = await searchPharmaPrograms(query);
+      console.log(`Searching for: "${query}"`);
+      const results = await searchPharmaPrograms(query, 20);
       setSearchResults(results);
       setShowResults(true);
+
+      if (results.length > 0) {
+        setSearchMethod('Vector search with semantic matching');
+      } else {
+        setSearchMethod('No results found');
+      }
     } catch (error) {
       console.error('Search failed:', error);
+      setSearchError('Search temporarily unavailable. Please try again.');
       setSearchResults([]);
+      setSearchMethod('Error occurred');
     } finally {
       setIsSearching(false);
     }
@@ -50,6 +65,8 @@ export const SearchBar: React.FC = () => {
     setSearchQuery('');
     setSearchResults([]);
     setShowResults(false);
+    setSearchMethod('');
+    setSearchError(null);
   };
 
   const handleSuggestionClick = (drug: string) => {
@@ -133,108 +150,55 @@ export const SearchBar: React.FC = () => {
         {showResults && (
           <div className="mt-8 sm:mt-12">
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
-              <h3 className="text-xl sm:text-2xl font-bold">
-                {searchResults.length} {searchResults.length === 1 ? 'Program' : 'Programs'} Found
-              </h3>
+              <div>
+                <h3 className="text-xl sm:text-2xl font-bold">
+                  {searchResults.length} {searchResults.length === 1 ? 'Program' : 'Programs'} Found
+                </h3>
+                {searchMethod && (
+                  <p className="text-xs sm:text-sm text-muted-foreground mt-1">
+                    {searchMethod}
+                  </p>
+                )}
+              </div>
               <Button variant="ghost" size="sm" onClick={clearSearch}>
                 Clear Results
               </Button>
             </div>
 
-            {searchResults.length === 0 ? (
-              <Card className="p-6 sm:p-8 text-center">
-                <p className="text-base sm:text-lg text-muted-foreground">
-                  No programs found for "{searchQuery}". Try searching for a different medication name.
-                </p>
+            {searchError && (
+              <Card className="p-4 mb-6 bg-destructive/10 border-destructive/20">
+                <p className="text-sm text-destructive">{searchError}</p>
               </Card>
-            ) : (
-              <div className="grid gap-4 sm:gap-6">
-                {searchResults.map((program) => (
-                  <Card key={program.id} className="p-4 sm:p-6 hover:shadow-lg transition-shadow">
-                    <div className="space-y-3 sm:space-y-4">
-                      <div className="flex flex-col sm:flex-row items-start justify-between gap-3 sm:gap-4">
-                        <div className="flex-1 w-full">
-                          <h4 className="text-xl sm:text-2xl font-bold text-primary mb-1">
-                            {program.medication_name}
-                          </h4>
-                          {program.generic_name && (
-                            <p className="text-xs sm:text-sm text-muted-foreground mb-2">
-                              Generic: {program.generic_name}
-                            </p>
-                          )}
-                          <p className="text-base sm:text-lg font-semibold text-foreground mb-1">
-                            {program.program_name}
-                          </p>
-                          <p className="text-xs sm:text-sm text-muted-foreground">
-                            by {program.manufacturer}
-                          </p>
-                        </div>
-                        {program.discount_amount && (
-                          <div className="bg-primary/10 text-primary px-3 sm:px-4 py-2 rounded-lg text-center self-start sm:self-auto">
-                            <p className="text-xs sm:text-sm font-medium">Savings</p>
-                            <p className="text-base sm:text-lg font-bold whitespace-nowrap">
-                              {program.discount_amount}
-                            </p>
-                          </div>
-                        )}
-                      </div>
-
-                      {program.program_description && (
-                        <p className="text-sm sm:text-base text-foreground/80">
-                          {program.program_description}
-                        </p>
-                      )}
-
-                      {program.eligibility_criteria && (
-                        <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
-                          <p className="font-semibold mb-1 text-xs sm:text-sm">Eligibility:</p>
-                          <p className="text-xs sm:text-sm text-foreground/80">
-                            {program.eligibility_criteria}
-                          </p>
-                        </div>
-                      )}
-
-                      {program.enrollment_process && (
-                        <div className="bg-muted/50 p-3 sm:p-4 rounded-lg">
-                          <p className="font-semibold mb-1 text-xs sm:text-sm flex items-center gap-2">
-                            <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-                            How to Enroll:
-                          </p>
-                          <p className="text-xs sm:text-sm text-foreground/80">
-                            {program.enrollment_process}
-                          </p>
-                        </div>
-                      )}
-
-                      <div className="flex flex-col sm:flex-row flex-wrap gap-2 sm:gap-3 pt-2">
-                        {program.program_url && (
-                          <Button
-                            variant="default"
-                            size="sm"
-                            onClick={() => window.open(program.program_url, '_blank')}
-                            className="gap-2 w-full sm:w-auto text-sm"
-                          >
-                            <ExternalLink className="w-3 h-3 sm:w-4 sm:h-4" />
-                            Visit Program Website
-                          </Button>
-                        )}
-                        {program.phone_number && (
-                          <Button
-                            variant="outline"
-                            size="sm"
-                            onClick={() => window.open(`tel:${program.phone_number}`, '_self')}
-                            className="gap-2 w-full sm:w-auto text-sm"
-                          >
-                            <Phone className="w-3 h-3 sm:w-4 sm:h-4" />
-                            {program.phone_number}
-                          </Button>
-                        )}
-                      </div>
-                    </div>
-                  </Card>
-                ))}
-              </div>
             )}
+
+            {searchResults.length === 0 && !searchError ? (
+              <Card className="p-6 sm:p-8 text-center">
+                <p className="text-base sm:text-lg text-muted-foreground mb-3">
+                  No programs found for "{searchQuery}".
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  Try searching for:
+                </p>
+                <div className="flex flex-wrap justify-center gap-2 mt-4">
+                  {suggestions.slice(0, 6).map((drug, index) => (
+                    <Button
+                      key={index}
+                      variant="outline"
+                      size="sm"
+                      onClick={() => handleSuggestionClick(drug)}
+                    >
+                      {drug}
+                    </Button>
+                  ))}
+                </div>
+              </Card>
+            ) : searchResults.length > 0 ? (
+              <SearchResults
+                results={searchResults}
+                isLoading={isSearching}
+                searchMethod={searchMethod}
+              />
+            ) : null}
           </div>
         )}
       </div>

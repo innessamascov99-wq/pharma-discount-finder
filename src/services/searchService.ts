@@ -19,7 +19,14 @@ export interface PharmaProgram {
   similarity?: number;
 }
 
-export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram[]> => {
+export interface SearchResult {
+  results: PharmaProgram[];
+  count: number;
+  method: 'vector_search' | 'text_search' | 'fallback';
+  query?: string;
+}
+
+export const searchPharmaPrograms = async (query: string, limit: number = 15): Promise<PharmaProgram[]> => {
   if (!query || query.trim().length === 0) {
     return getAllPharmaPrograms();
   }
@@ -27,39 +34,57 @@ export const searchPharmaPrograms = async (query: string): Promise<PharmaProgram
   const searchTerm = query.trim();
 
   try {
-    console.log('Performing optimized search for:', searchTerm);
-    return await optimizedSearch(searchTerm);
+    console.log('Performing vector search for:', searchTerm);
+    return await vectorSearch(searchTerm, limit);
   } catch (err) {
-    console.error('Search error:', err);
-    return await fallbackTextSearch(searchTerm);
+    console.error('Vector search failed, using fallback:', err);
+    return await fallbackTextSearch(searchTerm, limit);
   }
 };
 
-const optimizedSearch = async (searchTerm: string): Promise<PharmaProgram[]> => {
+const vectorSearch = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
   try {
-    const { data, error } = await supabase
-      .rpc('search_pharma_programs_optimized', {
-        search_query: searchTerm,
-        result_limit: 20
-      });
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-    if (error) {
-      console.error('Optimized search error:', error);
-      throw error;
+    if (!supabaseUrl || !supabaseKey) {
+      console.warn('Supabase credentials not configured, using fallback search');
+      throw new Error('Missing Supabase credentials');
     }
 
-    return (data || []).map((item: any) => ({
-      ...item,
-      similarity: item.relevance
-    }));
+    console.log('Calling pharma-search edge function...');
+
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/pharma-search`,
+      {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${supabaseKey}`,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ query: searchTerm, limit }),
+      }
+    );
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edge function error:', response.status, errorText);
+      throw new Error(`Search failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log(`Vector search returned ${result.count} results using ${result.method}`);
+
+    return result.results || [];
   } catch (err) {
-    console.error('Unexpected optimized search error:', err);
+    console.error('Vector search error:', err);
     throw err;
   }
 };
 
-const fallbackTextSearch = async (searchTerm: string): Promise<PharmaProgram[]> => {
+const fallbackTextSearch = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
   try {
+    console.log('Using fallback text search...');
     const lowerSearchTerm = searchTerm.toLowerCase();
 
     const { data, error } = await supabase
@@ -74,13 +99,14 @@ const fallbackTextSearch = async (searchTerm: string): Promise<PharmaProgram[]> 
         `program_description.ilike.%${lowerSearchTerm}%`
       )
       .order('medication_name', { ascending: true })
-      .limit(20);
+      .limit(limit);
 
     if (error) {
       console.error('Fallback search error:', error);
       return [];
     }
 
+    console.log(`Fallback search returned ${data?.length || 0} results`);
     return data || [];
   } catch (err) {
     console.error('Unexpected fallback search error:', err);

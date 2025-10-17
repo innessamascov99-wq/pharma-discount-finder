@@ -34,47 +34,9 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
   const searchTerm = query.trim();
 
   try {
-    const vectorResults = await vectorSearchDirect(searchTerm, limit);
-    if (vectorResults.length > 0) {
-      return vectorResults;
-    }
     return await fallbackTextSearch(searchTerm, limit);
   } catch (err) {
     console.error('Search failed:', err);
-    try {
-      return await fallbackTextSearch(searchTerm, limit);
-    } catch (fallbackErr) {
-      console.error('Fallback search failed:', fallbackErr);
-      return [];
-    }
-  }
-};
-
-const vectorSearchDirect = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-  try {
-    const embeddingResponse = await fetch(
-      `${supabaseUrl}/functions/v1/pharma-search`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseKey}`,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ query: searchTerm, limit }),
-      }
-    );
-
-    if (!embeddingResponse.ok) {
-      throw new Error(`Vector search failed`);
-    }
-
-    const result = await embeddingResponse.json();
-    return result.results || [];
-  } catch (error) {
-    console.log('Vector search not available, falling back to text search');
     return [];
   }
 };

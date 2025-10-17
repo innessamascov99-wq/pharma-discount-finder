@@ -16,7 +16,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
   const [messages, setMessages] = useState<Message[]>([
     {
       role: 'assistant',
-      content: `Hi! I'm ${name}. I can help you find information about medications and assistance programs from our database. What would you like to know?`,
+      content: `Hi! I'm ${name}, your pharmacy assistance guide. I have access to our comprehensive database of medications, pharmaceutical assistance programs, and discount information. I can help you find affordable options for your prescriptions. What would you like to know?`,
       timestamp: new Date().toISOString(),
     },
   ]);
@@ -47,12 +47,11 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
 
     try {
       const response = await fetch(
-        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/chat-with-database`,
+        'https://creative-glider-excited.ngrok-free.app/webhook/32ecd779-a450-4f0a-82cc-d57e3ad66fed/chat',
         {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
-            'Authorization': `Bearer ${import.meta.env.VITE_SUPABASE_ANON_KEY}`,
           },
           body: JSON.stringify({
             message: inputValue,
@@ -98,7 +97,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className="fixed bottom-6 right-6 bg-pink-600 hover:bg-pink-700 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50"
+          className="fixed bottom-6 right-6 bg-pink-800 hover:bg-pink-900 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50"
           aria-label="Open chat"
         >
           <MessageCircle size={24} />
@@ -107,14 +106,14 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
 
       {isOpen && (
         <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200 dark:border-gray-700">
-          <div className="bg-pink-600 text-white p-4 rounded-t-lg flex justify-between items-center">
+          <div className="bg-pink-800 text-white p-4 rounded-t-lg flex justify-between items-center">
             <div>
               <h3 className="font-semibold text-lg">Chat with {name}</h3>
               <p className="text-sm text-pink-100">Ask about medications & programs</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className="hover:bg-pink-700 p-1 rounded transition-colors"
+              className="hover:bg-pink-900 p-1 rounded transition-colors"
               aria-label="Close chat"
             >
               <X size={20} />
@@ -130,7 +129,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                 <div
                   className={`max-w-[80%] rounded-lg p-3 ${
                     msg.role === 'user'
-                      ? 'bg-pink-600 text-white'
+                      ? 'bg-pink-800 text-white'
                       : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}
                 >
@@ -170,13 +169,13 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                 onChange={(e) => setInputValue(e.target.value)}
                 onKeyPress={handleKeyPress}
                 placeholder="Type your message..."
-                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-500 dark:bg-gray-700 dark:text-white"
+                className="flex-1 px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:outline-none focus:ring-2 focus:ring-pink-800 dark:bg-gray-700 dark:text-white"
                 disabled={isLoading}
               />
               <button
                 onClick={sendMessage}
                 disabled={isLoading || !inputValue.trim()}
-                className="bg-pink-600 hover:bg-pink-700 disabled:bg-gray-400 text-white p-2 rounded-lg transition-colors"
+                className="bg-pink-800 hover:bg-pink-900 disabled:bg-gray-400 text-white p-2 rounded-lg transition-colors"
                 aria-label="Send message"
               >
                 <Send size={20} />

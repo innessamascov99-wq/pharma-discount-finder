@@ -48,8 +48,8 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
 };
 
 const vectorSearch = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
-  const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
-  const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   const response = await fetch(
     `${supabaseUrl}/functions/v1/pharma-search`,

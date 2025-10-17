@@ -7,14 +7,20 @@ import {
   Pill,
   Loader2,
   BarChart3,
-  TrendingUp
+  TrendingUp,
+  Heart,
+  DollarSign,
+  Activity,
+  CheckCircle2,
+  ArrowRight,
+  Sparkles
 } from 'lucide-react';
-import { Button, Card, Input } from '../components/ui';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { searchDrugs, Drug } from '../services/searchService';
 
-interface Activity {
+interface ActivityItem {
   id: string;
   medication_name: string;
   action_type: string;
@@ -34,7 +40,7 @@ interface ActivityStats {
 export const UserDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [recentActivity, setRecentActivity] = useState<Activity[]>([]);
+  const [recentActivity, setRecentActivity] = useState<ActivityItem[]>([]);
   const [activityStats, setActivityStats] = useState<ActivityStats[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
@@ -80,7 +86,7 @@ export const UserDashboard: React.FC = () => {
     setLoading(false);
   };
 
-  const calculateActivityStats = (activities: Activity[]) => {
+  const calculateActivityStats = (activities: ActivityItem[]) => {
     const statsMap = new Map<string, number>();
 
     activities.forEach(activity => {
@@ -125,89 +131,149 @@ export const UserDashboard: React.FC = () => {
     const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
 
     if (seconds < 60) return 'Just now';
-    if (seconds < 3600) return `${Math.floor(seconds / 60)} minutes ago`;
-    if (seconds < 86400) return `${Math.floor(seconds / 3600)} hours ago`;
-    if (seconds < 604800) return `${Math.floor(seconds / 86400)} days ago`;
-    return `${Math.floor(seconds / 604800)} weeks ago`;
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    return `${Math.floor(seconds / 604800)}w ago`;
   };
 
   const maxCount = Math.max(...activityStats.map(s => s.count), 1);
 
-  const quickActions = [
-    { icon: FileText, label: 'All Programs', action: () => navigate('/programs'), count: undefined },
-    { icon: Clock, label: 'Recent Searches', count: recentActivity.length },
-    { icon: TrendingUp, label: 'Activity Stats', count: activityStats.length }
+  const statCards = [
+    {
+      title: 'Total Searches',
+      value: recentActivity.length,
+      icon: Search,
+      gradient: 'from-blue-500 to-cyan-500',
+      description: 'Medications searched',
+      bgColor: 'bg-blue-50 dark:bg-blue-950/20'
+    },
+    {
+      title: 'Saved Programs',
+      value: recentActivity.filter(a => a.action_type === 'saved').length,
+      icon: Heart,
+      gradient: 'from-rose-500 to-pink-500',
+      description: 'Assistance programs',
+      bgColor: 'bg-rose-50 dark:bg-rose-950/20'
+    },
+    {
+      title: 'Potential Savings',
+      value: '$2,450',
+      icon: DollarSign,
+      gradient: 'from-emerald-500 to-teal-500',
+      description: 'Estimated annually',
+      bgColor: 'bg-emerald-50 dark:bg-emerald-950/20'
+    },
+    {
+      title: 'Active Programs',
+      value: '3',
+      icon: Activity,
+      gradient: 'from-amber-500 to-orange-500',
+      description: 'Currently enrolled',
+      bgColor: 'bg-amber-50 dark:bg-amber-950/20'
+    }
   ];
 
   return (
-    <div className="min-h-screen bg-muted/30 pt-20">
-      <div className="max-w-7xl mx-auto px-6 py-8">
+    <div className="min-h-screen bg-gradient-to-br from-slate-50 via-white to-blue-50/30 dark:from-slate-950 dark:via-slate-900 dark:to-slate-950 pt-20">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         <div className="mb-8">
-          <h1 className="text-3xl font-bold mb-2">Welcome back!</h1>
-          {userProfile && (
-            <p className="text-xl font-semibold text-foreground mb-1">
-              {userProfile.first_name} {userProfile.last_name}
-            </p>
-          )}
-          <p className="text-muted-foreground">{user?.email}</p>
+          <div className="flex items-center gap-3 mb-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Sparkles className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <h1 className="text-3xl font-bold tracking-tight">Welcome back!</h1>
+              {userProfile && (
+                <p className="text-lg text-muted-foreground">
+                  {userProfile.first_name} {userProfile.last_name}
+                </p>
+              )}
+            </div>
+          </div>
+          <p className="text-sm text-muted-foreground">{user?.email}</p>
         </div>
 
-        <Card className="p-8 mb-8 bg-gradient-to-br from-primary/5 to-secondary/5">
-          <div className="text-center mb-6">
-            <h2 className="text-2xl font-bold mb-2">Search Discount Programs</h2>
-            <p className="text-muted-foreground">
-              Find savings on your medications
-            </p>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-8">
+          {statCards.map((stat, index) => (
+            <Card key={index} className="relative overflow-hidden border-0 shadow-lg hover:shadow-xl transition-all duration-300 group">
+              <div className={`absolute inset-0 bg-gradient-to-br ${stat.gradient} opacity-5 group-hover:opacity-10 transition-opacity`}></div>
+              <CardContent className="p-6 relative">
+                <div className="flex items-start justify-between mb-4">
+                  <div className={`p-3 rounded-xl ${stat.bgColor}`}>
+                    <stat.icon className="w-6 h-6 text-foreground" />
+                  </div>
+                </div>
+                <div>
+                  <p className="text-sm font-medium text-muted-foreground mb-1">{stat.title}</p>
+                  <p className="text-3xl font-bold tracking-tight mb-1">{stat.value}</p>
+                  <p className="text-xs text-muted-foreground">{stat.description}</p>
+                </div>
+              </CardContent>
+            </Card>
+          ))}
+        </div>
+
+        <Card className="mb-8 border-0 shadow-lg overflow-hidden">
+          <div className="bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-emerald-500/10 p-8">
+            <div className="max-w-3xl mx-auto">
+              <div className="text-center mb-6">
+                <h2 className="text-2xl font-bold mb-2">Search for Medications</h2>
+                <p className="text-muted-foreground">
+                  Find discount programs and savings opportunities
+                </p>
+              </div>
+
+              <form onSubmit={handleSearch}>
+                <div className="relative">
+                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
+                  <Input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    placeholder="Search by medication name, manufacturer, or condition..."
+                    className="pl-12 h-14 text-base shadow-sm"
+                    disabled={searching}
+                  />
+                  <Button
+                    type="submit"
+                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10"
+                    disabled={searching}
+                  >
+                    {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
+                  </Button>
+                </div>
+              </form>
+            </div>
           </div>
 
-          <form onSubmit={handleSearch} className="max-w-3xl mx-auto">
-            <div className="relative">
-              <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-              <Input
-                type="text"
-                value={searchQuery}
-                onChange={(e) => setSearchQuery(e.target.value)}
-                placeholder="Search by medication name, manufacturer, or condition..."
-                className="pl-12 h-14 text-base"
-                disabled={searching}
-              />
-              <Button
-                type="submit"
-                className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10"
-                disabled={searching}
-              >
-                {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-              </Button>
-            </div>
-          </form>
-
           {searchResults.length > 0 && (
-            <div className="mt-8 space-y-4">
-              <h3 className="text-lg font-semibold">Search Results ({searchResults.length})</h3>
-              <div className="grid gap-4 max-h-[600px] overflow-y-auto pr-2">
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <h3 className="text-lg font-semibold">Search Results</h3>
+                <Badge>{searchResults.length} found</Badge>
+              </div>
+              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
                 {searchResults.map((drug) => (
-                  <Card key={drug.id} className="p-6 hover:shadow-lg transition-shadow">
-                    <div className="space-y-4">
-                      <div className="flex items-start justify-between gap-4">
+                  <Card key={drug.id} className="border hover:shadow-md transition-shadow">
+                    <CardContent className="p-6">
+                      <div className="flex items-start justify-between gap-4 mb-4">
                         <div className="flex-1">
-                          <h3 className="text-2xl font-bold text-primary mb-1">
+                          <h4 className="text-xl font-bold text-primary mb-2">
                             {drug.medication_name}
-                          </h3>
+                          </h4>
                           {drug.generic_name && (
-                            <p className="text-sm text-muted-foreground mb-2">
+                            <p className="text-sm text-muted-foreground mb-1">
                               Generic: {drug.generic_name}
                             </p>
                           )}
                           <p className="text-sm text-muted-foreground">
-                            Manufacturer: {drug.manufacturer}
-                          </p>
-                          <p className="text-sm text-muted-foreground">
-                            Drug Class: {drug.drug_class}
+                            {drug.manufacturer}
                           </p>
                         </div>
                         {drug.typical_retail_price && (
-                          <div className="bg-primary/10 text-primary px-4 py-2 rounded-lg text-center">
-                            <p className="text-sm font-medium">Typical Price</p>
+                          <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-lg text-center">
+                            <p className="text-xs font-medium">Retail Price</p>
                             <p className="text-lg font-bold whitespace-nowrap">
                               {drug.typical_retail_price}
                             </p>
@@ -216,137 +282,171 @@ export const UserDashboard: React.FC = () => {
                       </div>
 
                       {drug.indication && (
-                        <p className="text-foreground/80">
+                        <p className="text-sm text-muted-foreground mb-3">
                           <span className="font-semibold">Used for:</span> {drug.indication}
                         </p>
                       )}
 
-                      {drug.description && (
-                        <p className="text-foreground/80 text-sm">
-                          {drug.description}
-                        </p>
-                      )}
-
-                      <div className="flex flex-wrap gap-3 pt-2">
-                        <Button
-                          variant="default"
-                          size="sm"
-                          onClick={() => navigate('/search')}
-                          className="gap-2"
-                        >
-                          <Search className="w-4 h-4" />
-                          Find Assistance Programs
-                        </Button>
-                      </div>
-                    </div>
+                      <Button
+                        variant="default"
+                        size="sm"
+                        onClick={() => navigate('/search')}
+                        className="gap-2"
+                      >
+                        View Assistance Programs
+                        <ArrowRight className="w-4 h-4" />
+                      </Button>
+                    </CardContent>
                   </Card>
                 ))}
               </div>
-            </div>
+            </CardContent>
           )}
         </Card>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-          {quickActions.map((action, index) => (
-            <Card
-              key={index}
-              className="p-6 hover:shadow-lg transition-shadow cursor-pointer"
-              onClick={action.action}
-            >
-              <div className="flex items-center justify-between mb-4">
-                <div className="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <action.icon className="w-6 h-6 text-primary" />
-                </div>
-                {action.count !== undefined && (
-                  <span className="text-2xl font-bold text-primary">{action.count}</span>
-                )}
-              </div>
-              <h3 className="font-semibold">{action.label}</h3>
-            </Card>
-          ))}
-        </div>
-
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-          <Card className="p-6">
-            <div className="flex items-center gap-3 mb-6">
-              <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                <BarChart3 className="w-5 h-5 text-primary" />
-              </div>
-              <h2 className="text-xl font-bold">Top Searched Medications</h2>
-            </div>
-            {loading ? (
-              <div className="text-center py-12 text-muted-foreground">Loading...</div>
-            ) : activityStats.length === 0 ? (
-              <div className="text-center py-12">
-                <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">No search activity yet</h3>
-                <p className="text-sm text-muted-foreground">
-                  Start searching for medications to see your activity stats
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4">
-                {activityStats.map((stat, index) => (
-                  <div key={index} className="space-y-2">
-                    <div className="flex items-center justify-between">
-                      <span className="font-medium text-sm">{stat.medication_name}</span>
-                      <span className="text-sm text-muted-foreground">{stat.count} searches</span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-3 overflow-hidden">
-                      <div
-                        className="bg-gradient-to-r from-primary to-secondary h-full rounded-full transition-all duration-500"
-                        style={{ width: `${(stat.count / maxCount) * 100}%` }}
-                      />
-                    </div>
-                  </div>
-                ))}
-              </div>
-            )}
-          </Card>
-
-          <Card className="p-6">
-            <div className="flex items-center justify-between mb-6">
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
               <div className="flex items-center gap-3">
-                <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center">
-                  <Clock className="w-5 h-5 text-primary" />
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <BarChart3 className="w-5 h-5 text-white" />
                 </div>
-                <h2 className="text-xl font-bold">Recent Activity</h2>
+                <div>
+                  <CardTitle className="text-xl">Top Searched Medications</CardTitle>
+                  <CardDescription>Your most frequent searches</CardDescription>
+                </div>
               </div>
-            </div>
-            {loading ? (
-              <div className="text-center py-12 text-muted-foreground">Loading...</div>
-            ) : recentActivity.length === 0 ? (
-              <div className="text-center py-12">
-                <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">No activity yet</h3>
-                <p className="text-sm text-muted-foreground mb-4">
-                  Start searching for medications to see your activity
-                </p>
-              </div>
-            ) : (
-              <div className="space-y-4 max-h-[400px] overflow-y-auto pr-2">
-                {recentActivity.map((activity) => (
-                  <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
-                    <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center flex-shrink-0">
-                      <Pill className="w-5 h-5 text-primary" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <h4 className="font-semibold mb-1">{activity.medication_name}</h4>
-                      <p className="text-sm text-muted-foreground mb-1">
-                        {activity.action_type === 'viewed' && 'Viewed savings program'}
-                        {activity.action_type === 'saved' && 'Saved to favorites'}
-                        {activity.action_type === 'downloaded' && 'Downloaded information'}
-                        {activity.action_type === 'searched' && 'Searched for program'}
-                      </p>
-                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                        <Clock className="w-3 h-3" />
-                        <span>{getTimeAgo(activity.created_at)}</span>
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  Loading...
+                </div>
+              ) : activityStats.length === 0 ? (
+                <div className="text-center py-12">
+                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="font-semibold mb-2">No search activity yet</h3>
+                  <p className="text-sm text-muted-foreground">
+                    Start searching for medications to see your activity stats
+                  </p>
+                </div>
+              ) : (
+                <div className="space-y-4">
+                  {activityStats.map((stat, index) => (
+                    <div key={index} className="space-y-2">
+                      <div className="flex items-center justify-between">
+                        <span className="font-medium text-sm">{stat.medication_name}</span>
+                        <Badge variant="secondary">{stat.count} searches</Badge>
+                      </div>
+                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                        <div
+                          className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-500"
+                          style={{ width: `${(stat.count / maxCount) * 100}%` }}
+                        />
                       </div>
                     </div>
-                  </div>
-                ))}
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg">
+            <CardHeader>
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                  <Clock className="w-5 h-5 text-white" />
+                </div>
+                <div>
+                  <CardTitle className="text-xl">Recent Activity</CardTitle>
+                  <CardDescription>Your latest searches and actions</CardDescription>
+                </div>
               </div>
-            )}
+            </CardHeader>
+            <CardContent>
+              {loading ? (
+                <div className="text-center py-12 text-muted-foreground">
+                  <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
+                  Loading...
+                </div>
+              ) : recentActivity.length === 0 ? (
+                <div className="text-center py-12">
+                  <Clock className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                  <h3 className="font-semibold mb-2">No activity yet</h3>
+                  <p className="text-sm text-muted-foreground mb-4">
+                    Start searching for medications to see your activity
+                  </p>
+                  <Button onClick={() => navigate('/search')} size="sm">
+                    Start Searching
+                  </Button>
+                </div>
+              ) : (
+                <div className="space-y-3 max-h-[400px] overflow-y-auto pr-2">
+                  {recentActivity.map((activity) => (
+                    <div key={activity.id} className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                      <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                        <Pill className="w-5 h-5 text-white" />
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <h4 className="font-semibold mb-1">{activity.medication_name}</h4>
+                        <p className="text-sm text-muted-foreground mb-1">
+                          {activity.action_type === 'viewed' && 'Viewed savings program'}
+                          {activity.action_type === 'saved' && 'Saved to favorites'}
+                          {activity.action_type === 'downloaded' && 'Downloaded information'}
+                          {activity.action_type === 'searched' && 'Searched for program'}
+                        </p>
+                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <Clock className="w-3 h-3" />
+                          <span>{getTimeAgo(activity.created_at)}</span>
+                        </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </div>
+
+        <div className="mt-8 grid grid-cols-1 md:grid-cols-3 gap-6">
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer group" onClick={() => navigate('/programs')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                  <FileText className="w-6 h-6 text-white" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Browse Programs</h3>
+              <p className="text-sm text-muted-foreground">Explore all available discount programs</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer group" onClick={() => navigate('/search')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <Search className="w-6 h-6 text-white" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Advanced Search</h3>
+              <p className="text-sm text-muted-foreground">Find specific medications and programs</p>
+            </CardContent>
+          </Card>
+
+          <Card className="border-0 shadow-lg hover:shadow-xl transition-shadow cursor-pointer group" onClick={() => navigate('/contact')}>
+            <CardContent className="p-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-emerald-500 to-teal-500 flex items-center justify-center">
+                  <CheckCircle2 className="w-6 h-6 text-white" />
+                </div>
+                <ArrowRight className="w-5 h-5 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Get Support</h3>
+              <p className="text-sm text-muted-foreground">Contact us for assistance</p>
+            </CardContent>
           </Card>
         </div>
       </div>

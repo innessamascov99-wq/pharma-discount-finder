@@ -34,13 +34,22 @@ export const SearchBar: React.FC = () => {
     setSearchMethod('');
 
     try {
+      console.log('SearchBar: Starting search for:', query);
       const results = await searchPharmaPrograms(query, 20);
+      console.log('SearchBar: Received', results.length, 'results');
+
       setSearchResults(results);
       setShowResults(true);
-      setSearchMethod(results.length > 0 ? 'Smart text search' : 'No results found');
-    } catch (error) {
-      console.error('Search failed:', error);
-      setSearchError('Search failed. Please try again.');
+
+      if (results.length > 0) {
+        setSearchMethod(`Found ${results.length} matching programs`);
+      } else {
+        setSearchMethod('No programs match your search. Try different keywords.');
+        setSearchError(null);
+      }
+    } catch (error: any) {
+      console.error('SearchBar: Search failed with error:', error);
+      setSearchError(error?.message || 'Search failed. Please check your connection and try again.');
       setSearchResults([]);
       setSearchMethod('');
     } finally {

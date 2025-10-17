@@ -1,17 +1,9 @@
 import React, { useState, useCallback } from 'react';
-import { HeroSection } from '../components/HeroSection';
-import { TrustBadges } from '../components/TrustBadges';
 import { SearchBar } from '../components/SearchBar';
 import { SearchResults } from '../components/SearchResults';
-import { HowItWorks } from '../components/HowItWorks';
-import { FeaturesGrid } from '../components/FeaturesGrid';
-import { ProgramPreview } from '../components/ProgramPreview';
-import { TrustTransparency } from '../components/TrustTransparency';
-import { ChatBot } from '../components/ChatBot';
-import { DatabaseStatus } from '../components/DatabaseStatus';
 import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
 
-export const Home: React.FC = () => {
+export const Search: React.FC = () => {
   const [results, setResults] = useState<PharmaProgram[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState('');
@@ -42,17 +34,15 @@ export const Home: React.FC = () => {
   }, []);
 
   return (
-    <>
-      <HeroSection />
-
-      <section className="py-20 bg-muted/30">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+    <div className="min-h-screen bg-background">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="pt-24 pb-16">
           <div className="text-center mb-12">
-            <h2 className="text-3xl md:text-4xl font-bold mb-4">
+            <h1 className="text-4xl md:text-5xl font-bold mb-4 bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
               Find Your Medication Discount
-            </h2>
-            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-              Search thousands of pharmaceutical assistance programs
+            </h1>
+            <p className="text-xl text-muted-foreground max-w-2xl mx-auto">
+              Search thousands of pharmaceutical assistance programs to save on your prescriptions
             </p>
           </div>
 
@@ -78,15 +68,7 @@ export const Home: React.FC = () => {
             searchQuery={searchQuery}
           />
         </div>
-      </section>
-
-      <ProgramPreview />
-      <TrustBadges />
-      <HowItWorks />
-      <FeaturesGrid />
-      <TrustTransparency />
-      <ChatBot name="Jack" />
-      <DatabaseStatus />
-    </>
+      </div>
+    </div>
   );
 };

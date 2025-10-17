@@ -26,7 +26,7 @@ Deno.serve(async (req: Request) => {
     const supabase = createClient(supabaseUrl, supabaseKey);
 
     if (req.method === 'POST') {
-      const { query, limit = 10 }: SearchRequest = await req.json();
+      const { query, limit = 15 }: SearchRequest = await req.json();
 
       if (!query) {
         return new Response(
@@ -46,12 +46,12 @@ Deno.serve(async (req: Request) => {
 
       console.log('Generated embedding, length:', embedding.length);
 
-      // Perform vector similarity search
+      // Perform vector similarity search with optimized parameters
       const { data: vectorResults, error: vectorError } = await supabase
         .rpc('search_pharma_programs_vector', {
           query_embedding: embedding,
-          match_threshold: 0.2,
-          match_count: limit,
+          match_threshold: 0.7,
+          match_count: limit || 15,
         });
 
       if (vectorError) {

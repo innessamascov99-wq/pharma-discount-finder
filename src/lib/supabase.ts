@@ -10,7 +10,7 @@ const CORRECT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhY
 const STORAGE_KEY = `sb-${CORRECT_PROJECT_REF}-auth-token`;
 
 // List of old/incorrect project refs to clean up
-const OLD_PROJECT_REFS = ['asqsltuwmqdvayjmwsjs'];
+const OLD_PROJECT_REFS = ['asqsltuwmqdvayjmwsjs', '0ec90b57d6e95fcbda19832f'];
 
 // ALWAYS use the correct URL, ignore environment variables to prevent accidental changes
 const supabaseUrl = CORRECT_SUPABASE_URL;
@@ -89,14 +89,14 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
 // Verify connection on initialization
 if (typeof window !== 'undefined') {
   supabase
-    .from('pharma_programs')
+    .from('drugs')
     .select('count', { count: 'exact', head: true })
     .eq('active', true)
     .then(({ count, error }) => {
       if (error) {
         console.error('❌ Supabase connection error:', error.message);
       } else {
-        console.log('✅ Supabase connected successfully. Active programs:', count);
+        console.log('✅ Supabase connected successfully. Active drugs:', count);
       }
     });
 }

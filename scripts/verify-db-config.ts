@@ -3,7 +3,7 @@
  * Database Configuration Verification Tool
  *
  * This script ensures all database connections point to the correct Supabase instance:
- * https://nuhfqkhplldontxtoxkg.supabase.co
+ * https://asqsltuwmqdvayjmwsjs.supabase.co
  *
  * It checks and corrects:
  * - .env file
@@ -14,9 +14,9 @@
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const CORRECT_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
-const CORRECT_PROJECT_REF = 'nuhfqkhplldontxtoxkg';
-const CORRECT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+const CORRECT_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
+const CORRECT_PROJECT_REF = 'asqsltuwmqdvayjmwsjs';
+const CORRECT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
 
 interface CheckResult {
   file: string;
@@ -116,28 +116,19 @@ function checkSupabaseClient(): void {
 
   const content = readFileSync(supabasePath, 'utf-8');
 
-  // Check if it uses the correct URL or project ref (either hardcoded or via env vars)
-  if (content.includes(CORRECT_URL) || content.includes(CORRECT_PROJECT_REF)) {
-    // Check if it's locked/hardcoded (preferred for stability)
-    if (content.includes('LOCKED CONFIGURATION') || content.includes('CORRECT_SUPABASE_URL') || content.includes('CORRECT_PROJECT_REF')) {
-      results.push({
-        file: 'src/lib/supabase.ts',
-        status: 'ok',
-        message: 'Configuration locked to correct database (hardcoded)'
-      });
-    } else if (content.includes('import.meta.env.VITE_SUPABASE_URL')) {
-      results.push({
-        file: 'src/lib/supabase.ts',
-        status: 'ok',
-        message: 'Using environment variables with correct database'
-      });
-    } else {
-      results.push({
-        file: 'src/lib/supabase.ts',
-        status: 'ok',
-        message: 'Configured with correct database URL'
-      });
-    }
+  // Check if it uses environment variables (preferred approach)
+  if (content.includes('import.meta.env.VITE_SUPABASE_URL')) {
+    results.push({
+      file: 'src/lib/supabase.ts',
+      status: 'ok',
+      message: 'Using environment variables (.env file controls configuration)'
+    });
+  } else if (content.includes(CORRECT_URL) || content.includes(CORRECT_PROJECT_REF)) {
+    results.push({
+      file: 'src/lib/supabase.ts',
+      status: 'ok',
+      message: 'Configuration locked to correct database (hardcoded)'
+    });
   } else {
     results.push({
       file: 'src/lib/supabase.ts',

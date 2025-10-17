@@ -11,6 +11,7 @@ import { FAQ } from './pages/FAQ';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
 import { Programs } from './pages/Programs';
+import { Search } from './pages/Search';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthCallback } from './pages/AuthCallback';
@@ -66,6 +67,7 @@ function AppContent() {
               <Route path="/about" element={<About />} />
               <Route path="/contact" element={<Contact />} />
               <Route path="/programs" element={<Programs />} />
+              <Route path="/search" element={<Search />} />
               <Route path="/dashboard" element={<UserDashboard />} />
               <Route path="/admin" element={<AdminDashboard />} />
             </Routes>

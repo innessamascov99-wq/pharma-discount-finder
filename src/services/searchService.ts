@@ -99,7 +99,7 @@ const vectorSearch = async (searchTerm: string, limit: number = 15): Promise<Pha
 
 const fallbackTextSearch = async (searchTerm: string, limit: number = 15): Promise<PharmaProgram[]> => {
   try {
-    console.log('Using fallback text search...');
+    console.log('Using optimized text search...');
     const lowerSearchTerm = searchTerm.toLowerCase();
 
     const { data, error } = await supabase
@@ -111,20 +111,52 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 15): Promi
         `generic_name.ilike.%${lowerSearchTerm}%,` +
         `manufacturer.ilike.%${lowerSearchTerm}%,` +
         `program_name.ilike.%${lowerSearchTerm}%,` +
-        `program_description.ilike.%${lowerSearchTerm}%`
-      )
-      .order('medication_name', { ascending: true })
-      .limit(limit);
+        `program_description.ilike.%${lowerSearchTerm}%,` +
+        `eligibility_criteria.ilike.%${lowerSearchTerm}%`
+      );
 
     if (error) {
-      console.error('Fallback search error:', error);
+      console.error('Text search error:', error);
       return [];
     }
 
-    console.log(`Fallback search returned ${data?.length || 0} results`);
-    return data || [];
+    if (!data || data.length === 0) {
+      return [];
+    }
+
+    const results = data.map(program => {
+      let relevanceScore = 0;
+      const term = lowerSearchTerm;
+      const medName = program.medication_name?.toLowerCase() || '';
+      const genName = program.generic_name?.toLowerCase() || '';
+      const manu = program.manufacturer?.toLowerCase() || '';
+      const progName = program.program_name?.toLowerCase() || '';
+
+      if (medName === term) relevanceScore += 100;
+      else if (medName.startsWith(term)) relevanceScore += 80;
+      else if (medName.includes(term)) relevanceScore += 40;
+
+      if (genName === term) relevanceScore += 90;
+      else if (genName.startsWith(term)) relevanceScore += 70;
+      else if (genName.includes(term)) relevanceScore += 35;
+
+      if (manu.includes(term)) relevanceScore += 20;
+      if (progName.includes(term)) relevanceScore += 15;
+
+      return {
+        ...program,
+        similarity: relevanceScore / 100
+      };
+    });
+
+    results.sort((a, b) => (b.similarity || 0) - (a.similarity || 0));
+
+    const topResults = results.slice(0, limit);
+    console.log(`Optimized search returned ${topResults.length} results`);
+
+    return topResults;
   } catch (err) {
-    console.error('Unexpected fallback search error:', err);
+    console.error('Unexpected text search error:', err);
     return [];
   }
 };

@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Embeddings - Simple</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #log {
+      margin-top: 20px;
+      padding: 20px;
+      background: #f5f5f5;
+      border-radius: 8px;
+      max-height: 400px;
+      overflow-y: auto;
+      font-family: monospace;
+      font-size: 12px;
+    }
+    .log-line {
+      margin: 5px 0;
+      padding: 5px;
+      border-left: 3px solid #ddd;
+      padding-left: 10px;
+    }
+    .log-success { border-left-color: #4caf50; color: #2e7d32; }
+    .log-error { border-left-color: #f44336; color: #c62828; }
+    .log-info { border-left-color: #2196f3; color: #1565c0; }
+    .progress {
+      margin: 20px 0;
+      background: #e0e0e0;
+      border-radius: 8px;
+      height: 30px;
+      overflow: hidden;
+    }
+    .progress-bar {
+      height: 100%;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      transition: width 0.3s;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      color: white;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Generate Embeddings</h1>
+    <p>This will generate AI embeddings for all pharmaceutical programs to enable semantic search.</p>
+
+    <button id="generateBtn" onclick="generateEmbeddings()">Generate Embeddings Now</button>
+
+    <div class="progress" id="progressContainer" style="display: none;">
+      <div class="progress-bar" id="progressBar">0%</div>
+    </div>
+
+    <div id="log"></div>
+  </div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    function log(message, type = 'info') {
+      const logDiv = document.getElementById('log');
+      const line = document.createElement('div');
+      line.className = `log-line log-${type}`;
+      line.textContent = `[${new Date().toLocaleTimeString()}] ${message}`;
+      logDiv.appendChild(line);
+      logDiv.scrollTop = logDiv.scrollHeight;
+    }
+
+    function updateProgress(current, total) {
+      const percent = Math.round((current / total) * 100);
+      const progressBar = document.getElementById('progressBar');
+      progressBar.style.width = `${percent}%`;
+      progressBar.textContent = `${current}/${total} (${percent}%)`;
+    }
+
+    async function generateEmbeddings() {
+      const btn = document.getElementById('generateBtn');
+      const progressContainer = document.getElementById('progressContainer');
+
+      btn.disabled = true;
+      progressContainer.style.display = 'block';
+      document.getElementById('log').innerHTML = '';
+
+      try {
+        log('Connecting to Supabase...', 'info');
+
+        const { createClient } = await import('https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm');
+        const supabase = createClient(SUPABASE_URL, SUPABASE_KEY);
+
+        // Fetch programs needing embeddings
+        log('Fetching programs without embeddings...', 'info');
+        const { data: programs, error: fetchError } = await supabase
+          .from('pharma_programs')
+          .select('*')
+          .eq('active', true)
+          .is('embedding', null);
+
+        if (fetchError) {
+          log(`Error fetching programs: ${fetchError.message}`, 'error');
+          throw fetchError;
+        }
+
+        if (!programs || programs.length === 0) {
+          log('All programs already have embeddings!', 'success');
+          btn.disabled = false;
+          return;
+        }
+
+        log(`Found ${programs.length} programs needing embeddings`, 'info');
+
+        // Generate embeddings using edge function
+        let successCount = 0;
+        let errorCount = 0;
+
+        for (let i = 0; i < programs.length; i++) {
+          const program = programs[i];
+          updateProgress(i, programs.length);
+
+          try {
+            log(`Processing: ${program.medication_name}`, 'info');
+
+            // Create searchable text
+            const searchText = [
+              program.medication_name,
+              program.generic_name,
+              program.manufacturer,
+              program.program_name,
+              program.program_description,
+              program.eligibility_criteria
+            ]
+              .filter(Boolean)
+              .join(' ');
+
+            // Call pharma-search to generate embedding (it will cache it)
+            const response = await fetch(`${SUPABASE_URL}/functions/v1/pharma-search`, {
+              method: 'POST',
+              headers: {
+                'Authorization': `Bearer ${SUPABASE_KEY}`,
+                'Content-Type': 'application/json',
+              },
+              body: JSON.stringify({
+                query: searchText.substring(0, 200),
+                limit: 1
+              })
+            });
+
+            if (response.ok) {
+              log(`✓ ${program.medication_name}`, 'success');
+              successCount++;
+            } else {
+              log(`✗ ${program.medication_name}: ${response.statusText}`, 'error');
+              errorCount++;
+            }
+
+            // Small delay to avoid rate limiting
+            await new Promise(resolve => setTimeout(resolve, 100));
+
+          } catch (error) {
+            log(`✗ ${program.medication_name}: ${error.message}`, 'error');
+            errorCount++;
+          }
+        }
+
+        updateProgress(programs.length, programs.length);
+        log('', 'info');
+        log(`✅ Complete! Success: ${successCount}, Errors: ${errorCount}`, 'success');
+        log('Your search is now optimized with AI embeddings!', 'success');
+
+      } catch (error) {
+        log(`Fatal error: ${error.message}`, 'error');
+      } finally {
+        btn.disabled = false;
+      }
+    }
+
+    window.generateEmbeddings = generateEmbeddings;
+  </script>
+</body>
+</html>

@@ -1,0 +1,78 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Pharma Search</title>
+</head>
+<body>
+  <h1>Testing Pharma Search</h1>
+  <div id="results"></div>
+
+  <script type="module">
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const resultsDiv = document.getElementById('results');
+
+    async function testDatabase() {
+      resultsDiv.innerHTML = '<p>Testing database connection...</p>';
+
+      try {
+        // Test 1: Direct table query
+        console.log('Test 1: Querying pharma_programs table directly...');
+        const response1 = await fetch(
+          `${SUPABASE_URL}/rest/v1/pharma_programs?select=*&limit=5`,
+          {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            }
+          }
+        );
+
+        console.log('Direct query status:', response1.status);
+        const data1 = await response1.json();
+        console.log('Direct query data:', data1);
+
+        if (!response1.ok) {
+          resultsDiv.innerHTML += `<p style="color: red;">❌ Database Error: ${JSON.stringify(data1)}</p>`;
+        } else {
+          resultsDiv.innerHTML += `<p style="color: green;">✅ Database connected! Found ${data1.length} programs</p>`;
+          resultsDiv.innerHTML += `<pre>${JSON.stringify(data1, null, 2)}</pre>`;
+        }
+
+        // Test 2: pharma-search edge function
+        console.log('Test 2: Testing pharma-search edge function...');
+        const response2 = await fetch(
+          `${SUPABASE_URL}/functions/v1/pharma-search`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({ query: 'Mounjaro', limit: 5 })
+          }
+        );
+
+        console.log('Edge function status:', response2.status);
+        const data2 = await response2.json();
+        console.log('Edge function data:', data2);
+
+        if (!response2.ok) {
+          resultsDiv.innerHTML += `<p style="color: orange;">⚠️ Edge function not available (Status ${response2.status})</p>`;
+          resultsDiv.innerHTML += `<pre>${JSON.stringify(data2, null, 2)}</pre>`;
+        } else {
+          resultsDiv.innerHTML += `<p style="color: green;">✅ Edge function working!</p>`;
+          resultsDiv.innerHTML += `<pre>${JSON.stringify(data2, null, 2)}</pre>`;
+        }
+
+      } catch (error) {
+        resultsDiv.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+        console.error('Test error:', error);
+      }
+    }
+
+    testDatabase();
+  </script>
+</body>
+</html>

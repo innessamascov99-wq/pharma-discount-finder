@@ -33,12 +33,27 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
 
   const searchTerm = query.trim();
 
+  console.log('🔍 Searching for:', searchTerm);
+  console.log('📊 Database URL:', import.meta.env.VITE_SUPABASE_URL);
+
+  // Try direct text search first (edge function may not be deployed)
   try {
-    console.log('Performing vector search for:', searchTerm);
+    const results = await fallbackTextSearch(searchTerm, limit);
+    if (results.length > 0) {
+      console.log('✅ Found', results.length, 'results via text search');
+      return results;
+    }
+  } catch (err) {
+    console.error('Text search error:', err);
+  }
+
+  // Try vector search if text search returns nothing
+  try {
+    console.log('Attempting vector search...');
     return await vectorSearch(searchTerm, limit);
   } catch (err) {
-    console.error('Vector search failed, using fallback:', err);
-    return await fallbackTextSearch(searchTerm, limit);
+    console.error('Vector search failed:', err);
+    return [];
   }
 };
 

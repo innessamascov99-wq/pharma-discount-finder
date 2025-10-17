@@ -30,7 +30,7 @@ export interface PharmaProgram {
  */
 export const searchPharmaPrograms = async (
   query: string,
-  limit: number = 20
+  _limit: number = 20
 ): Promise<PharmaProgram[]> => {
   // Validate input
   if (!query || query.trim().length === 0) {
@@ -45,10 +45,9 @@ export const searchPharmaPrograms = async (
   const startTime = performance.now();
 
   try {
-    // Primary method: Use optimized RPC function with pg_trgm
-    const { data, error } = await supabase.rpc('search_pharma_programs', {
-      search_query: searchTerm,
-      result_limit: limit
+    // Use simplified RPC function with single parameter to avoid schema cache issues
+    const { data, error } = await supabase.rpc('search_pharma_simple', {
+      search_query: searchTerm
     });
 
     const duration = performance.now() - startTime;

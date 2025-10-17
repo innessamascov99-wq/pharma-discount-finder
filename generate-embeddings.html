@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Generate Embeddings</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 10px;
+    }
+    .subtitle {
+      color: #666;
+      margin-bottom: 30px;
+    }
+    button {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      padding: 15px 40px;
+      font-size: 16px;
+      font-weight: 600;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: transform 0.2s;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 5px 20px rgba(102, 126, 234, 0.4);
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+      transform: none;
+    }
+    #status {
+      margin-top: 30px;
+      padding: 20px;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-family: monospace;
+      font-size: 14px;
+      line-height: 1.6;
+    }
+    .loading {
+      background: #e3f2fd;
+      border-left: 4px solid #2196f3;
+    }
+    .success {
+      background: #e8f5e9;
+      border-left: 4px solid #4caf50;
+    }
+    .error {
+      background: #ffebee;
+      border-left: 4px solid #f44336;
+    }
+    .spinner {
+      display: inline-block;
+      width: 20px;
+      height: 20px;
+      border: 3px solid rgba(102, 126, 234, 0.3);
+      border-radius: 50%;
+      border-top-color: #667eea;
+      animation: spin 1s ease-in-out infinite;
+      margin-right: 10px;
+    }
+    @keyframes spin {
+      to { transform: rotate(360deg); }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🚀 Generate Embeddings</h1>
+    <p class="subtitle">Click the button below to generate AI embeddings for all 28 pharmaceutical discount programs.</p>
+
+    <button id="generateBtn" onclick="generateEmbeddings()">
+      Generate Embeddings for All Programs
+    </button>
+
+    <div id="status"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
+
+    async function generateEmbeddings() {
+      const statusDiv = document.getElementById('status');
+      const button = document.getElementById('generateBtn');
+
+      button.disabled = true;
+      statusDiv.className = 'loading';
+      statusDiv.innerHTML = '<span class="spinner"></span>Connecting to Supabase Edge Function...\n';
+
+      try {
+        statusDiv.innerHTML += '📡 Calling generate-embeddings function...\n';
+        statusDiv.innerHTML += '⏳ This will take 30-60 seconds for 28 programs...\n\n';
+
+        const response = await fetch(
+          `${SUPABASE_URL}/functions/v1/generate-embeddings`,
+          {
+            method: 'POST',
+            headers: {
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+              'Content-Type': 'application/json',
+            },
+            body: JSON.stringify({})
+          }
+        );
+
+        statusDiv.innerHTML += `📊 Response Status: ${response.status} ${response.statusText}\n\n`;
+
+        if (!response.ok) {
+          throw new Error(`HTTP ${response.status}: ${response.statusText}`);
+        }
+
+        const result = await response.json();
+
+        statusDiv.className = 'success';
+        statusDiv.innerHTML += '═══════════════════════════════════════\n';
+        statusDiv.innerHTML += '✅ EMBEDDINGS GENERATED SUCCESSFULLY!\n';
+        statusDiv.innerHTML += '═══════════════════════════════════════\n\n';
+        statusDiv.innerHTML += `📊 Total Programs: ${result.total || 0}\n`;
+        statusDiv.innerHTML += `✅ Successfully Embedded: ${result.success || 0}\n`;
+        statusDiv.innerHTML += `❌ Errors: ${result.errors || 0}\n\n`;
+        statusDiv.innerHTML += '🎉 Your search is now powered by AI!\n\n';
+        statusDiv.innerHTML += '💡 Try searching for:\n';
+        statusDiv.innerHTML += '   • "diabetes medication"\n';
+        statusDiv.innerHTML += '   • "heart disease drugs"\n';
+        statusDiv.innerHTML += '   • "cheapest Ozempic"\n\n';
+        statusDiv.innerHTML += 'Raw Response:\n';
+        statusDiv.innerHTML += JSON.stringify(result, null, 2);
+
+      } catch (error) {
+        statusDiv.className = 'error';
+        statusDiv.innerHTML += '\n❌ ERROR OCCURRED\n';
+        statusDiv.innerHTML += '═══════════════════════════════════════\n\n';
+        statusDiv.innerHTML += `Error: ${error.message}\n\n`;
+        statusDiv.innerHTML += 'Troubleshooting:\n';
+        statusDiv.innerHTML += '1. Check if edge function is deployed\n';
+        statusDiv.innerHTML += '2. Verify database URL is correct\n';
+        statusDiv.innerHTML += '3. Check browser console for details\n';
+
+        console.error('Full error:', error);
+        button.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>

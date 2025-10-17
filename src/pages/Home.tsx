@@ -7,6 +7,7 @@ import { FeaturesGrid } from '../components/FeaturesGrid';
 import { ProgramPreview } from '../components/ProgramPreview';
 import { TrustTransparency } from '../components/TrustTransparency';
 import { ChatBot } from '../components/ChatBot';
+import { DatabaseStatus } from '../components/DatabaseStatus';
 
 export const Home: React.FC = () => {
   return (
@@ -19,6 +20,7 @@ export const Home: React.FC = () => {
       <FeaturesGrid />
       <TrustTransparency />
       <ChatBot name="Jack" />
+      <DatabaseStatus />
     </>
   );
 };

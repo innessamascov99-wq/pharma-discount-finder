@@ -1,0 +1,477 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Comprehensive Search Test Suite</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body {
+      font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      min-height: 100vh;
+      padding: 30px;
+    }
+    .container {
+      max-width: 1200px;
+      margin: 0 auto;
+      background: white;
+      border-radius: 16px;
+      padding: 40px;
+      box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #1a202c;
+      font-size: 32px;
+      margin-bottom: 10px;
+    }
+    h2 {
+      color: #2d3748;
+      font-size: 24px;
+      margin: 30px 0 15px 0;
+      padding-top: 20px;
+      border-top: 2px solid #e2e8f0;
+    }
+    .test-section {
+      margin-bottom: 30px;
+    }
+    .test-case {
+      background: #f7fafc;
+      border: 1px solid #e2e8f0;
+      border-radius: 8px;
+      padding: 20px;
+      margin-bottom: 15px;
+    }
+    .test-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 10px;
+    }
+    .test-name {
+      font-weight: 700;
+      font-size: 16px;
+      color: #2d3748;
+    }
+    .test-status {
+      padding: 4px 12px;
+      border-radius: 4px;
+      font-size: 12px;
+      font-weight: 600;
+    }
+    .status-pending {
+      background: #e2e8f0;
+      color: #4a5568;
+    }
+    .status-running {
+      background: #bee3f8;
+      color: #2c5282;
+      animation: pulse 2s infinite;
+    }
+    .status-pass {
+      background: #c6f6d5;
+      color: #22543d;
+    }
+    .status-fail {
+      background: #fed7d7;
+      color: #742a2a;
+    }
+    @keyframes pulse {
+      0%, 100% { opacity: 1; }
+      50% { opacity: 0.7; }
+    }
+    .test-details {
+      font-size: 14px;
+      color: #4a5568;
+      line-height: 1.6;
+    }
+    .test-result {
+      margin-top: 10px;
+      padding: 10px;
+      border-radius: 4px;
+      font-size: 13px;
+      font-family: monospace;
+    }
+    .result-pass {
+      background: #c6f6d5;
+      border: 1px solid #9ae6b4;
+      color: #22543d;
+    }
+    .result-fail {
+      background: #fed7d7;
+      border: 1px solid #fc8181;
+      color: #742a2a;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 14px;
+      font-weight: 600;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 8px;
+      cursor: pointer;
+      transition: all 0.2s;
+      margin-right: 10px;
+    }
+    button:hover {
+      transform: translateY(-2px);
+      box-shadow: 0 6px 20px rgba(102, 126, 234, 0.3);
+    }
+    button:disabled {
+      opacity: 0.6;
+      cursor: not-allowed;
+      transform: none;
+    }
+    .summary {
+      background: #edf2f7;
+      padding: 20px;
+      border-radius: 8px;
+      margin-top: 30px;
+    }
+    .summary-stat {
+      display: inline-block;
+      margin-right: 20px;
+      font-size: 18px;
+      font-weight: 600;
+    }
+    .pass-count { color: #22543d; }
+    .fail-count { color: #742a2a; }
+    .config-info {
+      background: #edf2f7;
+      padding: 15px;
+      border-radius: 8px;
+      margin-bottom: 20px;
+      font-size: 14px;
+      font-family: monospace;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔬 Comprehensive Search Test Suite</h1>
+    <p style="color: #718096; margin-bottom: 20px;">Testing all aspects of the pharmaceutical program search functionality</p>
+
+    <div class="config-info">
+      <strong>Supabase URL:</strong> <span id="configUrl"></span><br>
+      <strong>Test Database:</strong> <span id="testDatabase"></span>
+    </div>
+
+    <div>
+      <button onclick="runAllTests()">▶️ Run All Tests</button>
+      <button onclick="runDatabaseTests()">🗄️ Database Tests Only</button>
+      <button onclick="runSearchTests()">🔍 Search Tests Only</button>
+      <button onclick="clearResults()">🗑️ Clear Results</button>
+    </div>
+
+    <div id="testResults"></div>
+
+    <div id="summary" class="summary" style="display: none;"></div>
+  </div>
+
+  <script>
+    const CORRECT_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const CORRECT_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(CORRECT_URL, CORRECT_KEY);
+
+    document.getElementById('configUrl').textContent = CORRECT_URL;
+    document.getElementById('testDatabase').textContent = 'nuhfqkhplldontxtoxkg';
+
+    const tests = {
+      database: [
+        {
+          name: 'DB-01: Connection Test',
+          description: 'Verify database connection is working',
+          test: async () => {
+            const { data, error } = await supabase.from('pharma_programs').select('id').limit(1);
+            if (error) throw new Error(`Connection failed: ${error.message}`);
+            return 'Database connection successful';
+          }
+        },
+        {
+          name: 'DB-02: Table Exists',
+          description: 'Verify pharma_programs table exists',
+          test: async () => {
+            const { data, error } = await supabase.from('pharma_programs').select('count', { count: 'exact', head: true });
+            if (error) throw new Error(`Table not found: ${error.message}`);
+            return `Table exists`;
+          }
+        },
+        {
+          name: 'DB-03: Data Count',
+          description: 'Verify we have 39 active programs',
+          test: async () => {
+            const { count, error } = await supabase.from('pharma_programs').select('*', { count: 'exact', head: true }).eq('active', true);
+            if (error) throw new Error(error.message);
+            if (count !== 39) throw new Error(`Expected 39 programs, found ${count}`);
+            return `Found ${count} active programs ✓`;
+          }
+        },
+        {
+          name: 'DB-04: RPC Function Exists',
+          description: 'Verify search_pharma_programs function exists',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'test', result_limit: 1 });
+            if (error && error.message.includes('function') && error.message.includes('does not exist')) {
+              throw new Error('RPC function not found');
+            }
+            return 'RPC function exists ✓';
+          }
+        },
+        {
+          name: 'DB-05: Sample Data Quality',
+          description: 'Check if data has required fields',
+          test: async () => {
+            const { data, error } = await supabase.from('pharma_programs').select('*').limit(1);
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No data found');
+
+            const program = data[0];
+            const required = ['medication_name', 'manufacturer', 'program_name', 'discount_amount'];
+            const missing = required.filter(field => !program[field]);
+
+            if (missing.length > 0) throw new Error(`Missing fields: ${missing.join(', ')}`);
+            return 'All required fields present ✓';
+          }
+        }
+      ],
+      search: [
+        {
+          name: 'SEARCH-01: Exact Match (Mounjaro)',
+          description: 'Search for "Mounjaro" should return exact match',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'Mounjaro', result_limit: 5 });
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No results returned');
+            if (data[0].medication_name.toLowerCase() !== 'mounjaro') throw new Error(`Expected Mounjaro, got ${data[0].medication_name}`);
+            if (data[0].similarity !== 1) throw new Error(`Expected similarity 1.0, got ${data[0].similarity}`);
+            return `Found ${data.length} result(s), exact match with similarity ${data[0].similarity} ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-02: Case Insensitive (OZEMPIC)',
+          description: 'Search should work regardless of case',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'OZEMPIC', result_limit: 5 });
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No results returned');
+            if (!data[0].medication_name.toLowerCase().includes('ozempic')) throw new Error('Ozempic not found');
+            return `Found ${data.length} result(s) ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-03: Partial Match (hum)',
+          description: 'Partial search should find Humira, Humalog',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'hum', result_limit: 10 });
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No results returned');
+            const hasHumira = data.some(p => p.medication_name.toLowerCase().includes('humira'));
+            const hasHumalog = data.some(p => p.medication_name.toLowerCase().includes('humalog'));
+            if (!hasHumira && !hasHumalog) throw new Error('Expected Humira or Humalog in results');
+            return `Found ${data.length} result(s) including Humira/Humalog ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-04: Generic Name (insulin)',
+          description: 'Search by generic name should work',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'insulin', result_limit: 10 });
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No results returned');
+            if (data.length < 5) throw new Error(`Expected at least 5 insulin products, got ${data.length}`);
+            return `Found ${data.length} insulin products ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-05: Manufacturer (Eli Lilly)',
+          description: 'Search by manufacturer should work',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'Eli Lilly', result_limit: 10 });
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No results returned');
+            const allEliLilly = data.every(p => p.manufacturer.toLowerCase().includes('eli lilly'));
+            if (!allEliLilly) throw new Error('Not all results from Eli Lilly');
+            return `Found ${data.length} Eli Lilly products ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-06: Typo Tolerance (Mounjro)',
+          description: 'Search with typo should still find Mounjaro',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'Mounjro', result_limit: 5 });
+            if (error) throw new Error(error.message);
+            if (!data || data.length === 0) throw new Error('No results returned');
+            const hasMounjaro = data.some(p => p.medication_name.toLowerCase().includes('mounjaro'));
+            if (!hasMounjaro) throw new Error('Mounjaro not found with typo');
+            return `Found ${data.length} result(s), fuzzy match working ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-07: Empty Query',
+          description: 'Empty query should return nothing',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: '', result_limit: 5 });
+            if (error) throw new Error(error.message);
+            if (data && data.length > 0) throw new Error('Should not return results for empty query');
+            return 'Empty query handled correctly ✓';
+          }
+        },
+        {
+          name: 'SEARCH-08: No Results',
+          description: 'Non-existent medication should return empty',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'xyzabc123notfound', result_limit: 5 });
+            if (error) throw new Error(error.message);
+            if (data && data.length > 0) throw new Error('Should not return results for non-existent medication');
+            return 'No results for non-existent medication ✓';
+          }
+        },
+        {
+          name: 'SEARCH-09: Performance Test',
+          description: 'Search should complete in < 200ms',
+          test: async () => {
+            const start = performance.now();
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'insulin', result_limit: 20 });
+            const duration = performance.now() - start;
+            if (error) throw new Error(error.message);
+            if (duration > 200) throw new Error(`Search took ${duration.toFixed(0)}ms (expected < 200ms)`);
+            return `Search completed in ${duration.toFixed(0)}ms ✓`;
+          }
+        },
+        {
+          name: 'SEARCH-10: Result Limit',
+          description: 'Result limit should be respected',
+          test: async () => {
+            const { data, error } = await supabase.rpc('search_pharma_programs', { search_query: 'a', result_limit: 3 });
+            if (error) throw new Error(error.message);
+            if (data && data.length > 3) throw new Error(`Expected max 3 results, got ${data.length}`);
+            return `Limit respected: ${data ? data.length : 0} results ✓`;
+          }
+        }
+      ]
+    };
+
+    let testResults = {};
+
+    function updateTestUI(category, testIndex, status, message) {
+      const testId = `${category}-${testIndex}`;
+      const testCase = document.getElementById(testId);
+
+      const statusEl = testCase.querySelector('.test-status');
+      statusEl.className = `test-status status-${status}`;
+      statusEl.textContent = status.toUpperCase();
+
+      const resultEl = testCase.querySelector('.test-result');
+      resultEl.className = `test-result result-${status === 'pass' ? 'pass' : 'fail'}`;
+      resultEl.textContent = message;
+      resultEl.style.display = 'block';
+
+      testResults[testId] = status;
+    }
+
+    function renderTests() {
+      const container = document.getElementById('testResults');
+      let html = '';
+
+      for (const [category, testList] of Object.entries(tests)) {
+        html += `<h2>${category.toUpperCase()} Tests</h2>`;
+        html += `<div class="test-section">`;
+
+        testList.forEach((test, index) => {
+          const testId = `${category}-${index}`;
+          html += `
+            <div class="test-case" id="${testId}">
+              <div class="test-header">
+                <div class="test-name">${test.name}</div>
+                <div class="test-status status-pending">PENDING</div>
+              </div>
+              <div class="test-details">${test.description}</div>
+              <div class="test-result" style="display: none;"></div>
+            </div>
+          `;
+        });
+
+        html += `</div>`;
+      }
+
+      container.innerHTML = html;
+    }
+
+    async function runTest(category, testIndex) {
+      const test = tests[category][testIndex];
+      const testId = `${category}-${testIndex}`;
+
+      try {
+        updateTestUI(category, testIndex, 'running', 'Running...');
+        const result = await test.test();
+        updateTestUI(category, testIndex, 'pass', result);
+      } catch (error) {
+        updateTestUI(category, testIndex, 'fail', error.message);
+      }
+    }
+
+    async function runCategoryTests(category) {
+      for (let i = 0; i < tests[category].length; i++) {
+        await runTest(category, i);
+      }
+    }
+
+    async function runAllTests() {
+      testResults = {};
+      renderTests();
+      document.getElementById('summary').style.display = 'none';
+
+      await runCategoryTests('database');
+      await runCategoryTests('search');
+
+      showSummary();
+    }
+
+    async function runDatabaseTests() {
+      testResults = {};
+      renderTests();
+      document.getElementById('summary').style.display = 'none';
+      await runCategoryTests('database');
+      showSummary();
+    }
+
+    async function runSearchTests() {
+      testResults = {};
+      renderTests();
+      document.getElementById('summary').style.display = 'none';
+      await runCategoryTests('search');
+      showSummary();
+    }
+
+    function showSummary() {
+      const total = Object.keys(testResults).length;
+      const passed = Object.values(testResults).filter(r => r === 'pass').length;
+      const failed = total - passed;
+
+      const summaryEl = document.getElementById('summary');
+      summaryEl.innerHTML = `
+        <h3 style="margin-bottom: 15px;">Test Summary</h3>
+        <div class="summary-stat">Total: ${total}</div>
+        <div class="summary-stat pass-count">✓ Passed: ${passed}</div>
+        <div class="summary-stat fail-count">✗ Failed: ${failed}</div>
+        <div style="margin-top: 15px; font-size: 16px;">
+          ${failed === 0 ? '🎉 All tests passed!' : '⚠️ Some tests failed. See details above.'}
+        </div>
+      `;
+      summaryEl.style.display = 'block';
+    }
+
+    function clearResults() {
+      document.getElementById('testResults').innerHTML = '';
+      document.getElementById('summary').style.display = 'none';
+      testResults = {};
+    }
+
+    // Initialize
+    renderTests();
+  </script>
+</body>
+</html>

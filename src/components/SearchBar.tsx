@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Search, X } from 'lucide-react';
 import { Button, Input } from './ui';
 import { searchPharmaPrograms, PharmaProgram } from '../services/searchService';
@@ -15,20 +15,7 @@ export const SearchBar: React.FC = () => {
     'Mounjaro', 'Januvia', 'Ozempic', 'Humira', 'Eliquis', 'Xarelto', 'Trulicity', 'Jardiance'
   ]);
 
-  useEffect(() => {
-    const delayDebounceFn = setTimeout(() => {
-      if (searchQuery.trim().length > 1) {
-        performSearch(searchQuery);
-      } else {
-        setSearchResults([]);
-        setShowResults(false);
-      }
-    }, 300);
-
-    return () => clearTimeout(delayDebounceFn);
-  }, [searchQuery]);
-
-  const performSearch = async (query: string) => {
+  const performSearch = useCallback(async (query: string) => {
     setIsSearching(true);
     setSearchError(null);
     setSearchMethod('');
@@ -55,7 +42,20 @@ export const SearchBar: React.FC = () => {
     } finally {
       setIsSearching(false);
     }
-  };
+  }, []);
+
+  useEffect(() => {
+    const delayDebounceFn = setTimeout(() => {
+      if (searchQuery.trim().length > 1) {
+        performSearch(searchQuery);
+      } else {
+        setSearchResults([]);
+        setShowResults(false);
+      }
+    }, 300);
+
+    return () => clearTimeout(delayDebounceFn);
+  }, [searchQuery, performSearch]);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -150,7 +150,25 @@ export const SearchBar: React.FC = () => {
           </div>
         )}
 
-        {showResults && (
+        {searchError && (
+          <div className="mt-8 sm:mt-12">
+            <div className="bg-destructive/10 border-2 border-destructive/30 rounded-lg p-6 text-center">
+              <div className="text-destructive text-4xl mb-3">⚠️</div>
+              <h3 className="text-lg font-bold text-destructive mb-2">Search Error</h3>
+              <p className="text-sm text-destructive/90 mb-4">{searchError}</p>
+              <div className="flex gap-2 justify-center">
+                <Button variant="outline" size="sm" onClick={clearSearch}>
+                  Clear Search
+                </Button>
+                <Button variant="default" size="sm" onClick={() => performSearch(searchQuery)}>
+                  Try Again
+                </Button>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {showResults && !searchError && (
           <div className="mt-8 sm:mt-12">
             <div className="mb-4 sm:mb-6 flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
               <div>
@@ -168,19 +186,11 @@ export const SearchBar: React.FC = () => {
               </Button>
             </div>
 
-{searchError && (
-              <div className="bg-destructive/10 border border-destructive/20 rounded-lg p-4 mb-6">
-                <p className="text-sm text-destructive font-medium">{searchError}</p>
-              </div>
-            )}
-
-            {!searchError && (
-              <SearchResults
-                results={searchResults}
-                isLoading={isSearching}
-                searchMethod={searchMethod}
-              />
-            )}
+            <SearchResults
+              results={searchResults}
+              isLoading={isSearching}
+              searchMethod={searchMethod}
+            />
           </div>
         )}
       </div>

@@ -45,9 +45,12 @@ export const searchPharmaPrograms = async (
   const startTime = performance.now();
 
   try {
-    // Use simplified RPC function with single parameter to avoid schema cache issues
+    // Use simplified RPC function with NO caching
     const { data, error } = await supabase.rpc('search_pharma_simple', {
       search_query: searchTerm
+    }, {
+      head: false,
+      count: null,
     });
 
     const duration = performance.now() - startTime;
@@ -80,7 +83,10 @@ export const searchPharmaPrograms = async (
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
   const { data, error } = await supabase
     .from('pharma_programs')
-    .select('*')
+    .select('*', {
+      head: false,
+      count: null,
+    })
     .eq('active', true)
     .order('medication_name', { ascending: true });
 
@@ -101,7 +107,10 @@ export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
 export const getProgramById = async (id: string): Promise<PharmaProgram | null> => {
   const { data, error } = await supabase
     .from('pharma_programs')
-    .select('*')
+    .select('*', {
+      head: false,
+      count: null,
+    })
     .eq('id', id)
     .eq('active', true)
     .maybeSingle();
@@ -123,7 +132,10 @@ export const getProgramById = async (id: string): Promise<PharmaProgram | null> 
 export const getProgramsByManufacturer = async (manufacturer: string): Promise<PharmaProgram[]> => {
   const { data, error } = await supabase
     .from('pharma_programs')
-    .select('*')
+    .select('*', {
+      head: false,
+      count: null,
+    })
     .eq('active', true)
     .ilike('manufacturer', `%${manufacturer}%`)
     .order('medication_name', { ascending: true });

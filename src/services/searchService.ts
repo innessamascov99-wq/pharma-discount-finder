@@ -50,7 +50,7 @@ export const searchPharmaPrograms = async (
   console.log('📡 Calling supabase.rpc with search_query:', searchTerm);
 
   try {
-    const { data, error } = await supabase.rpc('search_pharma_simple', {
+    const { data, error } = await supabase.rpc('search_pharma_programs', {
       search_query: searchTerm
     });
 

@@ -41,100 +41,38 @@ export const searchPharmaPrograms = async (query: string, limit: number = 15): P
   console.log('Searching for:', searchTerm);
 
   try {
-    const results = await textSearch(searchTerm, limit);
-    console.log('Search completed:', results.length, 'results returned');
-    return results;
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+    const apiUrl = `${supabaseUrl}/functions/v1/pharma-search`;
+
+    const response = await fetch(apiUrl, {
+      method: 'POST',
+      headers: {
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        query: searchTerm,
+        limit: limit
+      })
+    });
+
+    if (!response.ok) {
+      const errorText = await response.text();
+      console.error('Edge function error:', response.status, errorText);
+      throw new Error(`Search failed: ${response.status}`);
+    }
+
+    const result = await response.json();
+    console.log('Search completed:', result.results?.length || 0, 'results returned');
+    return result.results || [];
   } catch (err) {
     console.error('Search failed with error:', err);
     throw err;
   }
 };
 
-const textSearch = async (searchTerm: string, limit: number = 20): Promise<PharmaProgram[]> => {
-  const lowerSearchTerm = searchTerm.toLowerCase().trim();
-  const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 1);
-
-  console.log('=== Search Debug ===');
-  console.log('Original term:', searchTerm);
-  console.log('Lowercase term:', lowerSearchTerm);
-  console.log('Search words:', searchWords);
-
-  if (searchWords.length === 0) {
-    console.log('No valid search words after filtering');
-    return [];
-  }
-
-  const orConditions = searchWords.flatMap(word => [
-    `medication_name.ilike.%${word}%`,
-    `generic_name.ilike.%${word}%`,
-    `manufacturer.ilike.%${word}%`,
-    `program_name.ilike.%${word}%`,
-    `program_description.ilike.%${word}%`
-  ]).join(',');
-
-  console.log('OR conditions:', orConditions);
-  console.log('Supabase URL:', supabase.supabaseUrl);
-
-  const { data, error } = await supabase
-    .from('pharma_programs')
-    .select('*')
-    .eq('active', true)
-    .or(orConditions)
-    .limit(50);
-
-  console.log('Query response - Error:', error);
-  console.log('Query response - Data length:', data?.length || 0);
-
-  if (error) {
-    console.error('Database error details:', JSON.stringify(error, null, 2));
-    throw error;
-  }
-
-  if (data && data.length > 0) {
-    console.log('First result sample:', {
-      medication: data[0].medication_name,
-      generic: data[0].generic_name,
-      manufacturer: data[0].manufacturer
-    });
-  }
-
-  if (!data || data.length === 0) {
-    return [];
-  }
-
-  const results = data.map(program => {
-    let relevanceScore = 0;
-    const medName = program.medication_name?.toLowerCase() || '';
-    const genName = program.generic_name?.toLowerCase() || '';
-    const mfg = program.manufacturer?.toLowerCase() || '';
-    const progName = program.program_name?.toLowerCase() || '';
-
-    searchWords.forEach(word => {
-      if (medName === word) relevanceScore += 100;
-      else if (medName.startsWith(word)) relevanceScore += 80;
-      else if (medName.includes(word)) relevanceScore += 50;
-
-      if (genName === word) relevanceScore += 90;
-      else if (genName.startsWith(word)) relevanceScore += 70;
-      else if (genName.includes(word)) relevanceScore += 40;
-
-      if (mfg.includes(word)) relevanceScore += 30;
-      if (progName.includes(word)) relevanceScore += 20;
-    });
-
-    return {
-      ...program,
-      similarity: relevanceScore / 100
-    };
-  });
-
-  const sorted = results
-    .filter(r => r.similarity && r.similarity > 0)
-    .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-    .slice(0, limit);
-
-  return sorted;
-};
 
 export const getAllPharmaPrograms = async (): Promise<PharmaProgram[]> => {
   const { data, error } = await supabase

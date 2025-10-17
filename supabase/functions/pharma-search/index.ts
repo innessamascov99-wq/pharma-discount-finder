@@ -32,12 +32,12 @@ Deno.serve(async (req: Request) => {
     }
 
     const supabaseUrl = Deno.env.get("SUPABASE_URL")!;
-    const supabaseKey = Deno.env.get("SUPABASE_ANON_KEY")!;
-    const supabase = createClient(supabaseUrl, supabaseKey);
+    const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
+    const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { query, limit = 15 }: SearchRequest = await req.json();
+    const { query, limit = 20 }: SearchRequest = await req.json();
 
-    if (!query) {
+    if (!query || query.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Query parameter is required" }),
         {
@@ -49,46 +49,52 @@ Deno.serve(async (req: Request) => {
 
     console.log("Searching for:", query);
 
-    const model = new Supabase.ai.Session("gte-small");
-    const embedding = await model.run(query, { mean_pool: true, normalize: true });
+    const lowerSearchTerm = query.toLowerCase().trim();
+    const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 1);
 
-    console.log("Generated embedding, length:", embedding.length);
-
-    const { data: vectorResults, error: vectorError } = await supabase
-      .rpc("search_pharma_programs_vector", {
-        query_embedding: embedding,
-        match_threshold: 0.7,
-        match_count: limit,
-      });
-
-    if (vectorError) {
-      console.error("Vector search error:", vectorError);
-      
-      const searchTerms = query.toLowerCase().split(" ").filter(term => term.length > 2);
-      const { data: fallbackData, error: fallbackError } = await supabase
-        .from("pharma_programs")
-        .select("*")
-        .eq("active", true)
-        .or(
-          searchTerms
-            .map(term => 
-              `medication_name.ilike.%${term}%,` +
-              `generic_name.ilike.%${term}%,` +
-              `manufacturer.ilike.%${term}%,` +
-              `program_name.ilike.%${term}%`
-            )
-            .join(",")
-        )
-        .limit(limit);
-
-      if (fallbackError) {
-        throw fallbackError;
-      }
-
+    if (searchWords.length === 0) {
       return new Response(
-        JSON.stringify({ 
-          results: fallbackData || [], 
-          count: fallbackData?.length || 0,
+        JSON.stringify({
+          results: [],
+          count: 0,
+          method: "empty_query"
+        }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    const orConditions = searchWords.flatMap(word => [
+      `medication_name.ilike.%${word}%`,
+      `generic_name.ilike.%${word}%`,
+      `manufacturer.ilike.%${word}%`,
+      `program_name.ilike.%${word}%`,
+      `program_description.ilike.%${word}%`
+    ]).join(',');
+
+    console.log("Search conditions:", orConditions);
+
+    const { data, error } = await supabase
+      .from('pharma_programs')
+      .select('*')
+      .eq('active', true)
+      .or(orConditions)
+      .limit(50);
+
+    if (error) {
+      console.error("Database error:", error);
+      throw new Error(`Database query failed: ${error.message}`);
+    }
+
+    console.log("Found results:", data?.length || 0);
+
+    if (!data || data.length === 0) {
+      return new Response(
+        JSON.stringify({
+          results: [],
+          count: 0,
           method: "text_search"
         }),
         {
@@ -98,13 +104,42 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log("Vector search results:", vectorResults?.length || 0);
+    const results = data.map(program => {
+      let relevanceScore = 0;
+      const medName = program.medication_name?.toLowerCase() || '';
+      const genName = program.generic_name?.toLowerCase() || '';
+      const mfg = program.manufacturer?.toLowerCase() || '';
+      const progName = program.program_name?.toLowerCase() || '';
+
+      searchWords.forEach(word => {
+        if (medName === word) relevanceScore += 100;
+        else if (medName.startsWith(word)) relevanceScore += 80;
+        else if (medName.includes(word)) relevanceScore += 50;
+
+        if (genName === word) relevanceScore += 90;
+        else if (genName.startsWith(word)) relevanceScore += 70;
+        else if (genName.includes(word)) relevanceScore += 40;
+
+        if (mfg.includes(word)) relevanceScore += 30;
+        if (progName.includes(word)) relevanceScore += 20;
+      });
+
+      return {
+        ...program,
+        similarity: relevanceScore / 100
+      };
+    });
+
+    const sorted = results
+      .filter(r => r.similarity && r.similarity > 0)
+      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
+      .slice(0, limit);
 
     return new Response(
-      JSON.stringify({ 
-        results: vectorResults || [], 
-        count: vectorResults?.length || 0,
-        method: "vector_search"
+      JSON.stringify({
+        results: sorted,
+        count: sorted.length,
+        method: "text_search"
       }),
       {
         status: 200,

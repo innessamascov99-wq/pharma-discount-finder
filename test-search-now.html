@@ -1,0 +1,213 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Test</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 1200px;
+            margin: 50px auto;
+            padding: 20px;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+        }
+        button {
+            padding: 10px 20px;
+            margin: 5px;
+            cursor: pointer;
+            background: #3b82f6;
+            color: white;
+            border: none;
+            border-radius: 4px;
+        }
+        button:hover {
+            background: #2563eb;
+        }
+        pre {
+            background: #f5f5f5;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+        }
+        .error {
+            color: red;
+            font-weight: bold;
+        }
+        .success {
+            color: green;
+            font-weight: bold;
+        }
+    </style>
+</head>
+<body>
+    <h1>Pharma Program Search Test</h1>
+
+    <div class="test-section">
+        <h2>Environment Check</h2>
+        <div id="env-check"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Database Connection Test</h2>
+        <button onclick="testConnection()">Test Connection</button>
+        <div id="connection-result"></div>
+    </div>
+
+    <div class="test-section">
+        <h2>Search Test</h2>
+        <input type="text" id="searchQuery" placeholder="Enter medication name" value="Mounjaro" style="padding: 10px; width: 300px;">
+        <button onclick="testSearch()">Search</button>
+        <div id="search-result"></div>
+    </div>
+
+    <script>
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        const supabase = supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        document.getElementById('env-check').innerHTML = `
+            <p><strong>Supabase URL:</strong> ${SUPABASE_URL}</p>
+            <p><strong>Key Length:</strong> ${SUPABASE_ANON_KEY.length} characters</p>
+            <p class="success">✓ Environment variables loaded</p>
+        `;
+
+        async function testConnection() {
+            const resultDiv = document.getElementById('connection-result');
+            resultDiv.innerHTML = '<p>Testing connection...</p>';
+
+            try {
+                const { data, error, count } = await supabase
+                    .from('pharma_programs')
+                    .select('id, medication_name', { count: 'exact' })
+                    .eq('active', true)
+                    .limit(5);
+
+                if (error) throw error;
+
+                resultDiv.innerHTML = `
+                    <p class="success">✓ Connection successful!</p>
+                    <p><strong>Total Programs:</strong> ${count}</p>
+                    <p><strong>Sample Programs:</strong></p>
+                    <pre>${JSON.stringify(data, null, 2)}</pre>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">✗ Connection failed!</p>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        }
+
+        async function testSearch() {
+            const resultDiv = document.getElementById('search-result');
+            const query = document.getElementById('searchQuery').value.trim();
+
+            if (!query) {
+                resultDiv.innerHTML = '<p class="error">Please enter a search term</p>';
+                return;
+            }
+
+            resultDiv.innerHTML = '<p>Searching...</p>';
+
+            try {
+                const lowerQuery = query.toLowerCase();
+                const searchWords = lowerQuery.split(/\s+/).filter(w => w.length > 0);
+
+                const orConditions = searchWords.flatMap(word => [
+                    `medication_name.ilike.%${word}%`,
+                    `generic_name.ilike.%${word}%`,
+                    `manufacturer.ilike.%${word}%`,
+                    `program_name.ilike.%${word}%`,
+                    `program_description.ilike.%${word}%`
+                ]).join(',');
+
+                console.log('Search query:', query);
+                console.log('OR conditions:', orConditions);
+
+                const { data, error } = await supabase
+                    .from('pharma_programs')
+                    .select('*')
+                    .eq('active', true)
+                    .or(orConditions)
+                    .limit(10);
+
+                if (error) throw error;
+
+                if (!data || data.length === 0) {
+                    resultDiv.innerHTML = `
+                        <p class="error">No results found for "${query}"</p>
+                        <p>Try searching for: Mounjaro, Ozempic, Humira, Eliquis, Januvia</p>
+                    `;
+                    return;
+                }
+
+                const results = data.map(program => {
+                    let relevanceScore = 0;
+                    const medName = (program.medication_name || '').toLowerCase();
+                    const genName = (program.generic_name || '').toLowerCase();
+
+                    searchWords.forEach(word => {
+                        if (medName === word) relevanceScore += 100;
+                        else if (medName.startsWith(word)) relevanceScore += 80;
+                        else if (medName.includes(word)) relevanceScore += 50;
+
+                        if (genName === word) relevanceScore += 90;
+                        else if (genName.startsWith(word)) relevanceScore += 70;
+                        else if (genName.includes(word)) relevanceScore += 40;
+                    });
+
+                    return { ...program, relevanceScore };
+                });
+
+                results.sort((a, b) => b.relevanceScore - a.relevanceScore);
+
+                resultDiv.innerHTML = `
+                    <p class="success">✓ Found ${data.length} results for "${query}"</p>
+                    <table border="1" cellpadding="10" style="width: 100%; border-collapse: collapse;">
+                        <thead>
+                            <tr>
+                                <th>Medication</th>
+                                <th>Generic</th>
+                                <th>Manufacturer</th>
+                                <th>Program</th>
+                                <th>Savings</th>
+                                <th>Relevance</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            ${results.map(p => `
+                                <tr>
+                                    <td><strong>${p.medication_name}</strong></td>
+                                    <td>${p.generic_name || '-'}</td>
+                                    <td>${p.manufacturer}</td>
+                                    <td>${p.program_name}</td>
+                                    <td>${p.discount_amount || 'N/A'}</td>
+                                    <td>${p.relevanceScore}</td>
+                                </tr>
+                            `).join('')}
+                        </tbody>
+                    </table>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <p class="error">✗ Search failed!</p>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+                console.error('Search error:', error);
+            }
+        }
+
+        window.addEventListener('load', () => {
+            testConnection();
+        });
+    </script>
+</body>
+</html>

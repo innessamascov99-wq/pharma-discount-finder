@@ -28,16 +28,20 @@ export interface SearchResult {
 
 export const searchPharmaPrograms = async (query: string, limit: number = 15): Promise<PharmaProgram[]> => {
   if (!query || query.trim().length === 0) {
+    console.log('Empty search query');
     return [];
   }
 
   const searchTerm = query.trim();
+  console.log('Searching for:', searchTerm);
 
   try {
-    return await fallbackTextSearch(searchTerm, limit);
+    const results = await fallbackTextSearch(searchTerm, limit);
+    console.log('Search completed:', results.length, 'results returned');
+    return results;
   } catch (err) {
-    console.error('Search failed:', err);
-    return [];
+    console.error('Search failed with error:', err);
+    throw err;
   }
 };
 
@@ -45,6 +49,11 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promi
   const lowerSearchTerm = searchTerm.toLowerCase().trim();
 
   const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 0);
+
+  if (searchWords.length === 0) {
+    console.log('No valid search words after filtering');
+    return [];
+  }
 
   const orConditions = searchWords.flatMap(word => [
     `medication_name.ilike.%${word}%`,
@@ -54,6 +63,9 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promi
     `program_description.ilike.%${word}%`
   ]).join(',');
 
+  console.log('Search words:', searchWords);
+  console.log('OR conditions:', orConditions);
+
   const { data, error } = await supabase
     .from('pharma_programs')
     .select('*')
@@ -62,8 +74,11 @@ const fallbackTextSearch = async (searchTerm: string, limit: number = 20): Promi
     .limit(50);
 
   if (error) {
+    console.error('Supabase query error:', error);
     throw error;
   }
+
+  console.log('Raw search results:', data?.length || 0, 'programs found');
 
   if (!data || data.length === 0) {
     return [];

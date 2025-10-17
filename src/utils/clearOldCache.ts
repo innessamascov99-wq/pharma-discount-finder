@@ -1,8 +1,5 @@
 export const clearOldSupabaseCache = () => {
-  const OLD_SUPABASE_URLS = [
-    'asqsltuwmqdvayjmwsjs',
-    'https://asqsltuwmqdvayjmwsjs.supabase.co'
-  ];
+  const OLD_SUPABASE_URLS: string[] = [];
 
   let clearedCount = 0;
 

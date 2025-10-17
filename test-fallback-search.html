@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Fallback Search</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; margin-top: 0; }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 6px;
+      margin-bottom: 20px;
+    }
+    button {
+      padding: 12px 24px;
+      font-size: 16px;
+      background: #0066cc;
+      color: white;
+      border: none;
+      border-radius: 6px;
+      cursor: pointer;
+      margin-right: 10px;
+    }
+    button:hover { background: #0052a3; }
+    .result {
+      border: 1px solid #ddd;
+      padding: 15px;
+      margin: 10px 0;
+      border-radius: 6px;
+      background: #f9f9f9;
+    }
+    .result h3 { margin: 0 0 8px 0; color: #0066cc; }
+    .result p { margin: 5px 0; font-size: 14px; }
+    .status { padding: 10px; border-radius: 4px; margin: 10px 0; }
+    .status.success { background: #d4edda; color: #155724; }
+    .status.error { background: #f8d7da; color: #721c24; }
+    .status.info { background: #d1ecf1; color: #0c5460; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Fallback Search Test</h1>
+    <p>This tests the direct table search (fallback method when RPC is unavailable)</p>
+
+    <input type="text" id="searchInput" placeholder="Search for medication (e.g., mounjaro, insulin, ozempic)" value="mounjaro">
+
+    <button onclick="testRPC()">Test RPC Function</button>
+    <button onclick="testFallback()">Test Fallback Search</button>
+    <button onclick="testBoth()">Test Both Methods</button>
+
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseKey);
+
+    function showStatus(message, type = 'info') {
+      const statusDiv = document.getElementById('status');
+      statusDiv.innerHTML = `<div class="status ${type}">${message}</div>`;
+    }
+
+    function displayResults(data, method) {
+      const resultsDiv = document.getElementById('results');
+      if (!data || data.length === 0) {
+        resultsDiv.innerHTML = '<p>No results found</p>';
+        return;
+      }
+
+      let html = `<h2>${method} - Found ${data.length} result(s)</h2>`;
+      data.forEach((prog, i) => {
+        const similarity = prog.similarity ? `${(prog.similarity * 100).toFixed(0)}%` : 'N/A';
+        html += `
+          <div class="result">
+            <h3>${i + 1}. ${prog.medication_name} (${prog.generic_name})</h3>
+            <p><strong>Manufacturer:</strong> ${prog.manufacturer}</p>
+            <p><strong>Program:</strong> ${prog.program_name}</p>
+            <p><strong>Discount:</strong> ${prog.discount_amount}</p>
+            <p><strong>Relevance:</strong> ${similarity}</p>
+            <p><strong>Phone:</strong> ${prog.phone_number}</p>
+          </div>
+        `;
+      });
+      resultsDiv.innerHTML = html;
+    }
+
+    async function testRPC() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        showStatus('Please enter a search term', 'error');
+        return;
+      }
+
+      showStatus('Testing RPC function...', 'info');
+      console.log('Testing RPC with query:', query);
+
+      try {
+        const { data, error } = await supabase.rpc('search_pharma_programs', {
+          search_query: query,
+          result_limit: 10
+        });
+
+        if (error) {
+          console.error('RPC Error:', error);
+          showStatus(`RPC Failed: ${error.message}`, 'error');
+          document.getElementById('results').innerHTML = '';
+        } else {
+          console.log('RPC Success:', data);
+          showStatus('RPC function working!', 'success');
+          displayResults(data, 'RPC Search');
+        }
+      } catch (err) {
+        console.error('Exception:', err);
+        showStatus(`Exception: ${err.message}`, 'error');
+      }
+    }
+
+    async function testFallback() {
+      const query = document.getElementById('searchInput').value.trim();
+      if (!query) {
+        showStatus('Please enter a search term', 'error');
+        return;
+      }
+
+      showStatus('Testing fallback search (direct table access)...', 'info');
+      console.log('Testing fallback with query:', query);
+
+      try {
+        const searchWords = query.toLowerCase().split(/\s+/).filter(w => w.length > 1);
+
+        if (searchWords.length === 0) {
+          showStatus('Search term too short', 'error');
+          return;
+        }
+
+        const orConditions = searchWords.flatMap(word => [
+          `medication_name.ilike.%${word}%`,
+          `generic_name.ilike.%${word}%`,
+          `manufacturer.ilike.%${word}%`,
+          `program_name.ilike.%${word}%`
+        ]).join(',');
+
+        const { data, error } = await supabase
+          .from('pharma_programs')
+          .select('*')
+          .eq('active', true)
+          .or(orConditions)
+          .limit(50);
+
+        if (error) {
+          console.error('Fallback Error:', error);
+          showStatus(`Fallback Failed: ${error.message}`, 'error');
+          document.getElementById('results').innerHTML = '';
+        } else {
+          console.log('Fallback Success:', data);
+
+          // Calculate relevance scores
+          const results = data.map(program => {
+            let score = 0;
+            const medName = (program.medication_name || '').toLowerCase();
+            const genName = (program.generic_name || '').toLowerCase();
+
+            searchWords.forEach(word => {
+              if (medName === word) score += 100;
+              else if (medName.startsWith(word)) score += 80;
+              else if (medName.includes(word)) score += 50;
+
+              if (genName === word) score += 90;
+              else if (genName.includes(word)) score += 40;
+            });
+
+            return { ...program, similarity: score / 100 };
+          });
+
+          const sorted = results
+            .filter(r => r.similarity > 0)
+            .sort((a, b) => b.similarity - a.similarity)
+            .slice(0, 10);
+
+          showStatus('Fallback search working!', 'success');
+          displayResults(sorted, 'Fallback Search');
+        }
+      } catch (err) {
+        console.error('Exception:', err);
+        showStatus(`Exception: ${err.message}`, 'error');
+      }
+    }
+
+    async function testBoth() {
+      await testRPC();
+      setTimeout(() => {
+        if (document.getElementById('status').textContent.includes('Failed')) {
+          console.log('RPC failed, trying fallback...');
+          testFallback();
+        }
+      }, 1000);
+    }
+
+    // Auto-run test on load
+    window.addEventListener('load', () => {
+      setTimeout(testBoth, 500);
+    });
+  </script>
+</body>
+</html>

@@ -18,17 +18,3 @@ export const supabase = createClient(supabaseUrl, supabaseAnonKey, {
     schema: 'public',
   },
 });
-
-if (typeof window !== 'undefined') {
-  supabase
-    .from('drugs')
-    .select('count', { count: 'exact', head: true })
-    .eq('active', true)
-    .then(({ count, error }) => {
-      if (error) {
-        console.error('Supabase connection error:', error.message);
-      } else {
-        console.log('Supabase connected successfully. Active drugs:', count);
-      }
-    });
-}

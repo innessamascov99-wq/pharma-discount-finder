@@ -1,0 +1,234 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google OAuth Redirect Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 0; }
+    .success { color: #22c55e; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .info { color: #3b82f6; }
+    .warning { color: #f59e0b; font-weight: bold; }
+    pre {
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+      white-space: pre-wrap;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 15px;
+      border-radius: 8px;
+      border-left: 4px solid;
+    }
+    .status.success {
+      background: #dcfce7;
+      border-color: #22c55e;
+    }
+    .status.error {
+      background: #fee2e2;
+      border-color: #ef4444;
+    }
+    .status.info {
+      background: #dbeafe;
+      border-color: #3b82f6;
+    }
+    .status.warning {
+      background: #fef3c7;
+      border-color: #f59e0b;
+    }
+    code {
+      background: #e5e7eb;
+      padding: 2px 6px;
+      border-radius: 4px;
+      font-family: monospace;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Google OAuth Redirect Diagnostic</h1>
+
+  <div class="card">
+    <h2>Current Configuration</h2>
+    <div id="config"></div>
+  </div>
+
+  <div class="card">
+    <h2>Test Google OAuth</h2>
+    <button onclick="testGoogleOAuth()">Test Google Sign In</button>
+    <div id="oauthResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Instructions to Fix</h2>
+    <div id="instructions"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    // Display configuration
+    const configDiv = document.getElementById('config');
+    const currentOrigin = window.location.origin;
+    const redirectUrl = `${currentOrigin}/auth/callback`;
+
+    configDiv.innerHTML = `
+      <div class="status info">
+        <strong>Current Origin:</strong> <code>${currentOrigin}</code><br>
+        <strong>OAuth Redirect URL:</strong> <code>${redirectUrl}</code><br>
+        <strong>Supabase Project:</strong> <code>asqsltuwmqdvayjmwsjs</code>
+      </div>
+    `;
+
+    // Display instructions
+    const instructionsDiv = document.getElementById('instructions');
+    instructionsDiv.innerHTML = `
+      <div class="status warning">
+        <strong>⚠️ Important: Add Redirect URLs to Supabase</strong><br><br>
+
+        <strong>Step 1:</strong> Go to your Supabase Dashboard<br>
+        <a href="https://supabase.com/dashboard/project/asqsltuwmqdvayjmwsjs/auth/url-configuration" target="_blank" style="color: #3b82f6;">
+          https://supabase.com/dashboard/project/asqsltuwmqdvayjmwsjs/auth/url-configuration
+        </a><br><br>
+
+        <strong>Step 2:</strong> Add these URLs to "Redirect URLs" section:<br>
+        <pre>${currentOrigin}/auth/callback
+http://localhost:5173/auth/callback
+http://127.0.0.1:5173/auth/callback</pre>
+
+        <strong>Step 3:</strong> Make sure Google OAuth is enabled:<br>
+        Go to: <a href="https://supabase.com/dashboard/project/asqsltuwmqdvayjmwsjs/auth/providers" target="_blank" style="color: #3b82f6;">Auth Providers</a><br>
+        Enable Google provider and add your Client ID and Client Secret<br><br>
+
+        <strong>Step 4:</strong> After saving, test the Google Sign In button above
+      </div>
+
+      <div class="status info" style="margin-top: 20px;">
+        <strong>✅ What this test checks:</strong><br>
+        • Current origin and redirect URL configuration<br>
+        • Whether Google OAuth initiates successfully<br>
+        • Any error messages from Supabase<br><br>
+
+        <strong>Common Issues:</strong><br>
+        • <span class="error">Invalid redirect URL</span> - Redirect URL not in Supabase allowed list<br>
+        • <span class="error">OAuth provider not configured</span> - Google OAuth not enabled in Supabase<br>
+        • <span class="error">Invalid credentials</span> - Google Client ID/Secret incorrect
+      </div>
+    `;
+
+    async function testGoogleOAuth() {
+      const resultDiv = document.getElementById('oauthResult');
+      resultDiv.innerHTML = '<div class="status info">Initiating Google OAuth...</div>';
+
+      try {
+        console.log('Testing Google OAuth...');
+        console.log('Redirect URL:', redirectUrl);
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
+
+        console.log('OAuth response:', { data, error });
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>❌ Google OAuth Error</strong><br><br>
+              <strong>Error Message:</strong> ${error.message}<br>
+              <strong>Error Code:</strong> ${error.status || 'N/A'}<br>
+              <strong>Error Name:</strong> ${error.name}<br><br>
+              <pre>${JSON.stringify(error, null, 2)}</pre>
+
+              <div style="margin-top: 20px; padding: 10px; background: white; border-radius: 4px;">
+                <strong>💡 Likely Cause:</strong><br>
+                ${error.message.includes('redirect') || error.message.includes('URL') ?
+                  '• The redirect URL is not in Supabase\'s allowed list<br>• Add <code>' + redirectUrl + '</code> to your Supabase Auth settings' :
+                  error.message.includes('provider') || error.message.includes('Google') ?
+                  '• Google OAuth provider is not enabled in Supabase<br>• Go to Auth > Providers and enable Google' :
+                  '• Check your Supabase Auth configuration<br>• Verify Google OAuth credentials are correct'
+                }
+              </div>
+            </div>
+          `;
+        } else if (data.url) {
+          resultDiv.innerHTML = `
+            <div class="status success">
+              <strong>✅ Google OAuth Initiated Successfully!</strong><br><br>
+              OAuth URL generated. Redirecting to Google...<br><br>
+              <strong>OAuth URL:</strong><br>
+              <pre style="max-height: 100px; overflow-y: auto;">${data.url}</pre>
+              <br>
+              <em>You should be redirected automatically. If not, click below:</em><br>
+              <a href="${data.url}" style="color: #3b82f6; text-decoration: underline;">Click here to continue</a>
+            </div>
+          `;
+
+          // Redirect after 2 seconds
+          setTimeout(() => {
+            window.location.href = data.url;
+          }, 2000);
+        } else {
+          resultDiv.innerHTML = `
+            <div class="status warning">
+              <strong>⚠️ Unexpected Response</strong><br><br>
+              No error, but no OAuth URL generated.<br>
+              <pre>${JSON.stringify(data, null, 2)}</pre>
+            </div>
+          `;
+        }
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>❌ Unexpected Error</strong><br><br>
+            <pre>${err.message}</pre>
+          </div>
+        `;
+      }
+    }
+  </script>
+</body>
+</html>

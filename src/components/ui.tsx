@@ -137,3 +137,194 @@ export const Badge = React.forwardRef<HTMLDivElement, BadgeProps>(
   }
 );
 Badge.displayName = 'Badge';
+
+export interface DropdownMenuProps {
+  trigger: React.ReactNode;
+  children: React.ReactNode;
+  align?: 'start' | 'center' | 'end';
+}
+
+export const DropdownMenu: React.FC<DropdownMenuProps> = ({ trigger, children, align = 'end' }) => {
+  const [open, setOpen] = React.useState(false);
+  const menuRef = React.useRef<HTMLDivElement>(null);
+
+  React.useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (menuRef.current && !menuRef.current.contains(event.target as Node)) {
+        setOpen(false);
+      }
+    };
+
+    if (open) {
+      document.addEventListener('mousedown', handleClickOutside);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+    };
+  }, [open]);
+
+  return (
+    <div className="relative inline-block" ref={menuRef}>
+      <div onClick={() => setOpen(!open)}>{trigger}</div>
+      {open && (
+        <div
+          className={cn(
+            'absolute z-50 mt-2 min-w-[8rem] overflow-hidden rounded-md border bg-popover p-1 text-popover-foreground shadow-lg animate-in fade-in-80 slide-in-from-top-2',
+            align === 'start' && 'left-0',
+            align === 'center' && 'left-1/2 -translate-x-1/2',
+            align === 'end' && 'right-0'
+          )}
+        >
+          {children}
+        </div>
+      )}
+    </div>
+  );
+};
+
+export interface DropdownMenuItemProps extends React.HTMLAttributes<HTMLDivElement> {
+  icon?: React.ReactNode;
+  disabled?: boolean;
+}
+
+export const DropdownMenuItem = React.forwardRef<HTMLDivElement, DropdownMenuItemProps>(
+  ({ className, icon, disabled, children, ...props }, ref) => {
+    return (
+      <div
+        ref={ref}
+        className={cn(
+          'relative flex cursor-pointer select-none items-center rounded-sm px-2 py-1.5 text-sm outline-none transition-colors hover:bg-accent hover:text-accent-foreground focus:bg-accent focus:text-accent-foreground',
+          disabled && 'pointer-events-none opacity-50',
+          className
+        )}
+        {...props}
+      >
+        {icon && <span className="mr-2 h-4 w-4">{icon}</span>}
+        {children}
+      </div>
+    );
+  }
+);
+DropdownMenuItem.displayName = 'DropdownMenuItem';
+
+export const DropdownMenuSeparator = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('-mx-1 my-1 h-px bg-muted', className)} {...props} />
+  )
+);
+DropdownMenuSeparator.displayName = 'DropdownMenuSeparator';
+
+export const DropdownMenuLabel = React.forwardRef<HTMLDivElement, React.HTMLAttributes<HTMLDivElement>>(
+  ({ className, ...props }, ref) => (
+    <div ref={ref} className={cn('px-2 py-1.5 text-sm font-semibold', className)} {...props} />
+  )
+);
+DropdownMenuLabel.displayName = 'DropdownMenuLabel';
+
+export interface TabsProps {
+  defaultValue: string;
+  children: React.ReactNode;
+  className?: string;
+  onValueChange?: (value: string) => void;
+}
+
+export const Tabs: React.FC<TabsProps> = ({ defaultValue, children, className, onValueChange }) => {
+  const [value, setValue] = React.useState(defaultValue);
+
+  const handleChange = (newValue: string) => {
+    setValue(newValue);
+    onValueChange?.(newValue);
+  };
+
+  return (
+    <div className={className}>
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, { value, onChange: handleChange } as any);
+        }
+        return child;
+      })}
+    </div>
+  );
+};
+
+export interface TabsListProps {
+  children: React.ReactNode;
+  className?: string;
+  value?: string;
+  onChange?: (value: string) => void;
+}
+
+export const TabsList: React.FC<TabsListProps> = ({ children, className, value, onChange }) => {
+  return (
+    <div
+      className={cn(
+        'inline-flex h-10 items-center justify-center rounded-md bg-muted p-1 text-muted-foreground',
+        className
+      )}
+    >
+      {React.Children.map(children, (child) => {
+        if (React.isValidElement(child)) {
+          return React.cloneElement(child, { value, onChange } as any);
+        }
+        return child;
+      })}
+    </div>
+  );
+};
+
+export interface TabsTriggerProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+  currentValue?: string;
+  onChange?: (value: string) => void;
+}
+
+export const TabsTrigger: React.FC<TabsTriggerProps> = ({
+  value,
+  children,
+  className,
+  currentValue,
+  onChange,
+}) => {
+  const isActive = currentValue === value;
+
+  return (
+    <button
+      onClick={() => onChange?.(value)}
+      className={cn(
+        'inline-flex items-center justify-center whitespace-nowrap rounded-sm px-3 py-1.5 text-sm font-medium ring-offset-background transition-all focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50',
+        isActive
+          ? 'bg-background text-foreground shadow-sm'
+          : 'text-muted-foreground hover:bg-background/50 hover:text-foreground',
+        className
+      )}
+    >
+      {children}
+    </button>
+  );
+};
+
+export interface TabsContentProps {
+  value: string;
+  children: React.ReactNode;
+  className?: string;
+  currentValue?: string;
+}
+
+export const TabsContent: React.FC<TabsContentProps> = ({ value, children, className, currentValue }) => {
+  if (currentValue !== value) return null;
+
+  return (
+    <div
+      className={cn(
+        'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        className
+      )}
+    >
+      {children}
+    </div>
+  );
+};

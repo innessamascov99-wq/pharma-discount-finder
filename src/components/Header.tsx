@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
-import { Menu, X, Pill, User, LogOut } from 'lucide-react';
-import { Button } from './ui';
+import { Menu, X, Pill, User, LogOut, LayoutDashboard, Shield } from 'lucide-react';
+import { Button, DropdownMenu, DropdownMenuItem, DropdownMenuSeparator, DropdownMenuLabel } from './ui';
 import { ThemeToggle } from './ThemeToggle';
 import { useAuth } from '../contexts/AuthContext';
 
@@ -90,16 +90,40 @@ export const Header: React.FC = () => {
           <div className="hidden md:flex items-center gap-4">
             <ThemeToggle />
             {user ? (
-              <>
-                <Button variant="ghost" size="sm" onClick={() => navigate(isAdmin ? '/admin' : '/dashboard')}>
-                  <User className="w-4 h-4 mr-2" />
-                  {isAdmin ? 'Admin' : 'Dashboard'}
-                </Button>
-                <Button variant="ghost" size="sm" onClick={handleSignOut}>
-                  <LogOut className="w-4 h-4 mr-2" />
-                  Logout
-                </Button>
-              </>
+              <DropdownMenu
+                trigger={
+                  <Button variant="ghost" size="sm" className="gap-2">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                      <User className="w-4 h-4 text-white" />
+                    </div>
+                    <span className="hidden lg:inline">{user.email}</span>
+                  </Button>
+                }
+              >
+                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  icon={<LayoutDashboard className="w-4 h-4" />}
+                  onClick={() => navigate('/dashboard')}
+                >
+                  Dashboard
+                </DropdownMenuItem>
+                {isAdmin && (
+                  <DropdownMenuItem
+                    icon={<Shield className="w-4 h-4" />}
+                    onClick={() => navigate('/admin')}
+                  >
+                    Admin Portal
+                  </DropdownMenuItem>
+                )}
+                <DropdownMenuSeparator />
+                <DropdownMenuItem
+                  icon={<LogOut className="w-4 h-4" />}
+                  onClick={handleSignOut}
+                >
+                  Sign Out
+                </DropdownMenuItem>
+              </DropdownMenu>
             ) : (
               <>
                 <Button variant="ghost" size="sm" onClick={() => navigate('/login')}>

@@ -1,0 +1,203 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Search Drugs RPC Edge Function</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      margin-bottom: 20px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      font-size: 16px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+    }
+    button {
+      width: 100%;
+      padding: 12px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #9ca3af;
+      cursor: not-allowed;
+    }
+    .results {
+      margin-top: 25px;
+      padding: 20px;
+      background: #f9fafb;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    .result-item {
+      padding: 15px;
+      margin-bottom: 15px;
+      background: white;
+      border-radius: 8px;
+      border: 1px solid #e5e7eb;
+    }
+    .result-item h3 {
+      margin: 0 0 8px 0;
+      color: #1f2937;
+    }
+    .result-item p {
+      margin: 4px 0;
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .status {
+      padding: 12px;
+      margin-bottom: 15px;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .status.success { background: #d1fae5; color: #065f46; }
+    .status.error { background: #fee2e2; color: #991b1b; }
+    .status.info { background: #dbeafe; color: #1e40af; }
+    pre {
+      background: #1f2937;
+      color: #f9fafb;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Test Search Drugs RPC Edge Function</h1>
+
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Enter drug name (e.g., lipitor, aspirin, metformin)"
+      value="lipitor"
+    />
+
+    <button id="searchBtn" onclick="searchDrugs()">Search Drugs</button>
+
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    async function searchDrugs() {
+      const searchInput = document.getElementById('searchInput');
+      const searchBtn = document.getElementById('searchBtn');
+      const statusDiv = document.getElementById('status');
+      const resultsDiv = document.getElementById('results');
+
+      const query = searchInput.value.trim();
+      if (!query) {
+        statusDiv.innerHTML = '<div class="status error">Please enter a search query</div>';
+        return;
+      }
+
+      searchBtn.disabled = true;
+      statusDiv.innerHTML = '<div class="status info">Searching...</div>';
+      resultsDiv.innerHTML = '';
+
+      try {
+        console.log('Calling edge function with query:', query);
+
+        const response = await fetch(`${SUPABASE_URL}/functions/v1/search-drugs-rpc`, {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          },
+          body: JSON.stringify({
+            search_query: query
+          })
+        });
+
+        console.log('Response status:', response.status);
+        const responseText = await response.text();
+        console.log('Response text:', responseText);
+
+        let data;
+        try {
+          data = JSON.parse(responseText);
+        } catch (e) {
+          throw new Error(`Failed to parse response: ${responseText}`);
+        }
+
+        if (!response.ok) {
+          throw new Error(data.error || `HTTP ${response.status}: ${responseText}`);
+        }
+
+        // Display results
+        if (Array.isArray(data) && data.length > 0) {
+          statusDiv.innerHTML = `<div class="status success">✓ Found ${data.length} result(s)</div>`;
+
+          resultsDiv.innerHTML = '<div class="results">' +
+            data.map(drug => `
+              <div class="result-item">
+                <h3>${drug.medication_name || 'N/A'}</h3>
+                <p><strong>Generic:</strong> ${drug.generic_name || 'N/A'}</p>
+                <p><strong>Manufacturer:</strong> ${drug.manufacturer || 'N/A'}</p>
+                <p><strong>Class:</strong> ${drug.drug_class || 'N/A'}</p>
+                <p><strong>Indication:</strong> ${drug.indication || 'N/A'}</p>
+                <p><strong>Price:</strong> ${drug.typical_retail_price || 'N/A'}</p>
+              </div>
+            `).join('') +
+            '</div>';
+        } else {
+          statusDiv.innerHTML = '<div class="status info">No results found</div>';
+          resultsDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+        resultsDiv.innerHTML = '<pre>' + error.stack + '</pre>';
+      } finally {
+        searchBtn.disabled = false;
+      }
+    }
+
+    // Allow Enter key to trigger search
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        searchDrugs();
+      }
+    });
+
+    // Auto-run search on page load
+    window.addEventListener('load', () => {
+      setTimeout(() => searchDrugs(), 500);
+    });
+  </script>
+</body>
+</html>

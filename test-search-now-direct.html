@@ -1,0 +1,55 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Drug Search - Direct</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; }
+        #results { margin-top: 20px; white-space: pre-wrap; }
+        .error { color: red; }
+        .success { color: green; }
+    </style>
+</head>
+<body>
+    <h1>Test Drug Search</h1>
+    <button id="testBtn">Test Search for "Ozempic"</button>
+    <div id="results"></div>
+
+    <script type="module">
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        document.getElementById('testBtn').addEventListener('click', async () => {
+            const resultsDiv = document.getElementById('results');
+            resultsDiv.innerHTML = 'Testing...';
+
+            try {
+                const response = await fetch(
+                    `${SUPABASE_URL}/functions/v1/db-query`,
+                    {
+                        method: 'POST',
+                        headers: {
+                            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                            'apikey': SUPABASE_ANON_KEY,
+                            'Content-Type': 'application/json',
+                        },
+                        body: JSON.stringify({ type: 'search_drugs', query: 'ozempic' }),
+                    }
+                );
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    resultsDiv.innerHTML = `<div class="error">Error: ${response.status}\n${errorText}</div>`;
+                    return;
+                }
+
+                const result = await response.json();
+                resultsDiv.innerHTML = `<div class="success">Success! Found ${result.data?.length || 0} results:</div>\n${JSON.stringify(result, null, 2)}`;
+            } catch (error) {
+                resultsDiv.innerHTML = `<div class="error">Error: ${error.message}</div>`;
+            }
+        });
+    </script>
+</body>
+</html>

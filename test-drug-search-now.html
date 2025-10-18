@@ -1,0 +1,326 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Drug Search Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 0; }
+    .success { color: #22c55e; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .info { color: #3b82f6; }
+    pre {
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      border: 2px solid #ddd;
+      border-radius: 8px;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    input:focus {
+      outline: none;
+      border-color: #3b82f6;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .drug-card {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      border-radius: 8px;
+      padding: 16px;
+      margin: 10px 0;
+    }
+    .drug-name {
+      font-size: 18px;
+      font-weight: bold;
+      color: #1f2937;
+    }
+    .drug-generic {
+      color: #6b7280;
+      font-size: 14px;
+    }
+    .drug-manufacturer {
+      color: #3b82f6;
+      font-size: 14px;
+      margin-top: 8px;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .status.success {
+      background: #dcfce7;
+      border: 1px solid #22c55e;
+    }
+    .status.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 Drug Search Test</h1>
+
+  <div class="card">
+    <h2>Database Configuration</h2>
+    <div id="config"></div>
+  </div>
+
+  <div class="card">
+    <h2>Search Drugs</h2>
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Search for a drug (e.g., Ozempic, diabetes, semaglutide)..."
+      onkeyup="handleKeyPress(event)"
+    >
+    <button onclick="searchDrugs()">Search</button>
+    <button onclick="getAllDrugs()" style="background: #10b981;">Get All Drugs</button>
+    <div id="searchResults"></div>
+  </div>
+
+  <div class="card">
+    <h2>Test Specific Queries</h2>
+    <button onclick="testSearch('Ozempic')">Search "Ozempic"</button>
+    <button onclick="testSearch('diabetes')">Search "diabetes"</button>
+    <button onclick="testSearch('semaglutide')">Search "semaglutide"</button>
+    <button onclick="testSearch('Eli Lilly')">Search "Eli Lilly"</button>
+  </div>
+
+  <div class="card">
+    <h2>Direct Database Query</h2>
+    <button onclick="directQuery()">Query Database Directly</button>
+    <div id="directQueryResults"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      db: {
+        schema: 'public',
+      },
+    });
+
+    document.getElementById('config').innerHTML = `
+      <div class="status success">
+        <strong>Database URL:</strong> ${SUPABASE_URL}<br>
+        <strong>Project:</strong> nuhfqkhplldontxtoxkg<br>
+        <strong>Status:</strong> <span class="success">✓ Connected</span>
+      </div>
+    `;
+
+    function handleKeyPress(event) {
+      if (event.key === 'Enter') {
+        searchDrugs();
+      }
+    }
+
+    async function searchDrugs() {
+      const query = document.getElementById('searchInput').value;
+      await testSearch(query);
+    }
+
+    async function testSearch(query) {
+      const resultsDiv = document.getElementById('searchResults');
+
+      if (!query || query.trim().length < 2) {
+        resultsDiv.innerHTML = '<div class="status error">Please enter at least 2 characters</div>';
+        return;
+      }
+
+      resultsDiv.innerHTML = '<p class="info">Searching...</p>';
+
+      try {
+        const searchTerm = query.trim();
+        console.log('Searching for:', searchTerm);
+
+        const { data, error } = await supabase
+          .from('drugs')
+          .select('*')
+          .eq('active', true)
+          .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
+          .order('medication_name')
+          .limit(20);
+
+        console.log('Search results:', data);
+        console.log('Search error:', error);
+
+        if (error) {
+          resultsDiv.innerHTML = `
+            <div class="status error">
+              <strong>Search Error:</strong><br>
+              <pre>${JSON.stringify(error, null, 2)}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          resultsDiv.innerHTML = `
+            <div class="status">
+              <strong>No Results Found</strong><br>
+              No drugs matched your search query: "${searchTerm}"
+            </div>
+          `;
+          return;
+        }
+
+        let html = `<div class="status success"><strong>Found ${data.length} drugs:</strong></div>`;
+        data.forEach(drug => {
+          html += `
+            <div class="drug-card">
+              <div class="drug-name">${drug.medication_name}</div>
+              <div class="drug-generic">Generic: ${drug.generic_name}</div>
+              <div class="drug-manufacturer">Manufacturer: ${drug.manufacturer}</div>
+              <div class="drug-generic" style="margin-top: 8px;">Class: ${drug.drug_class}</div>
+              <div class="drug-generic">Indication: ${drug.indication}</div>
+            </div>
+          `;
+        });
+
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        resultsDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    async function getAllDrugs() {
+      const resultsDiv = document.getElementById('searchResults');
+      resultsDiv.innerHTML = '<p class="info">Loading all drugs...</p>';
+
+      try {
+        const { data, error } = await supabase
+          .from('drugs')
+          .select('*')
+          .eq('active', true)
+          .order('medication_name');
+
+        console.log('All drugs:', data);
+        console.log('Error:', error);
+
+        if (error) {
+          resultsDiv.innerHTML = `
+            <div class="status error">
+              <strong>Error:</strong><br>
+              <pre>${JSON.stringify(error, null, 2)}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        if (!data || data.length === 0) {
+          resultsDiv.innerHTML = '<div class="status error">No drugs found in database</div>';
+          return;
+        }
+
+        let html = `<div class="status success"><strong>Total: ${data.length} drugs in database</strong></div>`;
+        data.forEach(drug => {
+          html += `
+            <div class="drug-card">
+              <div class="drug-name">${drug.medication_name}</div>
+              <div class="drug-generic">Generic: ${drug.generic_name}</div>
+              <div class="drug-manufacturer">Manufacturer: ${drug.manufacturer}</div>
+              <div class="drug-generic" style="margin-top: 8px;">Class: ${drug.drug_class}</div>
+            </div>
+          `;
+        });
+
+        resultsDiv.innerHTML = html;
+      } catch (err) {
+        console.error('Unexpected error:', err);
+        resultsDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    async function directQuery() {
+      const resultsDiv = document.getElementById('directQueryResults');
+      resultsDiv.innerHTML = '<p class="info">Running direct query...</p>';
+
+      try {
+        const { data, error } = await supabase
+          .from('drugs')
+          .select('id, medication_name, generic_name, manufacturer, active')
+          .limit(10);
+
+        if (error) {
+          resultsDiv.innerHTML = `
+            <div class="status error">
+              <strong>Query Error:</strong><br>
+              <pre>${JSON.stringify(error, null, 2)}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        resultsDiv.innerHTML = `
+          <div class="status success">
+            <strong>Direct Query Successful</strong><br>
+            Retrieved ${data.length} rows
+          </div>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (err) {
+        resultsDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Run initial test
+    getAllDrugs();
+  </script>
+</body>
+</html>

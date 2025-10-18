@@ -48,15 +48,10 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
     return [];
   }
 
-  const searchTerm = query.trim().toLowerCase();
+  const searchTerm = query.trim();
 
   const { data, error } = await supabase
-    .from('drugs')
-    .select('*')
-    .eq('active', true)
-    .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
-    .order('medication_name')
-    .limit(20);
+    .rpc('search_drugs_rpc', { search_query: searchTerm });
 
   if (error) {
     throw new Error(error.message);
@@ -70,15 +65,10 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
     return [];
   }
 
-  const searchTerm = query.trim().toLowerCase();
+  const searchTerm = query.trim();
 
   const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('active', true)
-    .or(`program_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
-    .order('program_name')
-    .limit(20);
+    .rpc('search_programs_rpc', { search_query: searchTerm });
 
   if (error) {
     throw new Error(error.message);
@@ -88,28 +78,19 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
 };
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
-  const { data: joinData, error } = await supabase
-    .from('drugs_programs')
-    .select('program_id, programs (*)')
-    .eq('drug_id', drugId);
+  const { data, error } = await supabase
+    .rpc('get_programs_for_drug_rpc', { drug_uuid: drugId });
 
   if (error) {
     throw new Error(error.message);
   }
 
-  const programs = (joinData || [])
-    .filter(item => item.programs)
-    .map(item => item.programs as unknown as Program);
-
-  return programs;
+  return (data || []).map(p => ({ ...p, similarity: 0.7 }));
 };
 
 export const getAllDrugs = async (): Promise<Drug[]> => {
   const { data, error } = await supabase
-    .from('drugs')
-    .select('*')
-    .eq('active', true)
-    .order('medication_name');
+    .rpc('get_all_drugs_rpc');
 
   if (error) {
     throw new Error(error.message);

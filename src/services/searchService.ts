@@ -49,57 +49,29 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
   }
 
   const searchTerm = query.trim().toLowerCase();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   try {
-    const { data, error } = await supabase.rpc('search_drugs', {
-      search_query: searchTerm
+    const response = await fetch(`${supabaseUrl}/functions/v1/pharma-search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ query: searchTerm, type: 'drugs' })
     });
 
-    if (!error && data) {
-      return data;
+    if (!response.ok) {
+      throw new Error(`Search failed with status: ${response.status}`);
     }
 
-    console.warn('RPC function not available, trying direct query');
-  } catch (e) {
-    console.warn('RPC call failed, trying direct query', e);
+    const result = await response.json();
+    return result.drugs || [];
+  } catch (error) {
+    console.error('Search drugs error:', error);
+    throw error;
   }
-
-  try {
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('drugs')
-      .select('*')
-      .eq('active', true)
-      .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
-      .order('medication_name')
-      .limit(20);
-
-    if (!fallbackError && fallbackData) {
-      return fallbackData.map(drug => ({
-        ...drug,
-        similarity: 0.5
-      }));
-    }
-
-    console.warn('Direct query failed, using edge function');
-  } catch (e) {
-    console.warn('Direct query failed, using edge function', e);
-  }
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const response = await fetch(`${supabaseUrl}/functions/v1/pharma-search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query: searchTerm, type: 'drugs' })
-  });
-
-  if (!response.ok) {
-    throw new Error('Search failed: Unable to connect to search service');
-  }
-
-  const result = await response.json();
-  return result.drugs || [];
 };
 
 export const searchPrograms = async (query: string): Promise<Program[]> => {
@@ -108,90 +80,56 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
   }
 
   const searchTerm = query.trim().toLowerCase();
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
   try {
-    const { data, error } = await supabase.rpc('search_programs', {
-      search_query: searchTerm
+    const response = await fetch(`${supabaseUrl}/functions/v1/pharma-search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ query: searchTerm, type: 'programs' })
     });
 
-    if (!error && data) {
-      return data;
+    if (!response.ok) {
+      throw new Error(`Search failed with status: ${response.status}`);
     }
 
-    console.warn('RPC function not available, trying direct query');
-  } catch (e) {
-    console.warn('RPC call failed, trying direct query', e);
+    const result = await response.json();
+    return result.programs || [];
+  } catch (error) {
+    console.error('Search programs error:', error);
+    throw error;
   }
-
-  try {
-    const { data: fallbackData, error: fallbackError } = await supabase
-      .from('programs')
-      .select('*')
-      .eq('active', true)
-      .or(`program_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
-      .order('program_name')
-      .limit(20);
-
-    if (!fallbackError && fallbackData) {
-      return fallbackData.map(program => ({
-        ...program,
-        similarity: 0.5
-      }));
-    }
-
-    console.warn('Direct query failed, using edge function');
-  } catch (e) {
-    console.warn('Direct query failed, using edge function', e);
-  }
-
-  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-  const response = await fetch(`${supabaseUrl}/functions/v1/pharma-search`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-    },
-    body: JSON.stringify({ query: searchTerm, type: 'programs' })
-  });
-
-  if (!response.ok) {
-    throw new Error('Search failed: Unable to connect to search service');
-  }
-
-  const result = await response.json();
-  return result.programs || [];
 };
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
+  const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+  const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
   try {
-    const { data, error } = await supabase.rpc('get_programs_for_drug', {
-      drug_id_param: drugId
+    const response = await fetch(`${supabaseUrl}/functions/v1/pharma-search`, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${supabaseAnonKey}`,
+      },
+      body: JSON.stringify({ drugId, type: 'programs_for_drug' })
     });
 
-    if (!error && data) {
-      return data;
+    if (!response.ok) {
+      console.error('Failed to get programs for drug');
+      return [];
     }
 
-    console.warn('RPC function not available, falling back to direct query');
-  } catch (e) {
-    console.warn('RPC call failed, using fallback', e);
-  }
-
-  const { data: joinData, error: joinError } = await supabase
-    .from('drugs_programs')
-    .select(`
-      program_id,
-      programs (*)
-    `)
-    .eq('drug_id', drugId);
-
-  if (joinError) {
-    console.error('Error getting programs for drug:', joinError);
+    const result = await response.json();
+    return result.programs || [];
+  } catch (error) {
+    console.error('Error getting programs for drug:', error);
     return [];
   }
-
-  return (joinData || [])
-    .filter(item => item.programs)
-    .map(item => item.programs as unknown as Program);
 };
 
 export const getAllDrugs = async (): Promise<Drug[]> => {

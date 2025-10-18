@@ -8,8 +8,9 @@ const corsHeaders = {
 };
 
 interface SearchRequest {
-  query: string;
-  type?: 'drugs' | 'programs' | 'both';
+  query?: string;
+  drugId?: string;
+  type?: 'drugs' | 'programs' | 'both' | 'programs_for_drug';
   limit?: number;
 }
 
@@ -36,8 +37,45 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { query, type = 'both', limit = 20 }: SearchRequest = await req.json();
+    const { query, drugId, type = 'both', limit = 20 }: SearchRequest = await req.json();
 
+    console.log("Request:", { query, drugId, type });
+
+    // Handle programs_for_drug type
+    if (type === 'programs_for_drug' && drugId) {
+      const { data: joinData, error: joinError } = await supabase
+        .from('drugs_programs')
+        .select(`
+          program_id,
+          programs (*)
+        `)
+        .eq('drug_id', drugId);
+
+      if (joinError) {
+        console.error("Programs for drug error:", joinError);
+        return new Response(
+          JSON.stringify({ programs: [] }),
+          {
+            status: 200,
+            headers: { ...corsHeaders, "Content-Type": "application/json" },
+          }
+        );
+      }
+
+      const programs = (joinData || [])
+        .filter(item => item.programs)
+        .map(item => item.programs);
+
+      return new Response(
+        JSON.stringify({ programs }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Require query for search types
     if (!query || query.trim().length === 0) {
       return new Response(
         JSON.stringify({ error: "Query parameter is required" }),
@@ -47,8 +85,6 @@ Deno.serve(async (req: Request) => {
         }
       );
     }
-
-    console.log("Searching for:", query, "type:", type);
 
     const searchTerm = query.toLowerCase().trim();
     const results: any = { drugs: [], programs: [] };

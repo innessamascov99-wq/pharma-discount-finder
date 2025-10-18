@@ -3,7 +3,6 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Pill, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase } from '../lib/supabase';
 
 export const Signup: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -53,7 +52,10 @@ export const Signup: React.FC = () => {
     setLoading(true);
 
     try {
-      const { data, error } = await signUp(email, password);
+      const { data, error } = await signUp(email, password, {
+        first_name: firstName.trim(),
+        last_name: lastName.trim(),
+      });
 
       if (error) {
         setError(error.message);
@@ -62,17 +64,7 @@ export const Signup: React.FC = () => {
       }
 
       if (data.user) {
-        const { error: profileError } = await supabase
-          .from('user_profiles')
-          .insert({
-            user_id: data.user.id,
-            first_name: firstName.trim(),
-            last_name: lastName.trim(),
-          });
-
-        if (profileError) {
-          console.error('Failed to create profile:', profileError);
-        }
+        console.log('User created successfully with metadata');
       }
 
       setSuccess('Account created successfully! Redirecting to sign in...');

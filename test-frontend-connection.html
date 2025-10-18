@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Frontend Search Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 2rem auto;
+      padding: 0 1rem;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      border-radius: 12px;
+      padding: 2rem;
+      box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; margin-top: 0; }
+    .test-section {
+      margin: 1.5rem 0;
+      padding: 1rem;
+      background: #f9f9f9;
+      border-radius: 8px;
+      border-left: 4px solid #3b82f6;
+    }
+    .success { border-left-color: #10b981; }
+    .error { border-left-color: #ef4444; }
+    .status { font-weight: bold; margin-bottom: 0.5rem; }
+    pre {
+      background: #1f2937;
+      color: #e5e7eb;
+      padding: 1rem;
+      border-radius: 6px;
+      overflow-x: auto;
+      font-size: 0.875rem;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 0.75rem 1.5rem;
+      border-radius: 6px;
+      font-size: 1rem;
+      cursor: pointer;
+      margin-top: 1rem;
+    }
+    button:hover { background: #2563eb; }
+    .loading { opacity: 0.6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Frontend Search Connection Test</h1>
+
+    <div id="config" class="test-section">
+      <div class="status">📋 Configuration</div>
+      <div id="configDetails"></div>
+    </div>
+
+    <div id="connection" class="test-section">
+      <div class="status">🔌 Connection Test</div>
+      <div id="connectionResult">Click "Run Tests" to start...</div>
+    </div>
+
+    <div id="search" class="test-section">
+      <div class="status">🔍 Search Test</div>
+      <div id="searchResult"></div>
+    </div>
+
+    <button onclick="runTests()">Run Tests</button>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // Read from .env file values
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg5MzkyNDQsImV4cCI6MjA0NDUxNTI0NH0.P1SedpzJimnVCxzlsm3_B_KFRfwcx4-VhOp7vS6f86Q';
+
+    document.getElementById('configDetails').innerHTML = `
+      <strong>URL:</strong> ${SUPABASE_URL}<br>
+      <strong>Anon Key:</strong> ${SUPABASE_ANON_KEY.substring(0, 30)}...<br>
+      <strong>Project Ref:</strong> ${SUPABASE_URL.match(/https:\/\/([^.]+)/)[1]}
+    `;
+
+    window.runTests = async function() {
+      const connectionEl = document.getElementById('connectionResult');
+      const searchEl = document.getElementById('searchResult');
+
+      connectionEl.innerHTML = '<div class="loading">Testing connection...</div>';
+      searchEl.innerHTML = '';
+
+      const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+      // Test 1: Basic connection - count drugs
+      try {
+        const { count, error } = await supabase
+          .from('drugs')
+          .select('*', { count: 'exact', head: true })
+          .eq('active', true);
+
+        if (error) {
+          connectionEl.innerHTML = `
+            <div class="status" style="color: #ef4444;">❌ Connection Failed</div>
+            <strong>Error:</strong> ${error.message}<br>
+            <strong>Details:</strong> ${error.details || 'N/A'}<br>
+            <strong>Hint:</strong> ${error.hint || 'N/A'}<br>
+            <pre>${JSON.stringify(error, null, 2)}</pre>
+          `;
+          connectionEl.parentElement.classList.add('error');
+          return;
+        }
+
+        connectionEl.innerHTML = `
+          <div class="status" style="color: #10b981;">✅ Connection Successful</div>
+          <strong>Active Drugs Found:</strong> ${count}
+        `;
+        connectionEl.parentElement.classList.add('success');
+
+        // Test 2: Search function
+        searchEl.innerHTML = '<div class="loading">Testing search function...</div>';
+
+        const { data: searchResults, error: searchError } = await supabase
+          .rpc('search_drugs', { search_query: 'ozempic' });
+
+        if (searchError) {
+          searchEl.innerHTML = `
+            <div class="status" style="color: #ef4444;">❌ Search Failed</div>
+            <strong>Error:</strong> ${searchError.message}<br>
+            <strong>Details:</strong> ${searchError.details || 'N/A'}<br>
+            <strong>Hint:</strong> ${searchError.hint || 'N/A'}<br>
+            <pre>${JSON.stringify(searchError, null, 2)}</pre>
+          `;
+          searchEl.parentElement.classList.add('error');
+          return;
+        }
+
+        searchEl.innerHTML = `
+          <div class="status" style="color: #10b981;">✅ Search Successful</div>
+          <strong>Results for "ozempic":</strong> ${searchResults.length} found<br>
+          ${searchResults.length > 0 ? `
+            <br><strong>First Result:</strong><br>
+            • ${searchResults[0].medication_name} (${searchResults[0].generic_name})<br>
+            • Manufacturer: ${searchResults[0].manufacturer}<br>
+            • Price: ${searchResults[0].typical_retail_price}
+          ` : ''}
+          <pre>${JSON.stringify(searchResults[0], null, 2)}</pre>
+        `;
+        searchEl.parentElement.classList.add('success');
+
+      } catch (err) {
+        connectionEl.innerHTML = `
+          <div class="status" style="color: #ef4444;">❌ Unexpected Error</div>
+          <pre>${err.message}\n${err.stack}</pre>
+        `;
+        connectionEl.parentElement.classList.add('error');
+      }
+    };
+  </script>
+</body>
+</html>

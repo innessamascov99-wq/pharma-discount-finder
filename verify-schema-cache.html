@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Verify PostgREST Schema Cache</title>
+  <style>
+    body {
+      font-family: monospace;
+      max-width: 1000px;
+      margin: 20px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    h1 { color: #60a5fa; }
+    .status {
+      padding: 15px;
+      margin: 20px 0;
+      border-radius: 8px;
+      font-weight: bold;
+    }
+    .success { background: #065f46; color: #d1fae5; }
+    .error { background: #991b1b; color: #fee2e2; }
+    .info { background: #1e40af; color: #dbeafe; }
+    pre {
+      background: #1e293b;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      white-space: pre-wrap;
+    }
+    .highlight {
+      background: #fbbf24;
+      color: #000;
+      padding: 2px 4px;
+      font-weight: bold;
+    }
+  </style>
+</head>
+<body>
+  <h1>PostgREST Schema Cache Verification</h1>
+  <div id="status">Checking...</div>
+  <div id="results"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    async function checkSchemaCache() {
+      const statusDiv = document.getElementById('status');
+      const resultsDiv = document.getElementById('results');
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY
+          }
+        });
+
+        const schema = await response.json();
+        const schemaText = JSON.stringify(schema, null, 2);
+
+        // Check for search_drugs_rpc
+        const hasSearchDrugsRpc = schemaText.includes('search_drugs_rpc');
+
+        // Extract all RPC paths
+        const rpcPaths = Object.keys(schema.paths || {})
+          .filter(path => path.startsWith('/rpc/'))
+          .map(path => path.replace('/rpc/', ''));
+
+        let html = '';
+
+        if (hasSearchDrugsRpc) {
+          statusDiv.innerHTML = '<div class="status success">✓ search_drugs_rpc FOUND in schema cache!</div>';
+          html += '<h2>SUCCESS: Function is accessible via PostgREST</h2>';
+        } else {
+          statusDiv.innerHTML = '<div class="status error">✗ search_drugs_rpc NOT found in schema cache</div>';
+          html += '<h2>NOT FOUND: Function not in PostgREST schema</h2>';
+        }
+
+        html += `
+          <h3>Available RPC Functions (${rpcPaths.length})</h3>
+          <pre>${rpcPaths.length > 0 ? rpcPaths.join('\n') : 'No RPC functions found'}</pre>
+
+          <h3>Full Schema Cache Response</h3>
+          <pre>${schemaText.replace(/search_drugs_rpc/g, '<span class="highlight">search_drugs_rpc</span>')}</pre>
+        `;
+
+        resultsDiv.innerHTML = html;
+
+      } catch (error) {
+        statusDiv.innerHTML = `<div class="status error">Error: ${error.message}</div>`;
+        resultsDiv.innerHTML = `<pre>${error.stack}</pre>`;
+      }
+    }
+
+    window.addEventListener('load', checkSchemaCache);
+  </script>
+</body>
+</html>

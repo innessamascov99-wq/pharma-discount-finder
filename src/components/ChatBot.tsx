@@ -1,5 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { MessageCircle, X, Send } from 'lucide-react';
+import { supabase } from '../lib/supabase';
 
 interface ChatBotProps {
   name?: string;
@@ -42,42 +43,49 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
     };
 
     setMessages((prev) => [...prev, userMessage]);
+    const query = inputValue;
     setInputValue('');
     setIsLoading(true);
 
     try {
-      const response = await fetch(
-        'https://creative-glider-excited.ngrok-free.app/webhook/32ecd779-a450-4f0a-82cc-d57e3ad66fed/chat',
-        {
-          method: 'POST',
-          headers: {
-            'Content-Type': 'application/json',
-            'ngrok-skip-browser-warning': 'true',
-          },
-          body: JSON.stringify({
-            message: inputValue,
-            history: messages,
-          }),
-        }
-      );
+      const { data: programs, error } = await supabase
+        .from('pharma_programs')
+        .select('*')
+        .or(`medication_name.ilike.%${query}%,manufacturer.ilike.%${query}%,program_name.ilike.%${query}%`)
+        .eq('active', true)
+        .limit(5);
 
-      const data = await response.json();
+      if (error) throw error;
 
-      if (data.response) {
-        const assistantMessage: Message = {
-          role: 'assistant',
-          content: data.response,
-          timestamp: data.timestamp,
-        };
-        setMessages((prev) => [...prev, assistantMessage]);
+      let responseText = '';
+      if (programs && programs.length > 0) {
+        responseText = `I found ${programs.length} program${programs.length > 1 ? 's' : ''} for "${query}":\n\n`;
+        programs.forEach((prog, idx) => {
+          responseText += `${idx + 1}. ${prog.medication_name} by ${prog.manufacturer}\n`;
+          responseText += `   Program: ${prog.program_name}\n`;
+          if (prog.eligibility_criteria) {
+            responseText += `   Eligibility: ${prog.eligibility_criteria}\n`;
+          }
+          if (prog.website_url) {
+            responseText += `   Website: ${prog.website_url}\n`;
+          }
+          responseText += '\n';
+        });
       } else {
-        throw new Error('No response from server');
+        responseText = `I couldn't find any programs matching "${query}". Try searching for a specific medication name or manufacturer.`;
       }
+
+      const assistantMessage: Message = {
+        role: 'assistant',
+        content: responseText,
+        timestamp: new Date().toISOString(),
+      };
+      setMessages((prev) => [...prev, assistantMessage]);
     } catch (error) {
       console.error('Chat error:', error);
       const errorMessage: Message = {
         role: 'assistant',
-        content: "I'm sorry, I'm having trouble connecting right now. Please try again.",
+        content: "I'm sorry, I'm having trouble searching right now. Please try again.",
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [...prev, errorMessage]);
@@ -95,8 +103,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
 
   return (
     <>
-      {/* Chatbot temporarily disabled - ngrok webhook not available */}
-      {false && !isOpen && (
+      {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 bg-pink-800 hover:bg-pink-900 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50"
@@ -106,7 +113,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
         </button>
       )}
 
-      {false && isOpen && (
+      {isOpen && (
         <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200 dark:border-gray-700">
           <div className="bg-pink-800 text-white p-4 rounded-t-lg flex justify-between items-center">
             <div>

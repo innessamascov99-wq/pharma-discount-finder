@@ -49,21 +49,34 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
   }
 
   const searchTerm = query.trim();
-  const searchPattern = `%${searchTerm}%`;
 
-  const { data, error } = await supabase
-    .from('drugs')
-    .select('*')
-    .eq('active', true)
-    .or(`medication_name.ilike.${searchPattern},generic_name.ilike.${searchPattern},drug_class.ilike.${searchPattern},indication.ilike.${searchPattern}`)
-    .order('medication_name')
-    .limit(20);
+  try {
+    // Use edge function to bypass PostgREST schema cache issues
+    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
+    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-  if (error) {
-    throw new Error(error.message);
+    const response = await fetch(
+      `${supabaseUrl}/functions/v1/search-drugs?q=${encodeURIComponent(searchTerm)}`,
+      {
+        method: 'GET',
+        headers: {
+          'Authorization': `Bearer ${supabaseAnonKey}`,
+          'apikey': supabaseAnonKey,
+        },
+      }
+    );
+
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
+      throw new Error(errorData.error || `HTTP ${response.status}`);
+    }
+
+    const data = await response.json();
+    return (data || []).map((d: Drug) => ({ ...d, similarity: 0.7 }));
+  } catch (error) {
+    console.error('Search error:', error);
+    throw error;
   }
-
-  return (data || []).map(d => ({ ...d, similarity: 0.7 }));
 };
 
 export const searchPrograms = async (query: string): Promise<Program[]> => {

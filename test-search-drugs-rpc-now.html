@@ -1,0 +1,241 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test search_drugs_rpc Function</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 30px auto;
+      padding: 20px;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    .container {
+      background: #1e293b;
+      padding: 30px;
+      border-radius: 12px;
+      box-shadow: 0 4px 12px rgba(0,0,0,0.3);
+    }
+    h1 {
+      color: #60a5fa;
+      margin-bottom: 25px;
+    }
+    input {
+      width: 100%;
+      padding: 14px;
+      font-size: 16px;
+      border: 2px solid #334155;
+      border-radius: 8px;
+      margin-bottom: 15px;
+      box-sizing: border-box;
+      background: #0f172a;
+      color: #e2e8f0;
+    }
+    button {
+      width: 100%;
+      padding: 14px;
+      background: #3b82f6;
+      color: white;
+      border: none;
+      border-radius: 8px;
+      font-size: 16px;
+      cursor: pointer;
+      font-weight: 600;
+      transition: background 0.2s;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button:disabled {
+      background: #475569;
+      cursor: not-allowed;
+    }
+    .status {
+      padding: 12px;
+      margin: 15px 0;
+      border-radius: 8px;
+      font-weight: 500;
+    }
+    .status.success { background: #065f46; color: #d1fae5; }
+    .status.error { background: #991b1b; color: #fee2e2; }
+    .status.info { background: #1e40af; color: #dbeafe; }
+    .results {
+      margin-top: 20px;
+    }
+    .result-item {
+      padding: 15px;
+      margin-bottom: 12px;
+      background: #0f172a;
+      border-radius: 8px;
+      border: 1px solid #334155;
+    }
+    .result-item h3 {
+      margin: 0 0 8px 0;
+      color: #60a5fa;
+    }
+    .result-item p {
+      margin: 4px 0;
+      color: #94a3b8;
+      font-size: 14px;
+    }
+    pre {
+      background: #0f172a;
+      padding: 15px;
+      border-radius: 8px;
+      overflow-x: auto;
+      font-size: 13px;
+      border: 1px solid #334155;
+    }
+    .method-tabs {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 20px;
+    }
+    .tab {
+      padding: 10px 20px;
+      background: #334155;
+      border: none;
+      border-radius: 8px;
+      color: #e2e8f0;
+      cursor: pointer;
+      font-weight: 500;
+    }
+    .tab.active {
+      background: #3b82f6;
+      color: white;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔍 Test search_drugs_rpc</h1>
+
+    <div class="method-tabs">
+      <button class="tab active" onclick="setMethod('rpc')">Direct RPC</button>
+      <button class="tab" onclick="setMethod('edge')">Edge Function</button>
+    </div>
+
+    <input
+      type="text"
+      id="searchInput"
+      placeholder="Enter drug name (e.g., lipitor, aspirin, metformin)"
+      value="lipitor"
+    />
+
+    <button id="searchBtn" onclick="search()">Search</button>
+
+    <div id="status"></div>
+    <div id="results"></div>
+  </div>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.57.4/+esm';
+
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    window.currentMethod = 'rpc';
+
+    window.setMethod = function(method) {
+      window.currentMethod = method;
+      document.querySelectorAll('.tab').forEach(tab => tab.classList.remove('active'));
+      event.target.classList.add('active');
+    };
+
+    window.search = async function() {
+      const searchInput = document.getElementById('searchInput');
+      const searchBtn = document.getElementById('searchBtn');
+      const statusDiv = document.getElementById('status');
+      const resultsDiv = document.getElementById('results');
+
+      const query = searchInput.value.trim();
+      if (!query) {
+        statusDiv.innerHTML = '<div class="status error">Please enter a search query</div>';
+        return;
+      }
+
+      searchBtn.disabled = true;
+      statusDiv.innerHTML = `<div class="status info">Searching using ${window.currentMethod === 'rpc' ? 'Direct RPC' : 'Edge Function'}...</div>`;
+      resultsDiv.innerHTML = '';
+
+      try {
+        let data, error;
+
+        if (window.currentMethod === 'rpc') {
+          // Test direct RPC call
+          console.log('Calling supabase.rpc("search_drugs_rpc", { search_query: "' + query + '" })');
+          const result = await supabase.rpc('search_drugs_rpc', { search_query: query });
+          data = result.data;
+          error = result.error;
+          console.log('RPC Result:', { data, error });
+        } else {
+          // Test edge function
+          console.log('Calling edge function with query:', query);
+          const response = await fetch(`${SUPABASE_URL}/functions/v1/search-drugs-rpc`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json',
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+            },
+            body: JSON.stringify({ search_query: query })
+          });
+
+          if (!response.ok) {
+            const errorText = await response.text();
+            throw new Error(`HTTP ${response.status}: ${errorText}`);
+          }
+
+          data = await response.json();
+          console.log('Edge Function Result:', data);
+        }
+
+        if (error) {
+          throw error;
+        }
+
+        if (Array.isArray(data) && data.length > 0) {
+          statusDiv.innerHTML = `<div class="status success">✓ Found ${data.length} result(s)</div>`;
+
+          resultsDiv.innerHTML = '<div class="results">' +
+            data.map(drug => `
+              <div class="result-item">
+                <h3>${drug.medication_name || 'N/A'}</h3>
+                <p><strong>Generic:</strong> ${drug.generic_name || 'N/A'}</p>
+                <p><strong>Manufacturer:</strong> ${drug.manufacturer || 'N/A'}</p>
+                <p><strong>Class:</strong> ${drug.drug_class || 'N/A'}</p>
+                <p><strong>Indication:</strong> ${drug.indication || 'N/A'}</p>
+                <p><strong>Price:</strong> ${drug.typical_retail_price || 'N/A'}</p>
+              </div>
+            `).join('') +
+            '</div>';
+        } else {
+          statusDiv.innerHTML = '<div class="status info">No results found</div>';
+          resultsDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+        }
+
+      } catch (error) {
+        console.error('Error:', error);
+        statusDiv.innerHTML = `<div class="status error">❌ Error: ${error.message}</div>`;
+        resultsDiv.innerHTML = '<pre>' + JSON.stringify(error, null, 2) + '</pre>';
+      } finally {
+        searchBtn.disabled = false;
+      }
+    };
+
+    document.getElementById('searchInput').addEventListener('keypress', (e) => {
+      if (e.key === 'Enter') {
+        window.search();
+      }
+    });
+
+    // Auto-run on load
+    window.addEventListener('load', () => {
+      setTimeout(() => window.search(), 500);
+    });
+  </script>
+</body>
+</html>

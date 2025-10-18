@@ -95,7 +95,8 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
 
   return (
     <>
-      {!isOpen && (
+      {/* Chatbot temporarily disabled - ngrok webhook not available */}
+      {false && !isOpen && (
         <button
           onClick={() => setIsOpen(true)}
           className="fixed bottom-6 right-6 bg-pink-800 hover:bg-pink-900 text-white rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50"
@@ -105,7 +106,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
         </button>
       )}
 
-      {isOpen && (
+      {false && isOpen && (
         <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200 dark:border-gray-700">
           <div className="bg-pink-800 text-white p-4 rounded-t-lg flex justify-between items-center">
             <div>

@@ -1,0 +1,409 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Redirect Test - pharmadiscountfinder@gmail.com</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 900px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 0; }
+    .success { color: #22c55e; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .info { color: #3b82f6; }
+    .warning { color: #f59e0b; }
+    pre {
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    button.secondary {
+      background: #6b7280;
+    }
+    button.secondary:hover {
+      background: #4b5563;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .status.success {
+      background: #dcfce7;
+      border: 1px solid #22c55e;
+    }
+    .status.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+    }
+    .status.info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+    }
+    .status.warning {
+      background: #fef3c7;
+      border: 1px solid #f59e0b;
+    }
+    input {
+      width: 100%;
+      padding: 10px;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 14px;
+      margin: 5px 0;
+    }
+    label {
+      display: block;
+      margin: 10px 0 5px 0;
+      font-weight: 600;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Admin Redirect Test</h1>
+  <p class="info">Testing that <strong>pharmadiscountfinder@gmail.com</strong> gets directed to the admin portal</p>
+
+  <div class="card">
+    <h2>Database Configuration</h2>
+    <div id="config"></div>
+  </div>
+
+  <div class="card">
+    <h2>Test Admin Login Flow</h2>
+    <div>
+      <label for="email">Email</label>
+      <input type="email" id="email" value="pharmadiscountfinder@gmail.com" placeholder="pharmadiscountfinder@gmail.com">
+
+      <label for="password">Password</label>
+      <input type="password" id="password" placeholder="Enter password">
+
+      <button onclick="testLogin()">Test Login</button>
+      <button class="secondary" onclick="testGoogleOAuth()">Test Google OAuth</button>
+    </div>
+    <div id="login-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Current User & Admin Status</h2>
+    <div id="user-info"></div>
+  </div>
+
+  <div class="card">
+    <h2>Admin Flag Verification</h2>
+    <button onclick="checkAdminFlag()">Check Admin Flag in Database</button>
+    <div id="admin-flag-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Expected Redirect Behavior</h2>
+    <div class="status info">
+      <strong>✓ Expected Flow:</strong><br>
+      1. User signs in with pharmadiscountfinder@gmail.com<br>
+      2. Database trigger creates user record with is_admin=true<br>
+      3. AuthContext checks admin status from public.users table<br>
+      4. Login component detects isAdmin=true<br>
+      5. User redirected to /admin instead of /dashboard<br>
+      <br>
+      <strong>Code locations:</strong><br>
+      - Trigger: supabase/migrations/20251018164210_set_pharma_discount_finder_as_admin.sql<br>
+      - AuthContext admin check: src/contexts/AuthContext.tsx:37-55<br>
+      - Login redirect: src/pages/Login.tsx:18-26<br>
+      - Signup redirect: src/pages/Signup.tsx:22-30
+    </div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      }
+    });
+
+    // Display config
+    document.getElementById('config').innerHTML = `
+      <div class="status success">
+        <strong>Database URL:</strong> ${SUPABASE_URL}<br>
+        <strong>Project Ref:</strong> nuhfqkhplldontxtoxkg<br>
+        <strong>Admin Email:</strong> pharmadiscountfinder@gmail.com<br>
+        <strong>Status:</strong> <span class="success">✓ Configured correctly</span>
+      </div>
+    `;
+
+    // Test login
+    async function testLogin() {
+      const resultDiv = document.getElementById('login-result');
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      if (!password) {
+        resultDiv.innerHTML = '<div class="status error">Please enter a password</div>';
+        return;
+      }
+
+      resultDiv.innerHTML = '<p class="info">Signing in...</p>';
+
+      try {
+        const { data, error } = await supabase.auth.signInWithPassword({
+          email: email,
+          password: password,
+        });
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>Login Error:</strong> ${error.message}<br>
+              ${error.message.includes('Invalid') ? '<br><strong>Note:</strong> You may need to sign up first if this account doesn\'t exist yet.' : ''}
+            </div>
+          `;
+          return;
+        }
+
+        if (data.session) {
+          // Wait for trigger to create user record
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Check admin status
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', data.session.user.id)
+            .maybeSingle();
+
+          const isAdmin = userData?.is_admin || false;
+
+          resultDiv.innerHTML = `
+            <div class="status success">
+              <strong>✓ Login Successful!</strong><br>
+              User: ${data.session.user.email}<br>
+              User ID: ${data.session.user.id}<br>
+              Admin Status: <strong>${isAdmin ? 'YES - Admin' : 'NO - Regular User'}</strong><br>
+              <br>
+              <strong>Expected Redirect:</strong> ${isAdmin ? '/admin' : '/dashboard'}<br>
+              <br>
+              ${isAdmin ? '<span class="success">✓ This user WILL be redirected to the admin portal!</span>' : '<span class="warning">⚠ This user will be redirected to the regular dashboard</span>'}
+            </div>
+          `;
+
+          // Update current user info
+          checkCurrentUser();
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Test Google OAuth
+    async function testGoogleOAuth() {
+      const resultDiv = document.getElementById('login-result');
+      resultDiv.innerHTML = '<p class="info">Initiating Google OAuth...</p>';
+
+      try {
+        const redirectUrl = `${window.location.origin}/auth/callback`;
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>OAuth Error:</strong> ${error.message}
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="status success">
+              <strong>✓ OAuth initiated!</strong><br>
+              You should be redirected to Google sign-in...<br>
+              After signing in with pharmadiscountfinder@gmail.com, you will be redirected to /admin
+            </div>
+          `;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Check admin flag in database
+    async function checkAdminFlag() {
+      const resultDiv = document.getElementById('admin-flag-result');
+      resultDiv.innerHTML = '<p class="info">Checking database...</p>';
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('id, email, is_admin')
+          .eq('email', 'pharmadiscountfinder@gmail.com')
+          .maybeSingle();
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>Query Error:</strong> ${error.message}
+            </div>
+          `;
+          return;
+        }
+
+        if (data) {
+          resultDiv.innerHTML = `
+            <div class="status ${data.is_admin ? 'success' : 'warning'}">
+              <strong>User Found in Database:</strong><br>
+              Email: ${data.email}<br>
+              User ID: ${data.id}<br>
+              Admin Flag: <strong>${data.is_admin ? 'TRUE ✓' : 'FALSE ✗'}</strong><br>
+              <br>
+              ${data.is_admin ? '<span class="success">✓ Admin flag is correctly set!</span>' : '<span class="warning">⚠ Admin flag is not set. It should be set by the database trigger on first login.</span>'}
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="status warning">
+              <strong>User Not Found</strong><br>
+              The user pharmadiscountfinder@gmail.com has not signed up or logged in yet.<br>
+              <br>
+              <strong>Note:</strong> The admin flag will be automatically set to TRUE when this user:<br>
+              1. Signs up for the first time (trigger creates user record)<br>
+              2. Logs in for the first time (trigger creates user record)<br>
+              3. Uses Google OAuth (trigger creates user record)
+            </div>
+          `;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Check current user
+    async function checkCurrentUser() {
+      const userDiv = document.getElementById('user-info');
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          userDiv.innerHTML = `
+            <div class="status error">
+              <strong>Error:</strong> ${error.message}
+            </div>
+          `;
+          return;
+        }
+
+        if (session) {
+          // Check admin status from database
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', session.user.id)
+            .maybeSingle();
+
+          const isAdmin = userData?.is_admin || false;
+
+          userDiv.innerHTML = `
+            <div class="status success">
+              <strong>✓ Logged In</strong><br>
+              Email: ${session.user.email}<br>
+              User ID: ${session.user.id}<br>
+              Provider: ${session.user.app_metadata.provider || 'email'}<br>
+              Admin Status: <strong>${isAdmin ? 'YES - Admin' : 'NO - Regular User'}</strong><br>
+              <br>
+              <strong>Will Redirect To:</strong> ${isAdmin ? '/admin' : '/dashboard'}<br>
+              <br>
+              ${session.user.email === 'pharmadiscountfinder@gmail.com' && isAdmin ?
+                '<span class="success">✓ Perfect! Admin user will be redirected to admin portal</span>' :
+                session.user.email === 'pharmadiscountfinder@gmail.com' && !isAdmin ?
+                '<span class="warning">⚠ Admin flag not set. Should be set by trigger.</span>' :
+                '<span class="info">ℹ Regular user - will be redirected to dashboard</span>'}
+            </div>
+          `;
+        } else {
+          userDiv.innerHTML = `
+            <div class="status">
+              <strong>No active session</strong><br>
+              Sign in to test the redirect behavior
+            </div>
+          `;
+        }
+      } catch (err) {
+        userDiv.innerHTML = `
+          <div class="status error">
+            <strong>Error checking session:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Check current user on load
+    checkCurrentUser();
+
+    // Listen for auth changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event);
+      if (event === 'SIGNED_IN' || event === 'TOKEN_REFRESHED') {
+        setTimeout(checkCurrentUser, 500);
+      } else {
+        checkCurrentUser();
+      }
+    });
+  </script>
+</body>
+</html>

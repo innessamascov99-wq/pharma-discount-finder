@@ -1,0 +1,204 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Google OAuth Database Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 0; }
+    .success { color: #22c55e; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .info { color: #3b82f6; }
+    pre {
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 10px 20px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .status.success {
+      background: #dcfce7;
+      border: 1px solid #22c55e;
+    }
+    .status.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔐 Google OAuth Database Connection Test</h1>
+
+  <div class="card">
+    <h2>Database Configuration</h2>
+    <div id="config"></div>
+  </div>
+
+  <div class="card">
+    <h2>Test Google OAuth Flow</h2>
+    <button onclick="testGoogleOAuth()">Sign in with Google</button>
+    <div id="oauth-result"></div>
+  </div>
+
+  <div class="card">
+    <h2>Current Session</h2>
+    <div id="session-info"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+      auth: {
+        autoRefreshToken: true,
+        persistSession: true,
+        detectSessionInUrl: true,
+        flowType: 'pkce',
+      }
+    });
+
+    // Display config
+    document.getElementById('config').innerHTML = `
+      <div class="status success">
+        <strong>Database URL:</strong> ${SUPABASE_URL}<br>
+        <strong>Project Ref:</strong> nuhfqkhplldontxtoxkg<br>
+        <strong>Status:</strong> <span class="success">✓ Configured for nuhfqkhplldontxtoxkg database</span>
+      </div>
+    `;
+
+    // Test Google OAuth
+    async function testGoogleOAuth() {
+      const resultDiv = document.getElementById('oauth-result');
+      resultDiv.innerHTML = '<p class="info">Initiating Google OAuth...</p>';
+
+      try {
+        const redirectUrl = `${window.location.origin}/auth/callback`;
+        console.log('Redirect URL:', redirectUrl);
+
+        const { data, error } = await supabase.auth.signInWithOAuth({
+          provider: 'google',
+          options: {
+            redirectTo: redirectUrl,
+            queryParams: {
+              access_type: 'offline',
+              prompt: 'consent',
+            },
+          },
+        });
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>Error:</strong> ${error.message}<br>
+              <strong>Status:</strong> ${error.status}
+            </div>
+          `;
+        } else {
+          resultDiv.innerHTML = `
+            <div class="status success">
+              <strong>✓ OAuth initiated successfully!</strong><br>
+              Provider: ${data.provider}<br>
+              URL Generated: ${data.url ? 'Yes' : 'No'}<br>
+              <br>
+              You should be redirected to Google sign-in...
+            </div>
+          `;
+        }
+      } catch (err) {
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>Unexpected Error:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Check current session
+    async function checkSession() {
+      const sessionDiv = document.getElementById('session-info');
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          sessionDiv.innerHTML = `
+            <div class="status error">
+              <strong>Error:</strong> ${error.message}
+            </div>
+          `;
+          return;
+        }
+
+        if (session) {
+          sessionDiv.innerHTML = `
+            <div class="status success">
+              <strong>✓ Active Session Found</strong><br>
+              User: ${session.user.email}<br>
+              User ID: ${session.user.id}<br>
+              Provider: ${session.user.app_metadata.provider || 'email'}<br>
+              Database: <strong>nuhfqkhplldontxtoxkg</strong>
+            </div>
+          `;
+        } else {
+          sessionDiv.innerHTML = `
+            <div class="status">
+              <strong>No active session</strong><br>
+              Click "Sign in with Google" to test OAuth flow
+            </div>
+          `;
+        }
+      } catch (err) {
+        sessionDiv.innerHTML = `
+          <div class="status error">
+            <strong>Error checking session:</strong><br>
+            <pre>${JSON.stringify(err, null, 2)}</pre>
+          </div>
+        `;
+      }
+    }
+
+    // Check session on load
+    checkSession();
+
+    // Listen for auth changes
+    supabase.auth.onAuthStateChange((event, session) => {
+      console.log('Auth state change:', event);
+      checkSession();
+    });
+  </script>
+</body>
+</html>

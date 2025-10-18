@@ -1,5 +1,27 @@
 import { supabase } from '../lib/supabase';
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
+
+async function callEdgeFunction(type: string, params: any = {}) {
+  const response = await fetch(`${SUPABASE_URL}/functions/v1/db-query`, {
+    method: 'POST',
+    headers: {
+      'Content-Type': 'application/json',
+      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+    },
+    body: JSON.stringify({ type, ...params })
+  });
+
+  if (!response.ok) {
+    const error = await response.json();
+    throw new Error(error.error || 'Database query failed');
+  }
+
+  const result = await response.json();
+  return result.data;
+}
+
 export interface Drug {
   id: string;
   medication_name: string;
@@ -48,18 +70,7 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
     return [];
   }
 
-  const searchTerm = query.trim().toLowerCase();
-
-  const { data, error } = await supabase.rpc('simple_search_drugs', {
-    search_text: searchTerm
-  });
-
-  if (error) {
-    console.error('Search drugs error:', error);
-    throw new Error(`Search failed: ${error.message}`);
-  }
-
-  return data || [];
+  return await callEdgeFunction('search_drugs', { query: query.trim() });
 };
 
 export const searchPrograms = async (query: string): Promise<Program[]> => {
@@ -67,129 +78,33 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
     return [];
   }
 
-  const searchTerm = query.trim().toLowerCase();
-
-  const { data, error } = await supabase.rpc('simple_search_programs', {
-    search_text: searchTerm
-  });
-
-  if (error) {
-    console.error('Search programs error:', error);
-    throw new Error(`Search failed: ${error.message}`);
-  }
-
-  return data || [];
+  return await callEdgeFunction('search_programs', { query: query.trim() });
 };
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
-  const { data: joinData, error: joinError } = await supabase
-    .from('drugs_programs')
-    .select(`
-      program_id,
-      programs (*)
-    `)
-    .eq('drug_id', drugId);
-
-  if (joinError) {
-    console.error('Error getting programs for drug:', joinError);
-    return [];
-  }
-
-  return (joinData || [])
-    .filter(item => item.programs)
-    .map(item => item.programs as unknown as Program);
+  return await callEdgeFunction('get_programs_for_drug', { drugId });
 };
 
 export const getAllDrugs = async (): Promise<Drug[]> => {
-  const { data, error } = await supabase
-    .from('drugs')
-    .select('*')
-    .eq('active', true)
-    .order('medication_name', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching drugs:', error);
-    throw new Error(`Failed to fetch drugs: ${error.message}`);
-  }
-
-  return data || [];
+  return await callEdgeFunction('get_all_drugs');
 };
 
 export const getAllPrograms = async (): Promise<Program[]> => {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('active', true)
-    .order('program_name', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching programs:', error);
-    throw new Error(`Failed to fetch programs: ${error.message}`);
-  }
-
-  return data || [];
+  return await callEdgeFunction('get_all_programs');
 };
 
 export const getDrugById = async (id: string): Promise<Drug | null> => {
-  const { data, error } = await supabase
-    .from('drugs')
-    .select('*')
-    .eq('id', id)
-    .eq('active', true)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching drug:', error);
-    return null;
-  }
-
-  return data;
+  return await callEdgeFunction('get_drug_by_id', { id });
 };
 
 export const getProgramById = async (id: string): Promise<Program | null> => {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('id', id)
-    .eq('active', true)
-    .maybeSingle();
-
-  if (error) {
-    console.error('Error fetching program:', error);
-    return null;
-  }
-
-  return data;
+  return await callEdgeFunction('get_program_by_id', { id });
 };
 
 export const getDrugsByManufacturer = async (manufacturer: string): Promise<Drug[]> => {
-  const { data, error } = await supabase
-    .from('drugs')
-    .select('*')
-    .eq('active', true)
-    .ilike('manufacturer', `%${manufacturer}%`)
-    .order('medication_name', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching drugs by manufacturer:', error);
-    return [];
-  }
-
-  return data || [];
+  return await callEdgeFunction('get_drugs_by_manufacturer', { manufacturer });
 };
 
 export const getProgramsByManufacturer = async (manufacturer: string): Promise<Program[]> => {
-  const { data, error } = await supabase
-    .from('programs')
-    .select('*')
-    .eq('active', true)
-    .ilike('manufacturer', `%${manufacturer}%`)
-    .order('program_name', { ascending: true });
-
-  if (error) {
-    console.error('Error fetching programs by manufacturer:', error);
-    return [];
-  }
-
-  return data || [];
+  return await callEdgeFunction('get_programs_by_manufacturer', { manufacturer });
 };

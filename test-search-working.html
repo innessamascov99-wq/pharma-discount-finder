@@ -1,0 +1,59 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Supabase Search</title>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+    <h1>Test Supabase Search</h1>
+    <div id="status"></div>
+    <div id="results"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        async function testSearch() {
+            const statusDiv = document.getElementById('status');
+            const resultsDiv = document.getElementById('results');
+
+            try {
+                statusDiv.innerHTML = '<p>Testing RPC function simple_search_drugs...</p>';
+
+                const { data, error } = await supabase.rpc('simple_search_drugs', {
+                    search_text: 'jardiance'
+                });
+
+                if (error) {
+                    statusDiv.innerHTML += '<p style="color: red;">Error: ' + JSON.stringify(error, null, 2) + '</p>';
+                } else {
+                    statusDiv.innerHTML += '<p style="color: green;">Success! Found ' + data.length + ' results</p>';
+                    resultsDiv.innerHTML = '<pre>' + JSON.stringify(data, null, 2) + '</pre>';
+                }
+
+                // Test programs search
+                statusDiv.innerHTML += '<p>Testing RPC function simple_search_programs...</p>';
+
+                const { data: programsData, error: programsError } = await supabase.rpc('simple_search_programs', {
+                    search_text: 'copay'
+                });
+
+                if (programsError) {
+                    statusDiv.innerHTML += '<p style="color: red;">Programs Error: ' + JSON.stringify(programsError, null, 2) + '</p>';
+                } else {
+                    statusDiv.innerHTML += '<p style="color: green;">Programs Success! Found ' + programsData.length + ' results</p>';
+                    resultsDiv.innerHTML += '<h3>Programs:</h3><pre>' + JSON.stringify(programsData, null, 2) + '</pre>';
+                }
+
+            } catch (err) {
+                statusDiv.innerHTML += '<p style="color: red;">Exception: ' + err.message + '</p>';
+                console.error('Error:', err);
+            }
+        }
+
+        testSearch();
+    </script>
+</body>
+</html>

@@ -1,0 +1,251 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>PostgREST API Direct Test</title>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 1200px;
+      margin: 40px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .card {
+      background: white;
+      border-radius: 8px;
+      padding: 20px;
+      margin: 20px 0;
+      box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+    }
+    h1 { color: #333; }
+    h2 { color: #666; margin-top: 0; }
+    .success { color: #22c55e; font-weight: bold; }
+    .error { color: #ef4444; font-weight: bold; }
+    .info { color: #3b82f6; }
+    pre {
+      background: #f8f8f8;
+      padding: 10px;
+      border-radius: 4px;
+      overflow-x: auto;
+      font-size: 12px;
+      max-height: 400px;
+      overflow-y: auto;
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 8px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 5px;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .status {
+      margin: 10px 0;
+      padding: 10px;
+      border-radius: 4px;
+    }
+    .status.success {
+      background: #dcfce7;
+      border: 1px solid #22c55e;
+    }
+    .status.error {
+      background: #fee2e2;
+      border: 1px solid #ef4444;
+    }
+    .status.info {
+      background: #dbeafe;
+      border: 1px solid #3b82f6;
+    }
+  </style>
+</head>
+<body>
+  <h1>🔍 PostgREST API Direct Test</h1>
+  <p class="info">Testing direct PostgREST API access to drugs table</p>
+
+  <div class="card">
+    <h2>Test 1: Direct REST API Call</h2>
+    <button onclick="testDirectAPI()">Test Direct API</button>
+    <div id="directAPIResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Test 2: Supabase JS Client</h2>
+    <button onclick="testSupabaseClient()">Test Supabase Client</button>
+    <div id="supabaseClientResult"></div>
+  </div>
+
+  <div class="card">
+    <h2>Test 3: Check All Tables</h2>
+    <button onclick="checkAllTables()">Check All Tables</button>
+    <div id="allTablesResult"></div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    async function testDirectAPI() {
+      const resultDiv = document.getElementById('directAPIResult');
+      resultDiv.innerHTML = '<p class="info">Testing direct REST API...</p>';
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/drugs?select=*&limit=5`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+          }
+        });
+
+        console.log('Direct API Response Status:', response.status);
+        console.log('Direct API Response Headers:', response.headers);
+
+        const text = await response.text();
+        console.log('Direct API Response Text:', text);
+
+        if (!response.ok) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>❌ API Error</strong><br>
+              Status: ${response.status} ${response.statusText}<br>
+              <br>
+              <strong>Response:</strong>
+              <pre>${text}</pre>
+              <br>
+              <strong>Diagnosis:</strong><br>
+              ${response.status === 404 ? '- PostgREST schema cache does not include drugs table<br>- Need to wait for cache refresh or restart PostgREST' : ''}
+              ${response.status === 401 ? '- Authentication issue<br>- Check API key' : ''}
+            </div>
+          `;
+          return;
+        }
+
+        const data = JSON.parse(text);
+        resultDiv.innerHTML = `
+          <div class="status success">
+            <strong>✅ API Call Successful!</strong><br>
+            Found ${data.length} drugs
+          </div>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (err) {
+        console.error('Direct API Error:', err);
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>❌ Network Error</strong><br>
+            <pre>${err.message}</pre>
+          </div>
+        `;
+      }
+    }
+
+    async function testSupabaseClient() {
+      const resultDiv = document.getElementById('supabaseClientResult');
+      resultDiv.innerHTML = '<p class="info">Testing Supabase JS client...</p>';
+
+      try {
+        const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        const { data, error } = await supabase
+          .from('drugs')
+          .select('*')
+          .limit(5);
+
+        console.log('Supabase Client Data:', data);
+        console.log('Supabase Client Error:', error);
+
+        if (error) {
+          resultDiv.innerHTML = `
+            <div class="status error">
+              <strong>❌ Supabase Client Error</strong><br>
+              <strong>Code:</strong> ${error.code}<br>
+              <strong>Message:</strong> ${error.message}<br>
+              <strong>Details:</strong> ${error.details || 'None'}<br>
+              <strong>Hint:</strong> ${error.hint || 'None'}<br>
+              <br>
+              <pre>${JSON.stringify(error, null, 2)}</pre>
+            </div>
+          `;
+          return;
+        }
+
+        resultDiv.innerHTML = `
+          <div class="status success">
+            <strong>✅ Supabase Client Success!</strong><br>
+            Found ${data.length} drugs
+          </div>
+          <pre>${JSON.stringify(data, null, 2)}</pre>
+        `;
+      } catch (err) {
+        console.error('Supabase Client Error:', err);
+        resultDiv.innerHTML = `
+          <div class="status error">
+            <strong>❌ Unexpected Error</strong><br>
+            <pre>${err.message}</pre>
+          </div>
+        `;
+      }
+    }
+
+    async function checkAllTables() {
+      const resultDiv = document.getElementById('allTablesResult');
+      resultDiv.innerHTML = '<p class="info">Checking all tables...</p>';
+
+      const tables = ['drugs', 'programs', 'drugs_programs', 'users'];
+      const results = [];
+
+      for (const table of tables) {
+        try {
+          const response = await fetch(`${SUPABASE_URL}/rest/v1/${table}?select=*&limit=1`, {
+            headers: {
+              'apikey': SUPABASE_ANON_KEY,
+              'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+            }
+          });
+
+          results.push({
+            table,
+            status: response.status,
+            ok: response.ok,
+            statusText: response.statusText
+          });
+        } catch (err) {
+          results.push({
+            table,
+            status: 'ERROR',
+            ok: false,
+            statusText: err.message
+          });
+        }
+      }
+
+      let html = '<div class="status info"><strong>Table Access Status:</strong></div>';
+      results.forEach(result => {
+        const statusClass = result.ok ? 'success' : 'error';
+        const icon = result.ok ? '✅' : '❌';
+        html += `
+          <div class="status ${statusClass}">
+            ${icon} <strong>${result.table}</strong>: ${result.status} ${result.statusText}
+          </div>
+        `;
+      });
+
+      resultDiv.innerHTML = html;
+    }
+
+    // Run tests on load
+    setTimeout(() => {
+      testDirectAPI();
+      setTimeout(() => testSupabaseClient(), 1000);
+      setTimeout(() => checkAllTables(), 2000);
+    }, 500);
+  </script>
+</body>
+</html>

@@ -1,0 +1,129 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Search Verification Test</title>
+    <style>
+        body { font-family: Arial, sans-serif; padding: 20px; max-width: 800px; margin: 0 auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; background: #3b82f6; color: white; border: none; border-radius: 5px; }
+        button:hover { background: #2563eb; }
+        .result { margin-top: 20px; padding: 15px; border-radius: 5px; }
+        .success { background: #dcfce7; border: 1px solid #86efac; }
+        .error { background: #fee2e2; border: 1px solid #fca5a5; }
+        pre { white-space: pre-wrap; word-wrap: break-word; }
+        #log { margin-top: 20px; padding: 10px; background: #f3f4f6; border-radius: 5px; }
+    </style>
+</head>
+<body>
+    <h1>Drug Search Verification</h1>
+
+    <div>
+        <button onclick="testSearch('ozempic')">Test: Ozempic</button>
+        <button onclick="testSearch('insulin')">Test: Insulin</button>
+        <button onclick="testSearch('advair')">Test: Advair</button>
+        <button onclick="testGetAllDrugs()">Test: Get All Drugs</button>
+    </div>
+
+    <div id="result"></div>
+    <div id="log"></div>
+
+    <script>
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        function log(message) {
+            const logDiv = document.getElementById('log');
+            const timestamp = new Date().toLocaleTimeString();
+            logDiv.innerHTML += `[${timestamp}] ${message}<br>`;
+        }
+
+        async function testSearch(query) {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Searching...</p>';
+            log(`Starting search for: "${query}"`);
+
+            try {
+                const url = `${SUPABASE_URL}/functions/v1/db-query`;
+                log(`URL: ${url}`);
+
+                const body = { type: 'search_drugs', query: query };
+                log(`Request body: ${JSON.stringify(body)}`);
+
+                const response = await fetch(url, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify(body),
+                });
+
+                log(`Response status: ${response.status}`);
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`Error response: ${errorText}`);
+                    resultDiv.innerHTML = `<div class="result error"><strong>Error ${response.status}</strong><pre>${errorText}</pre></div>`;
+                    return;
+                }
+
+                const result = await response.json();
+                log(`Success! Found ${result.data?.length || 0} results`);
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>✓ Found ${result.data?.length || 0} results for "${query}"</h3>
+                        <pre>${JSON.stringify(result, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                log(`Exception: ${error.message}`);
+                resultDiv.innerHTML = `<div class="result error"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        async function testGetAllDrugs() {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = '<p>Loading all drugs...</p>';
+            log('Getting all drugs');
+
+            try {
+                const response = await fetch(`${SUPABASE_URL}/functions/v1/db-query`, {
+                    method: 'POST',
+                    headers: {
+                        'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
+                        'apikey': SUPABASE_ANON_KEY,
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ type: 'get_all_drugs' }),
+                });
+
+                if (!response.ok) {
+                    const errorText = await response.text();
+                    log(`Error: ${errorText}`);
+                    resultDiv.innerHTML = `<div class="result error"><strong>Error ${response.status}</strong><pre>${errorText}</pre></div>`;
+                    return;
+                }
+
+                const result = await response.json();
+                log(`Success! Found ${result.data?.length || 0} total drugs`);
+
+                const drugList = result.data?.map(d => d.medication_name).join(', ') || 'None';
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>✓ Found ${result.data?.length || 0} total drugs</h3>
+                        <p><strong>Medications:</strong> ${drugList}</p>
+                    </div>
+                `;
+            } catch (error) {
+                log(`Exception: ${error.message}`);
+                resultDiv.innerHTML = `<div class="result error"><strong>Error:</strong> ${error.message}</div>`;
+            }
+        }
+
+        log('Page loaded. Click a button to test search.');
+    </script>
+</body>
+</html>

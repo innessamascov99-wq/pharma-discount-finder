@@ -38,7 +38,7 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { query, drugId, type = 'both', limit = 20 }: SearchRequest = await req.json();
+    const { query, drugId, type = 'drugs', limit = 20 }: SearchRequest = await req.json();
 
     console.log("Request:", { query, drugId, type });
 
@@ -46,16 +46,13 @@ Deno.serve(async (req: Request) => {
     if (type === 'programs_for_drug' && drugId) {
       const { data: joinData, error: joinError } = await supabase
         .from('drugs_programs')
-        .select(`
-          program_id,
-          programs (*)
-        `)
+        .select('program_id, programs (*)')
         .eq('drug_id', drugId);
 
       if (joinError) {
         console.error("Programs for drug error:", joinError);
         return new Response(
-          JSON.stringify({ programs: [] }),
+          JSON.stringify({ data: [] }),
           {
             status: 200,
             headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -68,7 +65,7 @@ Deno.serve(async (req: Request) => {
         .map(item => item.programs);
 
       return new Response(
-        JSON.stringify({ programs }),
+        JSON.stringify({ data: programs }),
         {
           status: 200,
           headers: { ...corsHeaders, "Content-Type": "application/json" },
@@ -88,10 +85,9 @@ Deno.serve(async (req: Request) => {
     }
 
     const searchTerm = query.toLowerCase().trim();
-    const results: any = { drugs: [], programs: [] };
 
-    // Search drugs
-    if (type === 'drugs' || type === 'both') {
+    // Search drugs only (matching searchService.ts expectations)
+    if (type === 'drugs') {
       const { data: drugsData, error: drugsError } = await supabase
         .from('drugs')
         .select('*')
@@ -102,16 +98,22 @@ Deno.serve(async (req: Request) => {
 
       if (drugsError) {
         console.error("Drugs search error:", drugsError);
-      } else {
-        results.drugs = (drugsData || []).map(drug => ({
-          ...drug,
-          similarity: 0.8
-        }));
+        throw drugsError;
       }
+
+      const drugs = (drugsData || []).map(drug => ({ ...drug, similarity: 0.8 }));
+      
+      return new Response(
+        JSON.stringify({ data: drugs }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     // Search programs
-    if (type === 'programs' || type === 'both') {
+    if (type === 'programs') {
       const { data: programsData, error: programsError } = await supabase
         .from('programs')
         .select('*')
@@ -122,26 +124,24 @@ Deno.serve(async (req: Request) => {
 
       if (programsError) {
         console.error("Programs search error:", programsError);
-      } else {
-        results.programs = (programsData || []).map(program => ({
-          ...program,
-          similarity: 0.8
-        }));
+        throw programsError;
       }
+
+      const programs = (programsData || []).map(program => ({ ...program, similarity: 0.8 }));
+      
+      return new Response(
+        JSON.stringify({ data: programs }),
+        {
+          status: 200,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
     }
 
     return new Response(
-      JSON.stringify({
-        drugs: results.drugs,
-        programs: results.programs,
-        count: {
-          drugs: results.drugs.length,
-          programs: results.programs.length,
-          total: results.drugs.length + results.programs.length
-        }
-      }),
+      JSON.stringify({ error: "Invalid type parameter" }),
       {
-        status: 200,
+        status: 400,
         headers: { ...corsHeaders, "Content-Type": "application/json" },
       }
     );

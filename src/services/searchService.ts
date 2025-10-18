@@ -51,30 +51,16 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
   const searchTerm = query.trim();
 
   try {
-    // Use db-query edge function to bypass PostgREST schema cache issues
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('drugs')
+      .select('*')
+      .eq('active', true)
+      .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
+      .order('medication_name')
+      .limit(20);
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'search_drugs', query: searchTerm }),
-      }
-    );
-
-    if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: `HTTP ${response.status}` }));
-      throw new Error(errorData.error || `HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || [];
+    if (error) throw error;
+    return (data || []).map(drug => ({ ...drug, similarity: 0.8 }));
   } catch (error) {
     console.error('Search error:', error);
     throw error;
@@ -89,28 +75,16 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
   const searchTerm = query.trim();
 
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('programs')
+      .select('*')
+      .eq('active', true)
+      .or(`program_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+      .order('program_name')
+      .limit(20);
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'search_programs', query: searchTerm }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || [];
+    if (error) throw error;
+    return (data || []).map(program => ({ ...program, similarity: 0.8 }));
   } catch (error) {
     console.error('Search programs error:', error);
     throw error;
@@ -119,28 +93,18 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('drugs_programs')
+      .select('program_id, programs (*)')
+      .eq('drug_id', drugId);
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_programs_for_drug', drugId }),
-      }
-    );
+    if (error) throw error;
 
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
+    const programs = (data || [])
+      .filter(item => item.programs)
+      .map(item => item.programs as unknown as Program);
 
-    const result = await response.json();
-    return result.data || [];
+    return programs;
   } catch (error) {
     console.error('Get programs for drug error:', error);
     throw error;
@@ -149,28 +113,14 @@ export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => 
 
 export const getAllDrugs = async (): Promise<Drug[]> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('drugs')
+      .select('*')
+      .eq('active', true)
+      .order('medication_name');
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_all_drugs' }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || [];
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Get all drugs error:', error);
     throw error;
@@ -179,28 +129,14 @@ export const getAllDrugs = async (): Promise<Drug[]> => {
 
 export const getAllPrograms = async (): Promise<Program[]> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('programs')
+      .select('*')
+      .eq('active', true)
+      .order('program_name');
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_all_programs' }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || [];
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Get all programs error:', error);
     throw error;
@@ -209,28 +145,15 @@ export const getAllPrograms = async (): Promise<Program[]> => {
 
 export const getDrugById = async (id: string): Promise<Drug | null> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('drugs')
+      .select('*')
+      .eq('id', id)
+      .eq('active', true)
+      .maybeSingle();
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_drug_by_id', id }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || null;
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Get drug by id error:', error);
     throw error;
@@ -239,28 +162,15 @@ export const getDrugById = async (id: string): Promise<Drug | null> => {
 
 export const getProgramById = async (id: string): Promise<Program | null> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('programs')
+      .select('*')
+      .eq('id', id)
+      .eq('active', true)
+      .maybeSingle();
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_program_by_id', id }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || null;
+    if (error) throw error;
+    return data;
   } catch (error) {
     console.error('Get program by id error:', error);
     throw error;
@@ -269,28 +179,15 @@ export const getProgramById = async (id: string): Promise<Program | null> => {
 
 export const getDrugsByManufacturer = async (manufacturer: string): Promise<Drug[]> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('drugs')
+      .select('*')
+      .eq('active', true)
+      .ilike('manufacturer', `%${manufacturer}%`)
+      .order('medication_name');
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_drugs_by_manufacturer', manufacturer }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || [];
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Get drugs by manufacturer error:', error);
     throw error;
@@ -299,28 +196,15 @@ export const getDrugsByManufacturer = async (manufacturer: string): Promise<Drug
 
 export const getProgramsByManufacturer = async (manufacturer: string): Promise<Program[]> => {
   try {
-    const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
-    const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
+    const { data, error } = await supabase
+      .from('programs')
+      .select('*')
+      .eq('active', true)
+      .ilike('manufacturer', `%${manufacturer}%`)
+      .order('program_name');
 
-    const response = await fetch(
-      `${supabaseUrl}/functions/v1/db-query`,
-      {
-        method: 'POST',
-        headers: {
-          'Authorization': `Bearer ${supabaseAnonKey}`,
-          'apikey': supabaseAnonKey,
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({ type: 'get_programs_by_manufacturer', manufacturer }),
-      }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const result = await response.json();
-    return result.data || [];
+    if (error) throw error;
+    return data || [];
   } catch (error) {
     console.error('Get programs by manufacturer error:', error);
     throw error;

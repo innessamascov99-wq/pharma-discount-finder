@@ -1,4 +1,4 @@
-import { supabase } from '../lib/supabase';
+import { searchSupabase } from '../lib/supabase';
 
 export interface Drug {
   id: string;
@@ -51,7 +51,7 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
   const searchTerm = query.trim();
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('drugs')
       .select('*')
       .eq('active', true)
@@ -75,7 +75,7 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
   const searchTerm = query.trim();
 
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('programs')
       .select('*')
       .eq('active', true)
@@ -93,7 +93,7 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('drugs_programs')
       .select('program_id, programs (*)')
       .eq('drug_id', drugId);
@@ -113,7 +113,7 @@ export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => 
 
 export const getAllDrugs = async (): Promise<Drug[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('drugs')
       .select('*')
       .eq('active', true)
@@ -129,7 +129,7 @@ export const getAllDrugs = async (): Promise<Drug[]> => {
 
 export const getAllPrograms = async (): Promise<Program[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('programs')
       .select('*')
       .eq('active', true)
@@ -145,7 +145,7 @@ export const getAllPrograms = async (): Promise<Program[]> => {
 
 export const getDrugById = async (id: string): Promise<Drug | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('drugs')
       .select('*')
       .eq('id', id)
@@ -162,7 +162,7 @@ export const getDrugById = async (id: string): Promise<Drug | null> => {
 
 export const getProgramById = async (id: string): Promise<Program | null> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('programs')
       .select('*')
       .eq('id', id)
@@ -179,7 +179,7 @@ export const getProgramById = async (id: string): Promise<Program | null> => {
 
 export const getDrugsByManufacturer = async (manufacturer: string): Promise<Drug[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('drugs')
       .select('*')
       .eq('active', true)
@@ -196,7 +196,7 @@ export const getDrugsByManufacturer = async (manufacturer: string): Promise<Drug
 
 export const getProgramsByManufacturer = async (manufacturer: string): Promise<Program[]> => {
   try {
-    const { data, error } = await supabase
+    const { data, error } = await searchSupabase
       .from('programs')
       .select('*')
       .eq('active', true)

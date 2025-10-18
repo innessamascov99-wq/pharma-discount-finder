@@ -75,9 +75,9 @@ export const Signup: React.FC = () => {
         }
       }
 
-      setSuccess('Account created successfully! Redirecting to home...');
+      setSuccess('Account created successfully! Redirecting to sign in...');
       setTimeout(() => {
-        navigate('/');
+        navigate('/login');
       }, 2000);
     } catch (err) {
       console.error('Unexpected error:', err);

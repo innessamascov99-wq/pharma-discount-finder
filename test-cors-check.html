@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>CORS Test - Edge Function</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .test { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; border-color: #c3e6cb; }
+        .error { background-color: #f8d7da; border-color: #f5c6cb; }
+        pre { background: #f5f5f5; padding: 10px; border-radius: 3px; overflow-x: auto; }
+        button { padding: 10px 20px; margin: 5px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>CORS and Edge Function Test</h1>
+
+    <div>
+        <button onclick="testOptionsRequest()">Test OPTIONS (Preflight)</button>
+        <button onclick="testSearchRequest()">Test POST Search</button>
+        <button onclick="testWithoutAuth()">Test Without Auth Header</button>
+        <button onclick="testDirectFetch()">Test Direct Fetch</button>
+    </div>
+
+    <div id="results"></div>
+
+    <script>
+        const EDGE_FUNCTION_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co/functions/v1/db-query';
+        const ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        function addResult(title, status, data) {
+            const resultsDiv = document.getElementById('results');
+            const testDiv = document.createElement('div');
+            testDiv.className = 'test ' + status;
+            testDiv.innerHTML = `
+                <h3>${title}</h3>
+                <pre>${JSON.stringify(data, null, 2)}</pre>
+            `;
+            resultsDiv.insertBefore(testDiv, resultsDiv.firstChild);
+        }
+
+        async function testOptionsRequest() {
+            try {
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    method: 'OPTIONS',
+                    headers: {
+                        'Origin': window.location.origin,
+                        'Access-Control-Request-Method': 'POST',
+                        'Access-Control-Request-Headers': 'Content-Type, Authorization'
+                    }
+                });
+
+                const headers = {};
+                response.headers.forEach((value, key) => {
+                    headers[key] = value;
+                });
+
+                addResult('OPTIONS Request (Preflight)', 'success', {
+                    status: response.status,
+                    headers: headers
+                });
+            } catch (error) {
+                addResult('OPTIONS Request (Preflight)', 'error', {
+                    error: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        async function testSearchRequest() {
+            try {
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    },
+                    body: JSON.stringify({ type: 'search_drugs', query: 'ozempic' })
+                });
+
+                const data = await response.json();
+
+                addResult('POST Search Request with Auth', response.ok ? 'success' : 'error', {
+                    status: response.status,
+                    data: data
+                });
+            } catch (error) {
+                addResult('POST Search Request with Auth', 'error', {
+                    error: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        async function testWithoutAuth() {
+            try {
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ type: 'search_drugs', query: 'insulin' })
+                });
+
+                const data = await response.json();
+
+                addResult('POST Search Without Auth Header', response.ok ? 'success' : 'error', {
+                    status: response.status,
+                    data: data
+                });
+            } catch (error) {
+                addResult('POST Search Without Auth Header', 'error', {
+                    error: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        async function testDirectFetch() {
+            try {
+                const response = await fetch(EDGE_FUNCTION_URL, {
+                    method: 'POST',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${ANON_KEY}`
+                    },
+                    body: JSON.stringify({ type: 'get_all_drugs' })
+                });
+
+                const data = await response.json();
+
+                addResult('Direct Fetch - Get All Drugs', response.ok ? 'success' : 'error', {
+                    status: response.status,
+                    drugCount: data.data ? data.data.length : 0,
+                    sample: data.data ? data.data.slice(0, 2) : null
+                });
+            } catch (error) {
+                addResult('Direct Fetch - Get All Drugs', 'error', {
+                    error: error.message,
+                    stack: error.stack
+                });
+            }
+        }
+
+        // Run tests on load
+        window.addEventListener('load', () => {
+            setTimeout(() => testOptionsRequest(), 500);
+            setTimeout(() => testSearchRequest(), 1500);
+        });
+    </script>
+</body>
+</html>

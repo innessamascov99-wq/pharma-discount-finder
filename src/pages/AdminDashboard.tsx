@@ -33,7 +33,7 @@ import {
   Badge
 } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
-import { supabase, searchSupabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 interface ProgramStats {
   total_programs: number;
@@ -87,12 +87,12 @@ export const AdminDashboard: React.FC = () => {
     setLoading(true);
 
     const [programsResult, usersResult, activityResult, contactsResult, recentProgsResult, recentContactsResult] = await Promise.all([
-      searchSupabase.from('drugs').select('id, active', { count: 'exact' }),
+      supabase.from('pharma_programs').select('id, active', { count: 'exact' }),
       supabase.from('customer').select('*', { count: 'exact', head: true }),
       supabase.from('user_activity').select('*', { count: 'exact', head: true }),
       supabase.from('contact_submissions').select('*', { count: 'exact', head: true }),
-      searchSupabase
-        .from('drugs')
+      supabase
+        .from('pharma_programs')
         .select('id, medication_name, manufacturer, active, created_at')
         .order('created_at', { ascending: false })
         .limit(10),
@@ -138,8 +138,8 @@ export const AdminDashboard: React.FC = () => {
   const handleDeleteProgram = async (programId: string) => {
     if (!confirm('Are you sure you want to delete this program?')) return;
 
-    const { error } = await searchSupabase
-      .from('drugs')
+    const { error } = await supabase
+      .from('pharma_programs')
       .delete()
       .eq('id', programId);
 

@@ -1,27 +1,5 @@
 import { supabase } from '../lib/supabase';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL || 'https://nuhfqkhplldontxtoxkg.supabase.co';
-const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
-
-async function callEdgeFunction(type: string, params: any = {}) {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/db-query`, {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json',
-      'Authorization': `Bearer ${SUPABASE_ANON_KEY}`,
-    },
-    body: JSON.stringify({ type, ...params })
-  });
-
-  if (!response.ok) {
-    const error = await response.json();
-    throw new Error(error.error || 'Database query failed');
-  }
-
-  const result = await response.json();
-  return result.data;
-}
-
 export interface Drug {
   id: string;
   medication_name: string;
@@ -70,7 +48,21 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
     return [];
   }
 
-  return await callEdgeFunction('search_drugs', { query: query.trim() });
+  const searchTerm = query.trim().toLowerCase();
+
+  const { data, error } = await supabase
+    .from('drugs')
+    .select('*')
+    .eq('active', true)
+    .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
+    .order('medication_name')
+    .limit(20);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data || []).map(d => ({ ...d, similarity: 0.7 }));
 };
 
 export const searchPrograms = async (query: string): Promise<Program[]> => {
@@ -78,33 +70,124 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
     return [];
   }
 
-  return await callEdgeFunction('search_programs', { query: query.trim() });
+  const searchTerm = query.trim().toLowerCase();
+
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('active', true)
+    .or(`program_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+    .order('program_name')
+    .limit(20);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return (data || []).map(p => ({ ...p, similarity: 0.7 }));
 };
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
-  return await callEdgeFunction('get_programs_for_drug', { drugId });
+  const { data: joinData, error } = await supabase
+    .from('drugs_programs')
+    .select('program_id, programs (*)')
+    .eq('drug_id', drugId);
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  const programs = (joinData || [])
+    .filter(item => item.programs)
+    .map(item => item.programs as unknown as Program);
+
+  return programs;
 };
 
 export const getAllDrugs = async (): Promise<Drug[]> => {
-  return await callEdgeFunction('get_all_drugs');
+  const { data, error } = await supabase
+    .from('drugs')
+    .select('*')
+    .eq('active', true)
+    .order('medication_name');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data || [];
 };
 
 export const getAllPrograms = async (): Promise<Program[]> => {
-  return await callEdgeFunction('get_all_programs');
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('active', true)
+    .order('program_name');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data || [];
 };
 
 export const getDrugById = async (id: string): Promise<Drug | null> => {
-  return await callEdgeFunction('get_drug_by_id', { id });
+  const { data, error } = await supabase
+    .from('drugs')
+    .select('*')
+    .eq('id', id)
+    .eq('active', true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 };
 
 export const getProgramById = async (id: string): Promise<Program | null> => {
-  return await callEdgeFunction('get_program_by_id', { id });
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('id', id)
+    .eq('active', true)
+    .maybeSingle();
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data;
 };
 
 export const getDrugsByManufacturer = async (manufacturer: string): Promise<Drug[]> => {
-  return await callEdgeFunction('get_drugs_by_manufacturer', { manufacturer });
+  const { data, error } = await supabase
+    .from('drugs')
+    .select('*')
+    .eq('active', true)
+    .ilike('manufacturer', `%${manufacturer}%`)
+    .order('medication_name');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data || [];
 };
 
 export const getProgramsByManufacturer = async (manufacturer: string): Promise<Program[]> => {
-  return await callEdgeFunction('get_programs_by_manufacturer', { manufacturer });
+  const { data, error } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('active', true)
+    .ilike('manufacturer', `%${manufacturer}%`)
+    .order('program_name');
+
+  if (error) {
+    throw new Error(error.message);
+  }
+
+  return data || [];
 };

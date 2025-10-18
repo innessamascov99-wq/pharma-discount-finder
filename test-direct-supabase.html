@@ -1,0 +1,112 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Direct Supabase Client</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .result { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        .success { background-color: #d4edda; }
+        .error { background-color: #f8d7da; }
+        pre { background: #f5f5f5; padding: 10px; overflow-x: auto; }
+        input { padding: 8px; width: 300px; }
+        button { padding: 8px 20px; margin-left: 10px; cursor: pointer; }
+    </style>
+</head>
+<body>
+    <h1>Direct Supabase Client Test</h1>
+
+    <div>
+        <input type="text" id="searchInput" placeholder="Search for drugs..." value="ozempic">
+        <button onclick="testSearch()">Search Drugs</button>
+        <button onclick="testGetAll()">Get All Drugs</button>
+    </div>
+
+    <div id="result"></div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+        const supabase = createClient(supabaseUrl, supabaseAnonKey);
+
+        window.testSearch = async function() {
+            const query = document.getElementById('searchInput').value;
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.innerHTML = '<div class="result">Searching...</div>';
+
+            try {
+                const searchTerm = query.trim().toLowerCase();
+
+                const { data, error } = await supabase
+                    .from('drugs')
+                    .select('*')
+                    .eq('active', true)
+                    .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
+                    .order('medication_name')
+                    .limit(20);
+
+                if (error) {
+                    throw error;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>Search Results (${data.length} found)</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Error</h3>
+                        <p>${error.message}</p>
+                        <pre>${error.stack || ''}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        window.testGetAll = async function() {
+            const resultDiv = document.getElementById('result');
+
+            resultDiv.innerHTML = '<div class="result">Loading all drugs...</div>';
+
+            try {
+                const { data, error } = await supabase
+                    .from('drugs')
+                    .select('id, medication_name, generic_name, manufacturer')
+                    .eq('active', true)
+                    .order('medication_name')
+                    .limit(10);
+
+                if (error) {
+                    throw error;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="result success">
+                        <h3>All Drugs (first 10)</h3>
+                        <pre>${JSON.stringify(data, null, 2)}</pre>
+                    </div>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="result error">
+                        <h3>Error</h3>
+                        <p>${error.message}</p>
+                        <pre>${error.stack || ''}</pre>
+                    </div>
+                `;
+            }
+        };
+
+        // Auto-run on load
+        window.addEventListener('load', () => {
+            setTimeout(testSearch, 500);
+        });
+    </script>
+</body>
+</html>

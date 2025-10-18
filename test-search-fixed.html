@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test Search Fixed</title>
+</head>
+<body>
+    <h1>Test Search - Fixed Edge Function</h1>
+    <input type="text" id="searchInput" placeholder="Search for drugs..." value="ozempic">
+    <button onclick="testSearch()">Search</button>
+    <pre id="result"></pre>
+
+    <script>
+        async function testSearch() {
+            const query = document.getElementById('searchInput').value;
+            const resultEl = document.getElementById('result');
+
+            resultEl.textContent = 'Searching...';
+
+            try {
+                const response = await fetch('https://nuhfqkhplldontxtoxkg.supabase.co/functions/v1/db-query', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE'
+                    },
+                    body: JSON.stringify({ type: 'search_drugs', query })
+                });
+
+                const data = await response.json();
+                resultEl.textContent = JSON.stringify(data, null, 2);
+            } catch (error) {
+                resultEl.textContent = 'Error: ' + error.message;
+            }
+        }
+
+        // Auto-run test on load
+        window.addEventListener('load', testSearch);
+    </script>
+</body>
+</html>

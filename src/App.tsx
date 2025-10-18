@@ -8,6 +8,7 @@ import { Home } from './pages/Home';
 import { Login } from './pages/Login';
 import { Signup } from './pages/Signup';
 import { ForgotPassword } from './pages/ForgotPassword';
+import { ResetPassword } from './pages/ResetPassword';
 import { FAQ } from './pages/FAQ';
 import { About } from './pages/About';
 import { Contact } from './pages/Contact';
@@ -24,7 +25,7 @@ function AppContent() {
   const [hasVisited, setHasVisited] = useState(false);
   const location = useLocation();
 
-  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password' || location.pathname === '/auth/callback';
+  const isAuthPage = location.pathname === '/login' || location.pathname === '/signup' || location.pathname === '/forgot-password' || location.pathname === '/reset-password' || location.pathname === '/auth/callback';
   const isDashboardPage = location.pathname === '/dashboard' || location.pathname === '/admin';
 
   useEffect(() => {
@@ -63,6 +64,7 @@ function AppContent() {
               <Route path="/login" element={<Login />} />
               <Route path="/signup" element={<Signup />} />
               <Route path="/forgot-password" element={<ForgotPassword />} />
+              <Route path="/reset-password" element={<ResetPassword />} />
               <Route path="/auth/callback" element={<AuthCallback />} />
               <Route path="/faq" element={<FAQ />} />
               <Route path="/about" element={<About />} />

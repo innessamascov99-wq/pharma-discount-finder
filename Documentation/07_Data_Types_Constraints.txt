@@ -1,0 +1,739 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - DATA TYPES & CONSTRAINTS
+================================================================================
+
+This document describes all data types, constraints, and validation rules
+used throughout the database schema.
+
+================================================================================
+STANDARD DATA TYPES USED
+================================================================================
+
+UUID (Universally Unique Identifier)
+-------------------------------------
+Usage: Primary keys and foreign keys
+Type: uuid
+Generator: gen_random_uuid()
+
+Benefits:
+- Globally unique across all tables and databases
+- No collision risk
+- URL-safe
+- Can be generated client-side
+- 128-bit (16 bytes) storage
+
+Example:
+123e4567-e89b-12d3-a456-426614174000
+
+Tables Using UUID:
+- ALL tables use UUID for primary keys
+
+---------------------------------------
+
+Text (Variable-Length String)
+------------------------------
+Usage: Names, descriptions, email addresses, etc.
+Type: text
+Storage: Variable length, no length limit
+
+Benefits:
+- Flexible storage
+- No arbitrary length restrictions
+- Efficient storage of short and long strings
+
+When to Use:
+- User input fields
+- Email addresses
+- Names and descriptions
+- URLs
+- Any string data without specific length requirement
+
+---------------------------------------
+
+Timestamptz (Timestamp with Time Zone)
+---------------------------------------
+Usage: All timestamps (created_at, updated_at, last_login)
+Type: timestamptz (timestamp with time zone)
+Default: now() or CURRENT_TIMESTAMP
+
+Benefits:
+- Stores timezone information
+- Automatic timezone conversion
+- Consistent global time handling
+- ISO 8601 format
+
+Format: 2025-10-18 12:30:00+00
+
+Why Not timestamp (without timezone)?
+- Timezone-aware is essential for global applications
+- Prevents timezone-related bugs
+- Supabase best practice
+
+---------------------------------------
+
+Boolean
+-------
+Usage: Flags and status indicators
+Type: boolean
+Values: TRUE, FALSE, NULL (if nullable)
+
+Benefits:
+- Efficient storage (1 byte)
+- Clear true/false logic
+- Indexable for fast filtering
+
+Common Boolean Fields:
+- active (drug/program availability)
+- is_admin (user role)
+- is_blocked (user status)
+- renewal_required (program property)
+- read (submission status)
+
+---------------------------------------
+
+Date
+----
+Usage: Specific dates without time
+Type: date
+Format: YYYY-MM-DD
+
+Benefits:
+- Stores only date, no time component
+- Efficient for birthdates, approval dates
+- 4 bytes storage
+
+Fields Using Date:
+- date_of_birth
+- fda_approval_date
+
+---------------------------------------
+
+JSONB (Binary JSON)
+-------------------
+Usage: Flexible structured data
+Type: jsonb
+Storage: Binary format for efficiency
+
+Benefits:
+- Flexible schema
+- Indexable
+- Fast queries
+- Supports complex data structures
+
+Fields Using JSONB:
+- admin_actions.details
+
+Example:
+```json
+{
+  "blocked": true,
+  "reason": "Suspicious activity",
+  "previous_value": false
+}
+```
+
+================================================================================
+CONSTRAINTS BY TABLE
+================================================================================
+
+USERS TABLE CONSTRAINTS
+------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY
+- Enforces uniqueness
+- Cannot be NULL
+
+Unique Constraints:
+- email UNIQUE
+- Prevents duplicate email addresses
+
+NOT NULL Constraints:
+- id NOT NULL (implicit with PRIMARY KEY)
+- email NOT NULL
+- is_admin NOT NULL
+- is_blocked NOT NULL
+- created_at NOT NULL
+- updated_at NOT NULL
+
+Default Values:
+- country DEFAULT 'USA'
+- is_admin DEFAULT false
+- is_blocked DEFAULT false
+- created_at DEFAULT now()
+- updated_at DEFAULT now()
+
+Foreign Key:
+- id REFERENCES auth.users(id) ON DELETE CASCADE
+
+Check Constraints: None
+
+---------------------------------------
+
+DRUGS TABLE CONSTRAINTS
+------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- medication_name NOT NULL
+- generic_name NOT NULL
+- manufacturer NOT NULL
+- drug_class NOT NULL
+- indication NOT NULL (DEFAULT '')
+- description NOT NULL (DEFAULT '')
+- active NOT NULL
+- created_at NOT NULL
+- updated_at NOT NULL
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- indication DEFAULT ''
+- dosage_forms DEFAULT ''
+- common_dosages DEFAULT ''
+- typical_retail_price DEFAULT ''
+- description DEFAULT ''
+- side_effects DEFAULT ''
+- warnings DEFAULT ''
+- active DEFAULT true
+- created_at DEFAULT now()
+- updated_at DEFAULT now()
+
+Foreign Keys: None
+
+Check Constraints: None
+
+Note on Defaults:
+- Empty string defaults prevent NULL values
+- Simplifies application logic
+- Ensures fields always have a value
+
+---------------------------------------
+
+PROGRAMS TABLE CONSTRAINTS
+---------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- program_name NOT NULL
+- program_type NOT NULL
+- description NOT NULL (DEFAULT '')
+- manufacturer NOT NULL
+- eligibility_criteria NOT NULL (DEFAULT '')
+- discount_details NOT NULL (DEFAULT '')
+- enrollment_process NOT NULL (DEFAULT '')
+- required_documents NOT NULL (DEFAULT '')
+- renewal_required NOT NULL
+- active NOT NULL
+- created_at NOT NULL
+- updated_at NOT NULL
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- program_type DEFAULT 'copay_card'
+- description DEFAULT ''
+- eligibility_criteria DEFAULT ''
+- income_requirements DEFAULT ''
+- insurance_requirements DEFAULT ''
+- discount_details DEFAULT ''
+- program_url DEFAULT ''
+- phone_number DEFAULT ''
+- email DEFAULT ''
+- enrollment_process DEFAULT ''
+- required_documents DEFAULT ''
+- coverage_duration DEFAULT '12 months'
+- renewal_required DEFAULT true
+- active DEFAULT true
+- created_at DEFAULT now()
+- updated_at DEFAULT now()
+
+Foreign Keys: None
+
+Check Constraints: None
+
+---------------------------------------
+
+DRUGS_PROGRAMS TABLE CONSTRAINTS
+---------------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- drug_id NOT NULL
+- program_id NOT NULL
+- created_at NOT NULL
+
+Unique Constraints:
+- UNIQUE(drug_id, program_id)
+- Prevents duplicate drug-program relationships
+
+Foreign Keys:
+- drug_id REFERENCES drugs(id) ON DELETE CASCADE
+- program_id REFERENCES programs(id) ON DELETE CASCADE
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- created_at DEFAULT now()
+
+Check Constraints: None
+
+Purpose of UNIQUE Constraint:
+- A drug can only be linked to a program once
+- Prevents data inconsistency
+- Enforces business logic at database level
+
+---------------------------------------
+
+USER_ACTIVITY TABLE CONSTRAINTS
+--------------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- user_id NOT NULL
+- medication_name NOT NULL
+- action_type NOT NULL
+- created_at NOT NULL (if defined)
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- action_type DEFAULT 'viewed'
+- created_at DEFAULT now()
+
+Foreign Keys:
+- user_id REFERENCES auth.users(id) ON DELETE CASCADE
+
+Check Constraints: None
+
+Note on action_type:
+- Not enforced by CHECK constraint
+- Application validates valid values
+- Common: viewed, saved, searched, clicked, downloaded
+
+---------------------------------------
+
+SAVED_PROGRAMS TABLE CONSTRAINTS
+---------------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- user_id NOT NULL
+- program_id NOT NULL
+- created_at NOT NULL (if defined)
+
+Unique Constraints:
+- UNIQUE(user_id, program_id)
+- User can only save a program once
+
+Foreign Keys:
+- user_id REFERENCES auth.users(id) ON DELETE CASCADE
+- program_id REFERENCES programs(id) ON DELETE CASCADE
+  (or pharma_programs depending on migration state)
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- created_at DEFAULT now()
+
+Check Constraints: None
+
+---------------------------------------
+
+ADMIN_ACTIONS TABLE CONSTRAINTS
+--------------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- admin_id NOT NULL
+- action_type NOT NULL
+- created_at NOT NULL
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- details DEFAULT '{}'
+- created_at DEFAULT now()
+
+Foreign Keys:
+- admin_id REFERENCES auth.users(id) ON DELETE CASCADE
+- target_user_id REFERENCES auth.users(id) ON DELETE SET NULL
+
+Check Constraints: None
+
+Note on target_user_id:
+- Nullable (system-wide actions may not have target)
+- ON DELETE SET NULL preserves audit trail
+
+---------------------------------------
+
+CONTACT_SUBMISSIONS TABLE CONSTRAINTS
+--------------------------------------
+
+Primary Key:
+- id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+
+NOT NULL Constraints:
+- id NOT NULL
+- full_name NOT NULL
+- email NOT NULL
+- message NOT NULL
+
+Default Values:
+- id DEFAULT gen_random_uuid()
+- read DEFAULT false
+- created_at DEFAULT now()
+
+Foreign Keys: None (standalone table)
+
+Check Constraints: None
+
+================================================================================
+DATA VALIDATION STRATEGIES
+================================================================================
+
+Database-Level Validation:
+--------------------------
+Enforced By Constraints:
+- NOT NULL: Required fields
+- UNIQUE: No duplicates
+- PRIMARY KEY: Unique and not null
+- FOREIGN KEY: Referential integrity
+- CHECK: Value range validation (not heavily used in this schema)
+
+Benefits:
+- Cannot be bypassed
+- Data integrity guaranteed
+- Clear error messages
+
+Application-Level Validation:
+-----------------------------
+Enforced By Application Code:
+- Email format validation
+- Password strength requirements
+- Field length restrictions
+- Date range validation (e.g., birth date)
+- Enum value validation (action_type, program_type)
+
+Benefits:
+- Better user experience
+- Custom error messages
+- Client-side feedback
+
+Both Levels:
+- Defense in depth
+- Database as last line of defense
+- Application for UX
+
+================================================================================
+NULL VS EMPTY STRING VS DEFAULT VALUES
+================================================================================
+
+NULL:
+- Means "value unknown" or "not applicable"
+- Used for optional fields
+- Examples: phone, address_line2, target_user_id
+
+Empty String (''):
+- Means "value is known to be empty"
+- Used with NOT NULL DEFAULT ''
+- Examples: description, eligibility_criteria
+
+Benefits of DEFAULT '':
+- Prevents NULL checks in application
+- Simplifies queries (no NULL handling)
+- Consistent behavior
+
+When to Use NULL:
+- Optional relationships (target_user_id)
+- Optional metadata (phone, date_of_birth)
+- Fields that may genuinely be unknown
+
+When to Use DEFAULT '':
+- Text fields that should always have a value
+- Display fields where empty is valid
+- Fields used in search (empty searches won't break)
+
+================================================================================
+CASCADE DELETE BEHAVIOR
+================================================================================
+
+ON DELETE CASCADE:
+------------------
+Usage: Most foreign keys
+Effect: When parent is deleted, child rows are automatically deleted
+
+Examples:
+- auth.users -> public.users
+- users -> user_activity
+- users -> saved_programs
+- drugs -> drugs_programs
+- programs -> drugs_programs
+- users (admin_id) -> admin_actions
+
+Benefit: Maintains referential integrity automatically
+
+Risk: Cascading deletes can affect many rows
+
+---------------------------------------
+
+ON DELETE SET NULL:
+-------------------
+Usage: admin_actions.target_user_id
+Effect: When parent is deleted, foreign key is set to NULL
+
+Example:
+- If target user is deleted, admin action remains but target_user_id = NULL
+
+Benefit: Preserves audit trail even if user is deleted
+
+Requirement: Column must allow NULL
+
+---------------------------------------
+
+ON DELETE RESTRICT:
+-------------------
+Usage: Not used in this schema
+Effect: Prevents deletion if child rows exist
+
+Example (if used):
+- Cannot delete drug if it has programs
+
+Benefit: Explicit control over deletion
+
+Risk: Can make cleanup difficult
+
+---------------------------------------
+
+ON DELETE NO ACTION:
+--------------------
+Usage: Default (not explicitly used)
+Effect: Similar to RESTRICT but checked at end of transaction
+
+================================================================================
+DEFAULT VALUE PATTERNS
+================================================================================
+
+Timestamps:
+-----------
+Pattern: DEFAULT now()
+Effect: Automatically sets current timestamp
+
+Fields:
+- created_at
+- updated_at (should be updated on changes)
+
+Best Practice:
+```sql
+created_at timestamptz NOT NULL DEFAULT now()
+```
+
+---------------------------------------
+
+Booleans:
+---------
+Pattern: DEFAULT true or DEFAULT false
+Effect: Always has a value, never NULL
+
+Fields:
+- active DEFAULT true
+- is_admin DEFAULT false
+- is_blocked DEFAULT false
+- renewal_required DEFAULT true
+- read DEFAULT false
+
+Best Practice:
+```sql
+active boolean NOT NULL DEFAULT true
+```
+
+---------------------------------------
+
+UUIDs:
+------
+Pattern: DEFAULT gen_random_uuid()
+Effect: Auto-generates unique ID
+
+Fields:
+- id (primary key)
+
+Best Practice:
+```sql
+id uuid PRIMARY KEY DEFAULT gen_random_uuid()
+```
+
+---------------------------------------
+
+Text Defaults:
+--------------
+Pattern: DEFAULT ''
+Effect: Empty string instead of NULL
+
+Fields:
+- description
+- eligibility_criteria
+- enrollment_process
+
+Alternative Pattern: DEFAULT 'value'
+Example:
+- country DEFAULT 'USA'
+- program_type DEFAULT 'copay_card'
+- coverage_duration DEFAULT '12 months'
+
+Best Practice:
+```sql
+description text NOT NULL DEFAULT ''
+country text DEFAULT 'USA'
+```
+
+---------------------------------------
+
+JSONB Defaults:
+---------------
+Pattern: DEFAULT '{}'
+Effect: Empty JSON object
+
+Fields:
+- admin_actions.details
+
+Best Practice:
+```sql
+details jsonb DEFAULT '{}'
+```
+
+================================================================================
+CONSTRAINT NAMING CONVENTIONS
+================================================================================
+
+Primary Keys:
+- Automatic name: {table_name}_pkey
+- Example: users_pkey, drugs_pkey
+
+Foreign Keys:
+- Automatic name: {table_name}_{column_name}_fkey
+- Example: drugs_programs_drug_id_fkey
+
+Unique Constraints:
+- Automatic name: {table_name}_{column_name}_key
+- Example: users_email_key
+
+Indexes:
+- Pattern: idx_{table_name}_{column_name}
+- Example: idx_users_email, idx_drugs_active
+
+GIN Indexes:
+- Pattern: idx_{table_name}_{column_name}_trgm
+- Example: idx_drugs_medication_name_trgm
+
+Benefits of Clear Naming:
+- Easy to identify constraints in errors
+- Consistent pattern across schema
+- Self-documenting
+
+================================================================================
+DATA TYPE BEST PRACTICES
+================================================================================
+
+1. Use timestamptz, not timestamp
+   - Always include timezone
+   - Prevents timezone bugs
+
+2. Use text, not varchar(n)
+   - No arbitrary limits
+   - More flexible
+   - Same performance
+
+3. Use uuid for primary keys
+   - Globally unique
+   - No auto-increment collisions
+   - Better for distributed systems
+
+4. Use boolean for true/false
+   - Clear semantics
+   - Efficient storage
+   - Better than integer flags
+
+5. Use jsonb, not json
+   - Binary format (faster)
+   - Indexable
+   - Same functionality
+
+6. Use NOT NULL with DEFAULT
+   - Prevents NULL complexity
+   - Guarantees value exists
+   - Simplifies queries
+
+================================================================================
+CONSTRAINT MODIFICATION
+================================================================================
+
+Adding Constraints:
+```sql
+-- Add NOT NULL
+ALTER TABLE users ALTER COLUMN phone SET NOT NULL;
+
+-- Add UNIQUE
+ALTER TABLE users ADD CONSTRAINT users_phone_unique UNIQUE(phone);
+
+-- Add CHECK
+ALTER TABLE users ADD CONSTRAINT users_age_check CHECK (date_of_birth < CURRENT_DATE);
+
+-- Add DEFAULT
+ALTER TABLE users ALTER COLUMN country SET DEFAULT 'USA';
+```
+
+Removing Constraints:
+```sql
+-- Remove NOT NULL
+ALTER TABLE users ALTER COLUMN phone DROP NOT NULL;
+
+-- Remove UNIQUE
+ALTER TABLE users DROP CONSTRAINT users_phone_unique;
+
+-- Remove CHECK
+ALTER TABLE users DROP CONSTRAINT users_age_check;
+
+-- Remove DEFAULT
+ALTER TABLE users ALTER COLUMN country DROP DEFAULT;
+```
+
+Caution:
+- Adding NOT NULL requires all rows to have values
+- Removing constraints reduces data integrity
+- Always test in development first
+
+================================================================================
+COMMON CONSTRAINT ERRORS
+================================================================================
+
+Error: "duplicate key value violates unique constraint"
+- Trying to insert duplicate value in UNIQUE column
+- Solution: Check existing values, update instead of insert
+
+Error: "null value in column violates not-null constraint"
+- Trying to insert NULL into NOT NULL column
+- Solution: Provide value or use DEFAULT
+
+Error: "foreign key constraint violation"
+- Referenced row doesn't exist or is being deleted incorrectly
+- Solution: Check foreign key values, use CASCADE if appropriate
+
+Error: "check constraint violation"
+- Value doesn't meet CHECK constraint requirements
+- Solution: Adjust value to meet constraint
+
+================================================================================
+END OF DATA TYPES & CONSTRAINTS DOCUMENTATION
+================================================================================

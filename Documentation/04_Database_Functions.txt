@@ -1,0 +1,572 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - DATABASE FUNCTIONS & RPC ENDPOINTS
+================================================================================
+
+This document describes all database functions, stored procedures, and RPC
+endpoints available in the application.
+
+================================================================================
+SEARCH FUNCTIONS
+================================================================================
+
+Function 1: search_drugs(search_query text)
+--------------------------------------------
+
+Purpose: Search for medications using fuzzy text matching
+
+Return Type: TABLE with complete drug information plus similarity score
+
+Return Columns:
+- id (uuid)
+- medication_name (text)
+- generic_name (text)
+- manufacturer (text)
+- drug_class (text)
+- indication (text)
+- dosage_forms (text)
+- common_dosages (text)
+- typical_retail_price (text)
+- fda_approval_date (date)
+- description (text)
+- side_effects (text)
+- warnings (text)
+- active (boolean)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+- similarity (real) - relevance score 0-1
+
+Parameters:
+- search_query (text) - The search term entered by user
+
+Language: plpgsql
+Volatility: STABLE (does not modify data)
+
+Search Algorithm:
+1. Uses pg_trgm extension for fuzzy matching
+2. Searches across multiple fields:
+   - medication_name
+   - generic_name
+   - drug_class
+   - indication
+3. Uses both similarity operator (%) and LIKE pattern matching
+4. Calculates similarity score using GREATEST() of all field matches
+5. Returns only active drugs
+6. Orders by similarity DESC, then medication_name ASC
+7. Limits results to top 20 matches
+
+Example Usage:
+```sql
+SELECT * FROM search_drugs('insulin');
+SELECT * FROM search_drugs('diabetes medication');
+SELECT * FROM search_drugs('lipitor');
+```
+
+Performance:
+- Uses GIN indexes on text fields for fast searching
+- Stable function allows query planner optimization
+- Limit of 20 prevents excessive results
+
+Permissions:
+- GRANT EXECUTE TO public
+- Available to anonymous and authenticated users
+
+--------------------------------------------
+
+Function 2: search_programs(search_query text)
+-----------------------------------------------
+
+Purpose: Search for assistance programs using fuzzy text matching
+
+Return Type: TABLE with complete program information plus similarity score
+
+Return Columns:
+- id (uuid)
+- program_name (text)
+- program_type (text)
+- description (text)
+- manufacturer (text)
+- eligibility_criteria (text)
+- income_requirements (text)
+- insurance_requirements (text)
+- discount_details (text)
+- program_url (text)
+- phone_number (text)
+- email (text)
+- enrollment_process (text)
+- required_documents (text)
+- coverage_duration (text)
+- renewal_required (boolean)
+- active (boolean)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+- similarity (real) - relevance score 0-1
+
+Parameters:
+- search_query (text) - The search term entered by user
+
+Language: plpgsql
+Volatility: STABLE
+
+Search Algorithm:
+1. Uses pg_trgm extension for fuzzy matching
+2. Searches across:
+   - program_name
+   - manufacturer
+   - description
+3. Calculates similarity score using GREATEST() of field matches
+4. Returns only active programs
+5. Orders by similarity DESC, then program_name ASC
+6. Limits results to top 20 matches
+
+Example Usage:
+```sql
+SELECT * FROM search_programs('copay card');
+SELECT * FROM search_programs('patient assistance');
+SELECT * FROM search_programs('pfizer');
+```
+
+Performance:
+- Uses GIN indexes for fast text search
+- Stable function for query optimization
+- Limited to 20 results
+
+Permissions:
+- GRANT EXECUTE TO public
+
+--------------------------------------------
+
+Function 3: get_programs_for_drug(drug_id_param uuid)
+------------------------------------------------------
+
+Purpose: Retrieve all assistance programs available for a specific drug
+
+Return Type: TABLE with complete program information
+
+Return Columns:
+- id (uuid)
+- program_name (text)
+- program_type (text)
+- description (text)
+- manufacturer (text)
+- eligibility_criteria (text)
+- income_requirements (text)
+- insurance_requirements (text)
+- discount_details (text)
+- program_url (text)
+- phone_number (text)
+- email (text)
+- enrollment_process (text)
+- required_documents (text)
+- coverage_duration (text)
+- renewal_required (boolean)
+- active (boolean)
+- created_at (timestamptz)
+- updated_at (timestamptz)
+
+Parameters:
+- drug_id_param (uuid) - The ID of the drug
+
+Language: plpgsql
+Volatility: STABLE
+
+Query Logic:
+1. Joins programs with drugs_programs junction table
+2. Filters by drug_id
+3. Returns only active programs
+4. Orders by program_name ASC
+
+Example Usage:
+```sql
+SELECT * FROM get_programs_for_drug('123e4567-e89b-12d3-a456-426614174000');
+```
+
+Performance:
+- Indexed join on drugs_programs
+- Filter on indexed foreign key
+- Efficient retrieval of related programs
+
+Permissions:
+- GRANT EXECUTE TO public
+
+================================================================================
+ADMIN MANAGEMENT FUNCTIONS
+================================================================================
+
+Function 4: is_admin()
+----------------------
+
+Purpose: Check if current user has admin privileges
+
+Return Type: boolean
+
+Parameters: None (uses auth.uid() internally)
+
+Language: plpgsql
+Security: SECURITY DEFINER (runs with elevated privileges)
+
+Logic:
+1. Checks if user exists in users table
+2. Checks if is_admin = true for that user
+3. Returns true if admin, false otherwise
+
+Example Usage:
+```sql
+SELECT is_admin();
+```
+
+Used Internally By:
+- All RLS policies requiring admin access
+- Admin management functions
+
+Security Notes:
+- SECURITY DEFINER allows checking admin status
+- Does not expose sensitive data
+- Used in policy WHERE clauses
+
+--------------------------------------------
+
+Function 5: toggle_user_blocked(target_user_id uuid, block_status boolean)
+---------------------------------------------------------------------------
+
+Purpose: Block or unblock a user account (admin only)
+
+Return Type: void
+
+Parameters:
+- target_user_id (uuid) - User to block/unblock
+- block_status (boolean) - true to block, false to unblock
+
+Language: plpgsql
+Security: SECURITY DEFINER
+
+Logic:
+1. Checks if caller is admin using is_admin()
+2. Raises exception if not admin
+3. Updates users table setting is_blocked
+4. Logs action to admin_actions table
+
+Example Usage:
+```sql
+SELECT toggle_user_blocked('user-uuid', true);  -- Block user
+SELECT toggle_user_blocked('user-uuid', false); -- Unblock user
+```
+
+Error Handling:
+- Raises exception: "Only admins can block/unblock users"
+
+Audit Trail:
+- Creates admin_actions record with action_type 'block' or 'unblock'
+- Stores block_status in details JSONB
+
+Security:
+- Only admins can execute
+- Enforced at function level
+- All actions logged
+
+--------------------------------------------
+
+Function 6: set_user_admin(target_user_id uuid, admin_status boolean)
+----------------------------------------------------------------------
+
+Purpose: Grant or revoke admin privileges (admin only)
+
+Return Type: void
+
+Parameters:
+- target_user_id (uuid) - User to modify
+- admin_status (boolean) - true to grant admin, false to revoke
+
+Language: plpgsql
+Security: SECURITY DEFINER
+
+Logic:
+1. Checks if caller is admin
+2. Raises exception if not admin
+3. Updates users table setting is_admin
+4. Logs action to admin_actions table
+
+Example Usage:
+```sql
+SELECT set_user_admin('user-uuid', true);  -- Grant admin
+SELECT set_user_admin('user-uuid', false); -- Revoke admin
+```
+
+Error Handling:
+- Raises exception: "Only admins can grant/revoke admin access"
+
+Audit Trail:
+- Creates admin_actions record with action_type 'grant_admin' or 'revoke_admin'
+- Stores admin_status in details JSONB
+
+Security:
+- Only admins can execute
+- Prevents privilege escalation
+- Complete audit trail
+
+--------------------------------------------
+
+Function 7: get_user_statistics(days_back integer DEFAULT 30)
+--------------------------------------------------------------
+
+Purpose: Get user signup statistics for admin dashboard
+
+Return Type: TABLE (date, new_users count)
+
+Return Columns:
+- date (date) - The date
+- new_users (bigint) - Number of users who signed up that day
+
+Parameters:
+- days_back (integer) - Number of days to look back (default 30)
+
+Language: plpgsql
+Security: SECURITY DEFINER
+
+Logic:
+1. Queries users table
+2. Groups by date of created_at
+3. Counts users per day
+4. Filters to last N days
+5. Orders by date DESC
+
+Example Usage:
+```sql
+SELECT * FROM get_user_statistics();      -- Last 30 days
+SELECT * FROM get_user_statistics(7);     -- Last 7 days
+SELECT * FROM get_user_statistics(90);    -- Last 90 days
+```
+
+Use Cases:
+- Admin dashboard analytics
+- Growth tracking
+- User acquisition reporting
+
+Permissions:
+- Only callable by admins (enforced by SECURITY DEFINER and policies)
+
+--------------------------------------------
+
+Function 8: get_top_programs(limit_count integer DEFAULT 10)
+-------------------------------------------------------------
+
+Purpose: Get most popular programs based on user activity
+
+Return Type: TABLE (medication_name, search_count)
+
+Return Columns:
+- medication_name (text) - Name of medication
+- search_count (bigint) - Number of searches/views
+
+Parameters:
+- limit_count (integer) - Number of top results (default 10)
+
+Language: plpgsql
+Security: SECURITY DEFINER
+
+Logic:
+1. Queries user_activity table
+2. Filters by action_type ('search' or 'viewed')
+3. Groups by medication_name
+4. Counts occurrences
+5. Orders by count DESC
+6. Limits to top N
+
+Example Usage:
+```sql
+SELECT * FROM get_top_programs();     -- Top 10
+SELECT * FROM get_top_programs(5);    -- Top 5
+SELECT * FROM get_top_programs(25);   -- Top 25
+```
+
+Use Cases:
+- Admin dashboard showing popular medications
+- Understanding user needs
+- Prioritizing program updates
+
+================================================================================
+AUTHENTICATION TRIGGER FUNCTIONS
+================================================================================
+
+Function 9: handle_new_user()
+------------------------------
+
+Purpose: Automatically create user profile when auth account is created
+
+Return Type: TRIGGER
+
+Parameters: None (uses NEW record from trigger)
+
+Language: plpgsql
+Security: SECURITY DEFINER
+
+Trigger: on_auth_user_created
+- Fires: AFTER INSERT ON auth.users
+- For Each Row
+
+Logic:
+1. Extracts email from NEW.email
+2. Attempts to extract first_name from raw_user_meta_data
+3. Attempts to extract last_name from raw_user_meta_data
+4. Falls back to full_name for OAuth providers
+5. Falls back to 'name' field if needed
+6. Uses email username as first_name if all else fails
+7. Inserts into public.users with extracted data
+8. Uses ON CONFLICT DO UPDATE for idempotency
+
+Metadata Extraction Priority:
+1. raw_user_meta_data->>'first_name' and 'last_name'
+2. raw_user_meta_data->>'full_name' (split on space)
+3. raw_user_meta_data->>'name' (split on space)
+4. Email username (before @)
+
+Example Metadata Structures:
+
+Email/Password Signup:
+{
+  "first_name": "John",
+  "last_name": "Doe"
+}
+
+Google OAuth:
+{
+  "full_name": "John Doe",
+  "avatar_url": "https://...",
+  "email": "john@example.com"
+}
+
+Use Cases:
+- Automatic profile creation on signup
+- Works with email/password and OAuth
+- Ensures every auth user has a profile
+
+--------------------------------------------
+
+Function 10: update_last_login()
+--------------------------------
+
+Purpose: Update last_login timestamp when user logs in
+
+Return Type: void
+
+Parameters: None (uses auth.uid())
+
+Language: plpgsql
+Security: SECURITY DEFINER
+
+Logic:
+1. Gets current authenticated user ID
+2. Updates users.last_login to NOW()
+3. Only updates the calling user's record
+
+Example Usage:
+```sql
+SELECT update_last_login();
+```
+
+Called By:
+- Application after successful login
+- Can be called from client code
+
+Permissions:
+- GRANT EXECUTE TO authenticated
+- Only authenticated users can call
+
+Use Cases:
+- Track user activity
+- Display last login in admin dashboard
+- Identify inactive accounts
+
+================================================================================
+DATABASE EXTENSIONS REQUIRED
+================================================================================
+
+Extension: pg_trgm
+------------------
+Purpose: Trigram-based fuzzy text matching
+Used By: search_drugs(), search_programs()
+Installation: CREATE EXTENSION IF NOT EXISTS pg_trgm;
+
+Provides:
+- Similarity operator (%)
+- GIN index support for text search
+- similarity() function for scoring
+
+================================================================================
+FUNCTION SECURITY SUMMARY
+================================================================================
+
+Public Functions (no authentication required):
+- search_drugs(text)
+- search_programs(text)
+- get_programs_for_drug(uuid)
+
+Authenticated Functions:
+- update_last_login()
+
+Admin-Only Functions:
+- toggle_user_blocked(uuid, boolean)
+- set_user_admin(uuid, boolean)
+- get_user_statistics(integer)
+- get_top_programs(integer)
+
+Helper Functions:
+- is_admin() - Used internally by policies
+
+Trigger Functions:
+- handle_new_user() - Automatic, not called directly
+
+================================================================================
+CALLING FUNCTIONS FROM CLIENT CODE
+================================================================================
+
+JavaScript/TypeScript Example:
+
+Search for drugs:
+```javascript
+const { data, error } = await supabase
+  .rpc('search_drugs', { search_query: 'insulin' });
+```
+
+Get programs for a drug:
+```javascript
+const { data, error } = await supabase
+  .rpc('get_programs_for_drug', { drug_id_param: drugId });
+```
+
+Block a user (admin):
+```javascript
+const { error } = await supabase
+  .rpc('toggle_user_blocked', {
+    target_user_id: userId,
+    block_status: true
+  });
+```
+
+Update last login:
+```javascript
+await supabase.rpc('update_last_login');
+```
+
+================================================================================
+FUNCTION PERFORMANCE NOTES
+================================================================================
+
+Search Functions:
+- Use GIN indexes for fast fuzzy matching
+- Limited to 20 results to prevent slow queries
+- Stable volatility allows caching and optimization
+- Consider adding pagination for large result sets
+
+Admin Functions:
+- Lightweight operations on single rows
+- Immediate execution with minimal overhead
+- Audit logging adds minimal latency
+
+Trigger Functions:
+- Execute automatically, no client call needed
+- Fast execution (simple INSERT/UPDATE)
+- Use ON CONFLICT for idempotency
+
+================================================================================
+END OF DATABASE FUNCTIONS DOCUMENTATION
+================================================================================

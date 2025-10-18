@@ -1,0 +1,381 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - TABLE RELATIONSHIPS & CONNECTIONS
+================================================================================
+
+This document describes all table relationships, foreign keys, and how data
+flows between different parts of the database.
+
+================================================================================
+DATABASE SCHEMA OVERVIEW
+================================================================================
+
+Primary Schema: public
+Authentication Schema: auth (managed by Supabase)
+
+Total Core Tables: 5
+- users
+- drugs
+- programs
+- drugs_programs (junction table)
+- contact_submissions
+
+Total Activity Tables: 3
+- user_activity
+- saved_programs
+- admin_actions
+
+================================================================================
+RELATIONSHIP TYPE 1: AUTH INTEGRATION (ONE-TO-ONE)
+================================================================================
+
+auth.users (Supabase managed) <---> public.users
+
+Relationship Type: One-to-One (mandatory)
+Direction: auth.users is the parent, public.users is the child
+
+Foreign Key:
+- public.users.id REFERENCES auth.users(id) ON DELETE CASCADE
+
+Description:
+- Every record in auth.users automatically gets a corresponding record in
+  public.users through the handle_new_user() trigger
+- When an auth user is deleted, their profile in public.users is automatically
+  deleted (CASCADE)
+- The public.users table extends auth.users with application-specific fields
+
+Data Flow:
+1. User signs up (email/password or OAuth)
+2. Record created in auth.users by Supabase
+3. Trigger fires: handle_new_user()
+4. Record automatically created in public.users with same ID
+5. Application uses public.users for profile data
+
+Key Points:
+- auth.users contains: email, encrypted password, OAuth tokens, metadata
+- public.users contains: profile info, address, insurance, admin flags
+- Both tables share the same UUID as primary/foreign key
+
+================================================================================
+RELATIONSHIP TYPE 2: MANY-TO-MANY (DRUGS <-> PROGRAMS)
+================================================================================
+
+drugs <---> drugs_programs <---> programs
+
+Relationship Type: Many-to-Many
+Junction Table: drugs_programs
+
+Foreign Keys:
+- drugs_programs.drug_id REFERENCES drugs(id) ON DELETE CASCADE
+- drugs_programs.program_id REFERENCES programs(id) ON DELETE CASCADE
+
+Description:
+- One drug can be covered by multiple assistance programs
+- One program can cover multiple drugs
+- The junction table connects them
+
+Cascade Behavior:
+- If a drug is deleted, all its program relationships are deleted
+- If a program is deleted, all its drug relationships are deleted
+- This maintains referential integrity
+
+Example Queries:
+
+Find all programs for a specific drug:
+```sql
+SELECT p.*
+FROM programs p
+JOIN drugs_programs dp ON dp.program_id = p.id
+WHERE dp.drug_id = '<drug-uuid>'
+AND p.active = true;
+```
+
+Find all drugs covered by a specific program:
+```sql
+SELECT d.*
+FROM drugs d
+JOIN drugs_programs dp ON dp.drug_id = d.id
+WHERE dp.program_id = '<program-uuid>'
+AND d.active = true;
+```
+
+Count programs per drug:
+```sql
+SELECT d.medication_name, COUNT(dp.program_id) as program_count
+FROM drugs d
+LEFT JOIN drugs_programs dp ON dp.drug_id = d.id
+GROUP BY d.id, d.medication_name
+ORDER BY program_count DESC;
+```
+
+Constraints:
+- UNIQUE(drug_id, program_id) prevents duplicate relationships
+- Both foreign keys are NOT NULL
+
+================================================================================
+RELATIONSHIP TYPE 3: USER ACTIVITIES (ONE-TO-MANY)
+================================================================================
+
+users (ONE) ---> (MANY) user_activity
+
+Relationship Type: One-to-Many
+Parent: users
+Child: user_activity
+
+Foreign Key:
+- user_activity.user_id REFERENCES auth.users(id) ON DELETE CASCADE
+
+Description:
+- Each user can have many activity records
+- Each activity record belongs to exactly one user
+- Activities are deleted when user is deleted
+
+Usage:
+- Track user searches, views, saves, downloads
+- Generate analytics and insights
+- Populate user dashboard with history
+
+Example Queries:
+
+Get user's recent activity:
+```sql
+SELECT *
+FROM user_activity
+WHERE user_id = auth.uid()
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+Most searched medications:
+```sql
+SELECT medication_name, COUNT(*) as search_count
+FROM user_activity
+WHERE action_type = 'searched'
+GROUP BY medication_name
+ORDER BY search_count DESC
+LIMIT 10;
+```
+
+================================================================================
+RELATIONSHIP TYPE 4: SAVED PROGRAMS (MANY-TO-MANY WITH USER CONTEXT)
+================================================================================
+
+users (MANY) <---> saved_programs <---> programs (MANY)
+
+Relationship Type: Many-to-Many with user context
+Junction Table: saved_programs
+
+Foreign Keys:
+- saved_programs.user_id REFERENCES auth.users(id) ON DELETE CASCADE
+- saved_programs.program_id REFERENCES programs(id) ON DELETE CASCADE
+  (or pharma_programs depending on migration state)
+
+Description:
+- Each user can save multiple programs
+- Each program can be saved by multiple users
+- The junction table tracks who saved what
+
+Cascade Behavior:
+- If user is deleted, their saved programs are deleted
+- If program is deleted, all saves referencing it are deleted
+
+Constraints:
+- UNIQUE(user_id, program_id) prevents duplicate saves
+- A user can only save a program once
+
+Example Queries:
+
+Get user's saved programs:
+```sql
+SELECT p.*
+FROM programs p
+JOIN saved_programs sp ON sp.program_id = p.id
+WHERE sp.user_id = auth.uid()
+ORDER BY sp.created_at DESC;
+```
+
+Check if user has saved a specific program:
+```sql
+SELECT EXISTS (
+  SELECT 1
+  FROM saved_programs
+  WHERE user_id = auth.uid()
+  AND program_id = '<program-uuid>'
+);
+```
+
+Most saved programs:
+```sql
+SELECT p.program_name, COUNT(sp.user_id) as save_count
+FROM programs p
+JOIN saved_programs sp ON sp.program_id = p.id
+GROUP BY p.id, p.program_name
+ORDER BY save_count DESC
+LIMIT 10;
+```
+
+================================================================================
+RELATIONSHIP TYPE 5: ADMIN ACTIONS (ONE-TO-MANY, DUAL REFERENCES)
+================================================================================
+
+users (admin_id) ---> admin_actions
+users (target_user_id) ---> admin_actions
+
+Relationship Type: One-to-Many (with two user references)
+Parent: users (as both admin and target)
+Child: admin_actions
+
+Foreign Keys:
+- admin_actions.admin_id REFERENCES auth.users(id) ON DELETE CASCADE
+- admin_actions.target_user_id REFERENCES auth.users(id) ON DELETE SET NULL
+
+Description:
+- Each action has one admin who performed it (admin_id)
+- Each action may have one target user (target_user_id)
+- Target is nullable for system-wide actions
+
+Cascade Behavior:
+- If admin is deleted, their actions are deleted (CASCADE)
+- If target user is deleted, actions remain but target_user_id is set to NULL
+  (SET NULL) to preserve audit trail
+
+Example Queries:
+
+Get all actions performed by an admin:
+```sql
+SELECT *
+FROM admin_actions
+WHERE admin_id = '<admin-uuid>'
+ORDER BY created_at DESC;
+```
+
+Get all actions affecting a specific user:
+```sql
+SELECT *
+FROM admin_actions
+WHERE target_user_id = '<user-uuid>'
+ORDER BY created_at DESC;
+```
+
+Recent admin activity:
+```sql
+SELECT
+  aa.*,
+  u1.email as admin_email,
+  u2.email as target_email
+FROM admin_actions aa
+JOIN users u1 ON u1.id = aa.admin_id
+LEFT JOIN users u2 ON u2.id = aa.target_user_id
+ORDER BY aa.created_at DESC
+LIMIT 20;
+```
+
+================================================================================
+RELATIONSHIP TYPE 6: CONTACT SUBMISSIONS (STANDALONE)
+================================================================================
+
+contact_submissions (no foreign key relationships)
+
+Relationship Type: Standalone
+Parent: None
+Child: None
+
+Description:
+- This table has no foreign key relationships
+- It stores anonymous and authenticated contact form submissions
+- Email and name are stored as text, not linked to user accounts
+
+Reason for No Relationships:
+- Allows anonymous users to submit without creating an account
+- Preserves submissions even if user account is deleted
+- Simple, independent audit trail
+
+================================================================================
+ENTITY RELATIONSHIP DIAGRAM (TEXT)
+================================================================================
+
+auth.users (Supabase)
+    |
+    | (1:1, CASCADE)
+    v
+public.users -----> user_activity (1:MANY, CASCADE)
+    |
+    | (admin_id, CASCADE)
+    +------------> admin_actions
+    |                 ^
+    |                 | (target_user_id, SET NULL)
+    +------------------
+    |
+    | (MANY:MANY via saved_programs, CASCADE)
+    v
+saved_programs -----> programs
+                         |
+                         | (MANY:MANY via drugs_programs, CASCADE)
+                         v
+                      drugs_programs -----> drugs
+
+contact_submissions (standalone, no relationships)
+
+================================================================================
+CASCADE DELETE SUMMARY
+================================================================================
+
+If you delete from auth.users:
+- public.users record is deleted (CASCADE)
+  - user_activity records are deleted (CASCADE)
+  - saved_programs records are deleted (CASCADE)
+  - admin_actions where user is admin are deleted (CASCADE)
+  - admin_actions where user is target_user_id become NULL (SET NULL)
+
+If you delete from drugs:
+- drugs_programs relationships are deleted (CASCADE)
+
+If you delete from programs:
+- drugs_programs relationships are deleted (CASCADE)
+- saved_programs records are deleted (CASCADE)
+
+If you delete from contact_submissions:
+- No cascade effects (standalone table)
+
+================================================================================
+DATA INTEGRITY RULES
+================================================================================
+
+Enforced by Database:
+- Foreign key constraints prevent orphaned records
+- UNIQUE constraints prevent duplicate relationships
+- NOT NULL constraints ensure required data
+- CASCADE deletes maintain referential integrity
+- SET NULL preserves audit trails
+
+Enforced by Application:
+- Row Level Security policies restrict data access
+- Triggers automatically create related records
+- Functions validate admin permissions
+- Client-side validation before inserts
+
+================================================================================
+QUERY OPTIMIZATION TIPS
+================================================================================
+
+For Fast Queries:
+1. Always filter on indexed foreign keys (user_id, drug_id, program_id)
+2. Use JOIN instead of subqueries when possible
+3. Filter on active = true for drugs and programs
+4. Use created_at DESC indexes for recent data
+5. Leverage UNIQUE constraints for EXISTS checks
+
+Common Query Patterns:
+- User -> Activities: Filter by user_id with ORDER BY created_at DESC
+- Drug -> Programs: JOIN through drugs_programs, filter active = true
+- User -> Saved: JOIN saved_programs with program details
+- Admin -> Actions: Filter by admin_id or target_user_id
+
+Performance Considerations:
+- Junction tables are indexed on both foreign keys
+- GIN indexes enable fast text search
+- Timestamp indexes optimized for DESC ordering
+- UNIQUE constraints create implicit indexes
+
+================================================================================
+END OF TABLE RELATIONSHIPS DOCUMENTATION
+================================================================================

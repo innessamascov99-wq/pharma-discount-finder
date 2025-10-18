@@ -1,0 +1,379 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - CORE DATABASE TABLES
+================================================================================
+
+This document provides detailed information about the core database tables
+in the Pharmaceutical Discount Finder application.
+
+================================================================================
+TABLE 1: USERS
+================================================================================
+
+Purpose: Stores user profile information and integrates with Supabase authentication
+
+Schema: public.users
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY)
+  - References auth.users(id) with CASCADE delete
+  - Automatically created by authentication system
+
+- email (text, UNIQUE, NOT NULL)
+  - User's email address
+  - Must be unique across all users
+  - Indexed for fast lookup
+
+- first_name (text)
+  - User's first name
+  - Extracted from signup metadata or OAuth profile
+
+- last_name (text)
+  - User's last name
+  - Extracted from signup metadata or OAuth profile
+
+- phone (text)
+  - User's phone number
+  - Optional contact information
+
+- date_of_birth (date)
+  - User's date of birth
+  - Used for eligibility verification
+
+- address_line1 (text)
+  - Primary address line
+
+- address_line2 (text)
+  - Secondary address line (apartment, suite, etc.)
+
+- city (text)
+  - City name
+
+- state (text)
+  - State or province
+
+- zip_code (text)
+  - Postal/ZIP code
+
+- country (text, DEFAULT 'USA')
+  - Country name
+  - Defaults to USA
+
+- insurance_type (text)
+  - Type of insurance coverage
+  - Examples: Private, Medicare, Medicaid, Uninsured
+
+- insurance_provider (text)
+  - Name of insurance company
+
+- is_admin (boolean, NOT NULL, DEFAULT false)
+  - Administrative role flag
+  - Grants access to admin dashboard and user management
+
+- is_blocked (boolean, NOT NULL, DEFAULT false)
+  - User blocking status
+  - Blocked users cannot access the system
+
+- last_login (timestamptz)
+  - Timestamp of last successful login
+  - Used for activity tracking
+
+- created_at (timestamptz, NOT NULL, DEFAULT now())
+  - Account creation timestamp
+
+- updated_at (timestamptz, NOT NULL, DEFAULT now())
+  - Last profile update timestamp
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- UNIQUE INDEX on email
+- INDEX idx_users_email on email
+- INDEX idx_users_is_admin on is_admin
+- INDEX idx_users_is_blocked on is_blocked
+- INDEX idx_users_last_login on last_login (DESC)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Users can view their own profile
+- Admins can view all user profiles
+- Admins can update user admin status and blocking
+
+Comments:
+---------
+Table comment: "User profile information for pharmaceutical program eligibility"
+
+================================================================================
+TABLE 2: DRUGS
+================================================================================
+
+Purpose: Contains comprehensive information about prescription medications
+
+Schema: public.drugs
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each drug
+
+- medication_name (text, NOT NULL)
+  - Brand/commercial name of the medication
+  - Indexed with GIN for full-text search
+
+- generic_name (text, NOT NULL)
+  - Generic/chemical name of the medication
+  - Indexed with GIN for full-text search
+
+- manufacturer (text, NOT NULL)
+  - Pharmaceutical company that produces the drug
+
+- drug_class (text, NOT NULL)
+  - Therapeutic classification
+  - Examples: Antidiabetic, Anticoagulant, Immunosuppressant
+  - Indexed with GIN for full-text search
+
+- indication (text, NOT NULL, DEFAULT '')
+  - Medical conditions the drug treats
+  - Searchable field
+
+- dosage_forms (text, DEFAULT '')
+  - Available forms (tablet, injection, capsule, etc.)
+
+- common_dosages (text, DEFAULT '')
+  - Typical dosing information
+
+- typical_retail_price (text, DEFAULT '')
+  - Approximate retail cost
+  - Stored as text to allow ranges and formatting
+
+- fda_approval_date (date)
+  - Date of FDA approval
+
+- description (text, NOT NULL, DEFAULT '')
+  - Detailed drug information
+
+- side_effects (text, DEFAULT '')
+  - Common side effects and warnings
+
+- warnings (text, DEFAULT '')
+  - Important safety information
+
+- active (boolean, NOT NULL, DEFAULT true)
+  - Indicates if drug is currently available
+  - Only active drugs are shown to users
+
+- created_at (timestamptz, NOT NULL, DEFAULT now())
+  - Record creation timestamp
+
+- updated_at (timestamptz, NOT NULL, DEFAULT now())
+  - Last update timestamp
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- INDEX idx_drugs_medication_name on medication_name
+- INDEX idx_drugs_generic_name on generic_name
+- INDEX idx_drugs_active on active
+- GIN INDEX idx_drugs_medication_name_trgm on medication_name (for fuzzy search)
+- GIN INDEX idx_drugs_generic_name_trgm on generic_name (for fuzzy search)
+- GIN INDEX idx_drugs_drug_class_trgm on drug_class (for fuzzy search)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Public can view all active drugs (where active = true)
+
+Comments:
+---------
+Table comment: "Pharmaceutical drugs database - exposed via PostgREST"
+
+================================================================================
+TABLE 3: PROGRAMS
+================================================================================
+
+Purpose: Stores pharmaceutical assistance programs and discount offerings
+
+Schema: public.programs
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each program
+
+- program_name (text, NOT NULL)
+  - Official name of the assistance program
+  - Indexed with GIN for full-text search
+
+- program_type (text, NOT NULL, DEFAULT 'copay_card')
+  - Type of assistance program
+  - Examples: copay_card, patient_assistance, discount_card
+
+- description (text, NOT NULL, DEFAULT '')
+  - Detailed program description
+  - Searchable field
+
+- manufacturer (text, NOT NULL)
+  - Company or organization offering the program
+  - Indexed with GIN for full-text search
+
+- eligibility_criteria (text, NOT NULL, DEFAULT '')
+  - Requirements to qualify for the program
+
+- income_requirements (text, DEFAULT '')
+  - Income limits or guidelines
+
+- insurance_requirements (text, DEFAULT '')
+  - Insurance status requirements
+
+- discount_details (text, NOT NULL, DEFAULT '')
+  - Information about savings or discounts
+
+- program_url (text, DEFAULT '')
+  - Website link for more information
+
+- phone_number (text, DEFAULT '')
+  - Contact phone number
+
+- email (text, DEFAULT '')
+  - Contact email address
+
+- enrollment_process (text, NOT NULL, DEFAULT '')
+  - Steps to enroll in the program
+
+- required_documents (text, NOT NULL, DEFAULT '')
+  - Documents needed for enrollment
+
+- coverage_duration (text, DEFAULT '12 months')
+  - How long the assistance lasts
+
+- renewal_required (boolean, NOT NULL, DEFAULT true)
+  - Whether periodic renewal is needed
+
+- active (boolean, NOT NULL, DEFAULT true)
+  - Indicates if program is currently available
+
+- created_at (timestamptz, NOT NULL, DEFAULT now())
+  - Record creation timestamp
+
+- updated_at (timestamptz, NOT NULL, DEFAULT now())
+  - Last update timestamp
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- INDEX idx_programs_manufacturer on manufacturer
+- INDEX idx_programs_active on active
+- GIN INDEX idx_programs_program_name_trgm on program_name (for fuzzy search)
+- GIN INDEX idx_programs_manufacturer_trgm on manufacturer (for fuzzy search)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Public can view all active programs (where active = true)
+
+Comments:
+---------
+Table comment: "Pharmaceutical programs database - exposed via PostgREST"
+
+================================================================================
+TABLE 4: DRUGS_PROGRAMS (Junction Table)
+================================================================================
+
+Purpose: Links drugs to their available assistance programs (many-to-many)
+
+Schema: public.drugs_programs
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each relationship
+
+- drug_id (uuid, NOT NULL)
+  - References drugs(id) with CASCADE delete
+  - Foreign key to drugs table
+
+- program_id (uuid, NOT NULL)
+  - References programs(id) with CASCADE delete
+  - Foreign key to programs table
+
+- created_at (timestamptz, NOT NULL, DEFAULT now())
+  - When the relationship was created
+
+Constraints:
+------------
+- UNIQUE(drug_id, program_id)
+  - Prevents duplicate relationships
+  - A drug can only be linked to a program once
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- INDEX idx_drugs_programs_drug_id on drug_id
+- INDEX idx_drugs_programs_program_id on program_id
+- UNIQUE INDEX on (drug_id, program_id)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Public can view all drug-program relationships
+
+Comments:
+---------
+Table comment: "Drug-Program relationships - exposed via PostgREST"
+
+Purpose of Junction Table:
+---------------------------
+This table enables:
+- One drug to have multiple assistance programs
+- One program to support multiple drugs
+- Efficient querying of "which programs are available for this drug"
+- Efficient querying of "which drugs are covered by this program"
+
+================================================================================
+TABLE 5: CONTACT_SUBMISSIONS
+================================================================================
+
+Purpose: Stores messages submitted through the contact form
+
+Schema: public.contact_submissions
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each submission
+
+- full_name (text, NOT NULL)
+  - Name of person submitting the form
+
+- email (text, NOT NULL)
+  - Contact email address
+
+- message (text, NOT NULL)
+  - Message content
+
+- read (boolean, DEFAULT false)
+  - Whether admin has read the message
+
+- created_at (timestamptz, DEFAULT now())
+  - Submission timestamp
+
+Indexes:
+--------
+- PRIMARY KEY on id
+
+Row Level Security:
+-------------------
+- ENABLED
+- Anyone (anon, authenticated) can insert contact submissions
+- No SELECT policies (admin access only through direct queries)
+
+Comments:
+---------
+This table allows both anonymous and authenticated users to submit contact
+messages. Admin users can view and manage these submissions through the
+admin dashboard.
+
+================================================================================
+END OF CORE TABLES DOCUMENTATION
+================================================================================

@@ -1,0 +1,735 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - AUTHENTICATION INTEGRATION
+================================================================================
+
+This document describes how authentication is integrated with the database,
+including user creation, OAuth providers, and session management.
+
+================================================================================
+AUTHENTICATION ARCHITECTURE
+================================================================================
+
+Provider: Supabase Auth
+Authentication Schemas:
+- auth (managed by Supabase)
+- public (application tables)
+
+Authentication Methods Supported:
+1. Email/Password
+2. Google OAuth
+3. Additional OAuth providers (configurable)
+
+Key Components:
+- auth.users (Supabase managed table)
+- public.users (application profile table)
+- handle_new_user() trigger
+- RLS policies using auth.uid()
+
+================================================================================
+AUTH.USERS TABLE (SUPABASE MANAGED)
+================================================================================
+
+Location: auth schema (not public)
+Management: Fully managed by Supabase
+Direct Access: Not recommended
+
+Key Columns:
+------------
+- id (uuid) - User's unique identifier
+- email (text) - User's email address
+- encrypted_password (text) - Hashed password
+- email_confirmed_at (timestamptz) - Email verification timestamp
+- invited_at (timestamptz) - Invitation timestamp
+- confirmation_token (text) - Email confirmation token
+- recovery_token (text) - Password reset token
+- email_change_token_new (text) - Email change verification
+- last_sign_in_at (timestamptz) - Last login timestamp
+- raw_app_meta_data (jsonb) - System metadata
+- raw_user_meta_data (jsonb) - User-provided metadata
+- created_at (timestamptz) - Account creation time
+- updated_at (timestamptz) - Last update time
+
+Security:
+- Passwords are encrypted
+- Tokens are hashed
+- Direct queries require service role
+- Accessed via Supabase Auth API
+
+================================================================================
+PUBLIC.USERS TABLE (APPLICATION MANAGED)
+================================================================================
+
+Location: public schema
+Management: Application controlled
+Purpose: Extended user profile information
+
+Relationship:
+- One-to-one with auth.users
+- Same UUID as primary/foreign key
+- Automatically created via trigger
+
+Key Columns:
+------------
+- id (uuid) - References auth.users(id)
+- email (text) - Mirrored from auth.users
+- first_name (text) - User's first name
+- last_name (text) - User's last name
+- phone (text) - Contact number
+- date_of_birth (date) - Birthdate
+- address fields - Full address information
+- insurance_type (text) - Insurance coverage type
+- insurance_provider (text) - Insurance company
+- is_admin (boolean) - Admin role flag
+- is_blocked (boolean) - User blocking status
+- last_login (timestamptz) - Last login tracking
+
+Purpose:
+- Store application-specific user data
+- Enable custom profile fields
+- Support business logic (admin, blocking)
+
+================================================================================
+USER CREATION FLOW
+================================================================================
+
+EMAIL/PASSWORD SIGNUP FLOW
+---------------------------
+
+Step 1: User submits signup form
+- Email
+- Password
+- First name
+- Last name
+- Additional metadata
+
+Step 2: Application calls Supabase Auth API
+```javascript
+const { data, error } = await supabase.auth.signUp({
+  email: 'user@example.com',
+  password: 'securePassword123',
+  options: {
+    data: {
+      first_name: 'John',
+      last_name: 'Doe'
+    }
+  }
+});
+```
+
+Step 3: Supabase creates auth.users record
+- Encrypts password
+- Stores email
+- Stores metadata in raw_user_meta_data
+- Generates UUID
+
+Step 4: Database trigger fires
+- Trigger: on_auth_user_created
+- Function: handle_new_user()
+- Executes AFTER INSERT on auth.users
+
+Step 5: handle_new_user() creates public.users record
+- Extracts email
+- Extracts first_name from metadata
+- Extracts last_name from metadata
+- Inserts into public.users
+- Uses same UUID as auth.users
+
+Step 6: User is authenticated
+- Session token generated
+- Client receives auth token
+- User can access protected routes
+
+---------------------------------------
+
+GOOGLE OAUTH SIGNUP FLOW
+-------------------------
+
+Step 1: User clicks "Sign in with Google"
+
+Step 2: Application initiates OAuth
+```javascript
+const { data, error } = await supabase.auth.signInWithOAuth({
+  provider: 'google',
+  options: {
+    redirectTo: 'https://yourapp.com/auth/callback'
+  }
+});
+```
+
+Step 3: User redirected to Google
+- Google authentication page
+- User grants permissions
+
+Step 4: Google redirects back with token
+
+Step 5: Supabase creates auth.users record
+- No password (OAuth provider)
+- Email from Google
+- Metadata from Google profile:
+  ```json
+  {
+    "full_name": "John Doe",
+    "avatar_url": "https://...",
+    "email": "john@gmail.com",
+    "email_verified": true,
+    "provider": "google",
+    "sub": "google-user-id"
+  }
+  ```
+
+Step 6: Database trigger fires
+- Trigger: on_auth_user_created
+- Function: handle_new_user()
+
+Step 7: handle_new_user() extracts name intelligently
+- Checks for first_name, last_name in metadata
+- Falls back to full_name (splits on space)
+- Falls back to 'name' field
+- Falls back to email username
+- Creates public.users record
+
+Step 8: User is authenticated
+- Session established
+- Profile complete
+
+================================================================================
+HANDLE_NEW_USER() TRIGGER FUNCTION DETAILS
+================================================================================
+
+Function: handle_new_user()
+Trigger: on_auth_user_created
+Timing: AFTER INSERT ON auth.users
+Execute: FOR EACH ROW
+Security: SECURITY DEFINER
+
+Complete Logic:
+```sql
+CREATE OR REPLACE FUNCTION handle_new_user()
+RETURNS TRIGGER AS $$
+DECLARE
+  first_name_val text;
+  last_name_val text;
+  email_val text;
+BEGIN
+  -- Get email (always present)
+  email_val := NEW.email;
+
+  -- Try to extract first_name and last_name from raw_user_meta_data
+  first_name_val := NEW.raw_user_meta_data->>'first_name';
+  last_name_val := NEW.raw_user_meta_data->>'last_name';
+
+  -- If not found, try full_name (common in OAuth providers like Google)
+  IF first_name_val IS NULL AND NEW.raw_user_meta_data->>'full_name' IS NOT NULL THEN
+    first_name_val := split_part(NEW.raw_user_meta_data->>'full_name', ' ', 1);
+    last_name_val := substring(NEW.raw_user_meta_data->>'full_name' from position(' ' in NEW.raw_user_meta_data->>'full_name') + 1);
+  END IF;
+
+  -- If still null, try 'name' field (another common OAuth field)
+  IF first_name_val IS NULL AND NEW.raw_user_meta_data->>'name' IS NOT NULL THEN
+    first_name_val := split_part(NEW.raw_user_meta_data->>'name', ' ', 1);
+    last_name_val := substring(NEW.raw_user_meta_data->>'name' from position(' ' in NEW.raw_user_meta_data->>'name') + 1);
+  END IF;
+
+  -- If still null, use email username as first name
+  IF first_name_val IS NULL THEN
+    first_name_val := split_part(email_val, '@', 1);
+  END IF;
+
+  -- Insert into public.users table (single source of truth)
+  INSERT INTO public.users (id, email, first_name, last_name, created_at, updated_at)
+  VALUES (NEW.id, email_val, first_name_val, last_name_val, NOW(), NOW())
+  ON CONFLICT (id) DO UPDATE SET
+    email = EXCLUDED.email,
+    first_name = COALESCE(EXCLUDED.first_name, users.first_name),
+    last_name = COALESCE(EXCLUDED.last_name, users.last_name),
+    updated_at = NOW();
+
+  RETURN NEW;
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+Name Extraction Priority:
+1. raw_user_meta_data->>'first_name' and 'last_name'
+2. raw_user_meta_data->>'full_name' (split)
+3. raw_user_meta_data->>'name' (split)
+4. Email username (fallback)
+
+Benefits:
+- Works with all auth methods
+- Intelligent name extraction
+- Graceful fallbacks
+- Idempotent (ON CONFLICT)
+
+================================================================================
+AUTHENTICATION IN APPLICATION CODE
+================================================================================
+
+Client Initialization:
+----------------------
+```javascript
+import { createClient } from '@supabase/supabase-js';
+
+const supabase = createClient(
+  process.env.VITE_SUPABASE_URL,
+  process.env.VITE_SUPABASE_ANON_KEY
+);
+```
+
+Sign Up:
+--------
+```javascript
+const { data, error } = await supabase.auth.signUp({
+  email: 'user@example.com',
+  password: 'password123',
+  options: {
+    data: {
+      first_name: 'John',
+      last_name: 'Doe'
+    }
+  }
+});
+```
+
+Sign In:
+--------
+```javascript
+const { data, error } = await supabase.auth.signInWithPassword({
+  email: 'user@example.com',
+  password: 'password123'
+});
+
+// After successful login, update last_login
+await supabase.rpc('update_last_login');
+```
+
+Sign Out:
+---------
+```javascript
+const { error } = await supabase.auth.signOut();
+```
+
+Get Current User:
+-----------------
+```javascript
+const { data: { user } } = await supabase.auth.getUser();
+```
+
+Get Session:
+------------
+```javascript
+const { data: { session } } = await supabase.auth.getSession();
+```
+
+Listen to Auth Changes:
+-----------------------
+```javascript
+supabase.auth.onAuthStateChange((event, session) => {
+  if (event === 'SIGNED_IN') {
+    // User signed in
+    (async () => {
+      await supabase.rpc('update_last_login');
+    })();
+  }
+  if (event === 'SIGNED_OUT') {
+    // User signed out
+  }
+});
+```
+
+================================================================================
+ROW LEVEL SECURITY WITH AUTH
+================================================================================
+
+Using auth.uid() in Policies:
+------------------------------
+
+The auth.uid() function returns the UUID of the currently authenticated user.
+
+Example Policy:
+```sql
+CREATE POLICY "Users can view own profile"
+  ON users FOR SELECT
+  TO authenticated
+  USING (auth.uid() = id);
+```
+
+How it Works:
+- User authenticates with Supabase
+- JWT token contains user's UUID
+- auth.uid() extracts UUID from JWT
+- Policy compares UUID with row's id
+- Only matching rows are returned
+
+Benefits:
+- Automatic user context
+- No manual user ID passing
+- Secure (cannot be spoofed)
+- Efficient
+
+Using Custom Claims:
+--------------------
+
+Store custom data in raw_app_meta_data:
+```javascript
+// Server-side only (service role)
+await supabaseAdmin.auth.admin.updateUserById(userId, {
+  app_metadata: { is_admin: true }
+});
+```
+
+Access in Policy:
+```sql
+CREATE POLICY "Admin only"
+  ON sensitive_table FOR SELECT
+  TO authenticated
+  USING ((auth.jwt()->>'app_metadata')::jsonb->>'is_admin' = 'true');
+```
+
+Note: This schema uses is_admin in public.users table instead
+
+================================================================================
+PASSWORD RESET FLOW
+================================================================================
+
+Step 1: User requests password reset
+```javascript
+const { data, error } = await supabase.auth.resetPasswordForEmail(
+  'user@example.com',
+  { redirectTo: 'https://yourapp.com/reset-password' }
+);
+```
+
+Step 2: Supabase sends reset email
+- Contains secure token
+- Link to reset page
+
+Step 3: User clicks link and is redirected
+- Token in URL
+- Redirects to reset-password page
+
+Step 4: User enters new password
+```javascript
+const { data, error } = await supabase.auth.updateUser({
+  password: 'newSecurePassword123'
+});
+```
+
+Step 5: Password updated in auth.users
+- Old password invalidated
+- New password encrypted
+- User remains authenticated
+
+================================================================================
+EMAIL VERIFICATION
+================================================================================
+
+Configuration:
+- Email confirmation can be required or optional
+- Configured in Supabase dashboard
+- This project: Disabled by default
+
+If Enabled:
+-----------
+
+Step 1: User signs up
+- Account created but email_confirmed_at is NULL
+
+Step 2: Confirmation email sent
+- Contains verification token
+- Link to confirm email
+
+Step 3: User clicks confirmation link
+- Token validated
+- email_confirmed_at set to current timestamp
+
+Step 4: User can now fully access account
+
+Checking Email Confirmation:
+```javascript
+const { data: { user } } = await supabase.auth.getUser();
+if (user?.email_confirmed_at) {
+  // Email confirmed
+}
+```
+
+================================================================================
+SESSION MANAGEMENT
+================================================================================
+
+Session Storage:
+- Stored in browser localStorage
+- Includes JWT token
+- Automatic refresh
+
+Session Duration:
+- Default: 1 hour
+- Refresh token: 7 days
+- Configurable in Supabase dashboard
+
+Automatic Refresh:
+- Supabase client handles refresh
+- Transparent to application
+- Happens before token expiration
+
+Manual Session Refresh:
+```javascript
+const { data, error } = await supabase.auth.refreshSession();
+```
+
+Session Validation:
+```javascript
+const { data: { session } } = await supabase.auth.getSession();
+if (!session) {
+  // User not authenticated
+  // Redirect to login
+}
+```
+
+================================================================================
+MULTI-FACTOR AUTHENTICATION (MFA)
+================================================================================
+
+Status: Not currently implemented
+Availability: Supported by Supabase
+
+If Implemented:
+---------------
+
+Enable MFA:
+```javascript
+const { data, error } = await supabase.auth.mfa.enroll({
+  factorType: 'totp'
+});
+```
+
+Verify MFA:
+```javascript
+const { data, error } = await supabase.auth.mfa.verify({
+  factorId: 'factor-id',
+  challengeId: 'challenge-id',
+  code: '123456'
+});
+```
+
+Policy Check:
+```sql
+CREATE POLICY "Require MFA for sensitive operations"
+  ON sensitive_table FOR UPDATE
+  TO authenticated
+  USING ((auth.jwt()->>'aal') = 'aal2');
+-- aal2 = Assurance Level 2 (MFA verified)
+```
+
+================================================================================
+USER BLOCKING & ADMIN MANAGEMENT
+================================================================================
+
+Block User:
+-----------
+```javascript
+// Admin only
+const { error } = await supabase.rpc('toggle_user_blocked', {
+  target_user_id: 'user-uuid',
+  block_status: true
+});
+```
+
+Effect:
+- is_blocked set to true in public.users
+- User cannot access application (enforced by app logic)
+- Auth session remains valid (must be handled in app)
+
+Application Check:
+```javascript
+// Check if current user is blocked
+const { data } = await supabase
+  .from('users')
+  .select('is_blocked')
+  .eq('id', user.id)
+  .single();
+
+if (data?.is_blocked) {
+  // Sign out blocked user
+  await supabase.auth.signOut();
+  // Redirect to blocked page
+}
+```
+
+Grant Admin:
+------------
+```javascript
+// Admin only
+const { error } = await supabase.rpc('set_user_admin', {
+  target_user_id: 'user-uuid',
+  admin_status: true
+});
+```
+
+Check Admin Status:
+```javascript
+const { data } = await supabase
+  .from('users')
+  .select('is_admin')
+  .eq('id', user.id)
+  .single();
+
+if (data?.is_admin) {
+  // Show admin features
+}
+```
+
+================================================================================
+LAST LOGIN TRACKING
+================================================================================
+
+Update Last Login:
+------------------
+```javascript
+// After successful authentication
+await supabase.rpc('update_last_login');
+```
+
+Function Logic:
+```sql
+CREATE OR REPLACE FUNCTION update_last_login()
+RETURNS void AS $$
+BEGIN
+  UPDATE users
+  SET last_login = NOW()
+  WHERE id = auth.uid();
+END;
+$$ LANGUAGE plpgsql SECURITY DEFINER;
+```
+
+Usage:
+- Track user activity
+- Identify inactive accounts
+- Display in admin dashboard
+
+View Last Login:
+```sql
+SELECT email, last_login
+FROM users
+ORDER BY last_login DESC NULLS LAST;
+```
+
+================================================================================
+SECURITY BEST PRACTICES
+================================================================================
+
+1. Never expose service role key
+   - Only use anon key in client
+   - Service role bypasses RLS
+   - Keep service role server-side only
+
+2. Use RLS for all sensitive tables
+   - auth.uid() for user-specific data
+   - is_admin() for admin operations
+   - Cannot be bypassed from client
+
+3. Validate on both client and server
+   - Client validation for UX
+   - Server (RLS) validation for security
+
+4. Use SECURITY DEFINER carefully
+   - Only when elevated privileges needed
+   - Validate all inputs
+   - Prevent SQL injection
+
+5. Hash sensitive data
+   - Passwords (automatic in auth.users)
+   - API keys
+   - Tokens
+
+6. Implement rate limiting
+   - Prevent brute force attacks
+   - Configured in Supabase dashboard
+
+7. Monitor authentication logs
+   - Track failed login attempts
+   - Identify suspicious activity
+   - Available in Supabase dashboard
+
+8. Use HTTPS only
+   - Encrypt data in transit
+   - Configured at deployment level
+
+================================================================================
+COMMON AUTHENTICATION ISSUES
+================================================================================
+
+Issue: User can't log in
+- Check email is verified (if required)
+- Check password is correct
+- Check user is not blocked
+- Check Supabase service is online
+
+Issue: Session expires immediately
+- Check session duration settings
+- Check refresh token is valid
+- Check client-side storage works
+
+Issue: RLS denies access
+- Check auth.uid() returns correct value
+- Check policy logic
+- Check user has required role/permissions
+
+Issue: Trigger doesn't create profile
+- Check trigger is enabled
+- Check trigger function exists
+- Check for errors in function
+- Check public.users table exists
+
+Issue: OAuth redirect doesn't work
+- Check redirect URL is whitelisted
+- Check OAuth provider configuration
+- Check callback handling in app
+
+================================================================================
+TESTING AUTHENTICATION
+================================================================================
+
+Test User Creation:
+```javascript
+// Sign up test user
+const { data, error } = await supabase.auth.signUp({
+  email: 'test@example.com',
+  password: 'testPassword123'
+});
+
+// Verify public.users record created
+const { data: profile } = await supabase
+  .from('users')
+  .select('*')
+  .eq('email', 'test@example.com')
+  .single();
+```
+
+Test RLS:
+```sql
+-- As authenticated user
+SELECT * FROM users WHERE id = auth.uid(); -- Should return 1 row
+SELECT * FROM users WHERE id != auth.uid(); -- Should return 0 rows
+```
+
+Test Admin Functions:
+```javascript
+// As admin
+const { error } = await supabase.rpc('toggle_user_blocked', {
+  target_user_id: 'user-uuid',
+  block_status: true
+});
+// Should succeed
+
+// As regular user
+const { error } = await supabase.rpc('toggle_user_blocked', {
+  target_user_id: 'user-uuid',
+  block_status: true
+});
+// Should fail with permission error
+```
+
+================================================================================
+END OF AUTHENTICATION INTEGRATION DOCUMENTATION
+================================================================================

@@ -1,0 +1,523 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - ROW LEVEL SECURITY POLICIES
+================================================================================
+
+This document describes all Row Level Security (RLS) policies that protect
+data access in the database.
+
+================================================================================
+WHAT IS ROW LEVEL SECURITY (RLS)?
+================================================================================
+
+Row Level Security is a PostgreSQL feature that allows fine-grained access
+control at the row level. When RLS is enabled on a table:
+
+1. All queries are automatically filtered based on policies
+2. Users can only see/modify rows they are authorized to access
+3. Policies are enforced at the database level, not application level
+4. Cannot be bypassed by client code
+
+Security Roles Used:
+- anon: Anonymous users (not logged in)
+- authenticated: Logged-in users
+- public: Both anonymous and authenticated users
+
+Helper Functions:
+- auth.uid(): Returns UUID of current authenticated user
+- is_admin(): Returns true if current user has admin privileges
+
+================================================================================
+TABLE 1: USERS TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Users can view own profile"
+---------------------------------------
+Operation: SELECT
+Applies To: authenticated users
+Logic: USING (auth.uid() = id OR is_admin())
+
+Description:
+- Users can view their own profile data
+- Admins can view any user's profile
+- Prevents users from seeing other users' personal information
+
+Enforcement:
+```sql
+-- User can see their own data
+SELECT * FROM users WHERE id = auth.uid();  -- Works
+
+-- User cannot see other users
+SELECT * FROM users WHERE id != auth.uid(); -- Returns empty
+
+-- Admin can see all users
+SELECT * FROM users; -- Works if is_admin() = true
+```
+
+---------------------------------------
+
+Policy 2: "Admins can view all users"
+--------------------------------------
+Operation: SELECT
+Applies To: authenticated users
+Logic: USING (is_admin())
+
+Description:
+- Separate policy for admin access
+- Allows admins to query all users without restriction
+- Used for admin dashboard
+
+---------------------------------------
+
+Policy 3: "Admins can update user admin status"
+------------------------------------------------
+Operation: UPDATE
+Applies To: authenticated users
+Logic:
+- USING (is_admin())
+- WITH CHECK (is_admin())
+
+Description:
+- Only admins can update user records
+- Includes changing is_admin, is_blocked flags
+- Both USING and WITH CHECK ensure admin status before and after update
+
+Security:
+- Prevents privilege escalation
+- Audit trail maintained via admin_actions table
+
+================================================================================
+TABLE 2: DRUGS TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Anyone can view active drugs"
+-----------------------------------------
+Operation: SELECT
+Applies To: public (anon and authenticated)
+Logic: USING (active = true)
+
+Description:
+- All users can view active medications
+- Inactive drugs are hidden from all non-admin users
+- No authentication required for drug search
+
+Public Access Reason:
+- Drug information should be publicly accessible
+- Encourages users to search before signing up
+- No sensitive personal data in drugs table
+
+Example:
+```sql
+-- As anonymous user
+SELECT * FROM drugs WHERE active = true; -- Works
+
+-- Inactive drugs hidden
+SELECT * FROM drugs WHERE active = false; -- Returns empty
+```
+
+================================================================================
+TABLE 3: PROGRAMS TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Anyone can view active programs"
+--------------------------------------------
+Operation: SELECT
+Applies To: public (anon and authenticated)
+Logic: USING (active = true)
+
+Description:
+- All users can view active assistance programs
+- Inactive programs are hidden
+- No authentication required
+
+Public Access Reason:
+- Program information is meant to be public
+- Users need to see programs to understand value
+- No sensitive data in programs table
+
+Benefits:
+- Better SEO and discoverability
+- User-friendly search experience
+- Encourages program enrollment
+
+================================================================================
+TABLE 4: DRUGS_PROGRAMS JUNCTION TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Anyone can view drug-program relationships"
+-------------------------------------------------------
+Operation: SELECT
+Applies To: public (anon and authenticated)
+Logic: USING (true)
+
+Description:
+- All relationships are publicly visible
+- Required for "find programs for this drug" queries
+- No sensitive data in junction table
+
+Note:
+- Always used with JOIN to drugs and programs
+- Inherits active filtering from joined tables
+
+Example:
+```sql
+-- Find programs for a drug
+SELECT p.*
+FROM programs p
+JOIN drugs_programs dp ON dp.program_id = p.id
+WHERE dp.drug_id = '<drug-uuid>'
+AND p.active = true; -- Additional filtering on joined table
+```
+
+================================================================================
+TABLE 5: USER_ACTIVITY TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Users can view own activity"
+----------------------------------------
+Operation: SELECT
+Applies To: authenticated users
+Logic: USING (auth.uid() = user_id)
+
+Description:
+- Users can only see their own activity history
+- Protects privacy of user behavior
+- Used for personal dashboard
+
+Example:
+```sql
+-- User sees only their activity
+SELECT * FROM user_activity
+WHERE user_id = auth.uid(); -- Works
+
+-- Cannot see other users' activity
+SELECT * FROM user_activity
+WHERE user_id != auth.uid(); -- Returns empty
+```
+
+---------------------------------------
+
+Policy 2: "Users can insert own activity"
+------------------------------------------
+Operation: INSERT
+Applies To: authenticated users
+Logic: WITH CHECK (auth.uid() = user_id)
+
+Description:
+- Users can only log their own activity
+- Prevents spoofing other users' activity
+- Ensures data integrity
+
+Example:
+```sql
+-- Can insert own activity
+INSERT INTO user_activity (user_id, medication_name, action_type)
+VALUES (auth.uid(), 'Insulin', 'searched'); -- Works
+
+-- Cannot insert for other users
+INSERT INTO user_activity (user_id, medication_name, action_type)
+VALUES ('<other-user-id>', 'Insulin', 'searched'); -- Fails
+```
+
+Note on Admin Access:
+- Admins do NOT have special access to user_activity
+- Privacy protection is paramount
+- Admin analytics use aggregate functions, not individual records
+
+================================================================================
+TABLE 6: SAVED_PROGRAMS TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Users can view own saved programs"
+----------------------------------------------
+Operation: SELECT
+Applies To: authenticated users
+Logic: USING (auth.uid() = user_id)
+
+Description:
+- Users see only their bookmarked programs
+- Private list per user
+- Used for personal dashboard
+
+---------------------------------------
+
+Policy 2: "Users can insert own saved programs"
+------------------------------------------------
+Operation: INSERT
+Applies To: authenticated users
+Logic: WITH CHECK (auth.uid() = user_id)
+
+Description:
+- Users can only bookmark for themselves
+- Prevents unauthorized bookmarking
+- Enforces ownership
+
+Example:
+```sql
+-- Save a program
+INSERT INTO saved_programs (user_id, program_id)
+VALUES (auth.uid(), '<program-uuid>'); -- Works
+```
+
+---------------------------------------
+
+Policy 3: "Users can delete own saved programs"
+------------------------------------------------
+Operation: DELETE
+Applies To: authenticated users
+Logic: USING (auth.uid() = user_id)
+
+Description:
+- Users can remove their own bookmarks
+- Cannot delete others' bookmarks
+- Full CRUD control over owned records
+
+Example:
+```sql
+-- Remove a saved program
+DELETE FROM saved_programs
+WHERE user_id = auth.uid()
+AND program_id = '<program-uuid>'; -- Works
+```
+
+================================================================================
+TABLE 7: ADMIN_ACTIONS TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Admins can view all admin actions"
+----------------------------------------------
+Operation: SELECT
+Applies To: authenticated users
+Logic: USING (is_admin())
+
+Description:
+- Only admins can view the audit log
+- Complete transparency of admin operations
+- Used for admin dashboard and compliance
+
+Example:
+```sql
+-- Admin can see all actions
+SELECT * FROM admin_actions
+ORDER BY created_at DESC; -- Works if is_admin()
+
+-- Non-admin gets empty result
+SELECT * FROM admin_actions; -- Returns empty if not admin
+```
+
+---------------------------------------
+
+Policy 2: "Admins can insert admin actions"
+--------------------------------------------
+Operation: INSERT
+Applies To: authenticated users
+Logic: WITH CHECK (is_admin() AND auth.uid() = admin_id)
+
+Description:
+- Only admins can log actions
+- Admin must be the one performing the action (admin_id = auth.uid())
+- Prevents impersonation in audit log
+
+Security:
+- Ensures audit log integrity
+- Actions cannot be forged
+- Complete accountability
+
+Example:
+```sql
+-- Admin can log their own action
+INSERT INTO admin_actions (admin_id, target_user_id, action_type)
+VALUES (auth.uid(), '<target-user>', 'block'); -- Works if admin
+
+-- Cannot log action as different admin
+INSERT INTO admin_actions (admin_id, target_user_id, action_type)
+VALUES ('<other-admin>', '<target>', 'block'); -- Fails
+```
+
+================================================================================
+TABLE 8: CONTACT_SUBMISSIONS TABLE POLICIES
+================================================================================
+
+RLS Status: ENABLED
+
+Policy 1: "Anyone can submit contact form"
+-------------------------------------------
+Operation: INSERT
+Applies To: anon, authenticated (public)
+Logic: WITH CHECK (true)
+
+Description:
+- Anyone can submit a contact form
+- No authentication required
+- Encourages user engagement
+
+Public Access Reason:
+- Contact form should be accessible to all
+- No barriers to communication
+- Simple and user-friendly
+
+No SELECT Policy:
+- Regular users cannot view submissions
+- Only admins can view through direct database access
+- Maintains privacy of submissions
+
+Example:
+```sql
+-- Anyone can insert
+INSERT INTO contact_submissions (full_name, email, message)
+VALUES ('John Doe', 'john@example.com', 'Question about programs');
+-- Works for both anon and authenticated
+```
+
+================================================================================
+SECURITY BEST PRACTICES IMPLEMENTED
+================================================================================
+
+1. Principle of Least Privilege
+   - Users can only access their own data
+   - Public data clearly marked with active = true filter
+   - Admin operations require explicit admin check
+
+2. Defense in Depth
+   - RLS at database level
+   - Function-level security (SECURITY DEFINER)
+   - Application-level validation
+   - Client-side UI restrictions
+
+3. Privacy Protection
+   - User activity is private
+   - Personal information restricted to owner
+   - Admin actions are logged but private
+
+4. Data Integrity
+   - WITH CHECK prevents invalid inserts
+   - USING prevents unauthorized reads
+   - Foreign key constraints prevent orphans
+
+5. Audit Trail
+   - All admin actions logged
+   - Cannot be deleted or modified
+   - Audit table protected by RLS
+
+6. Public Data Access
+   - Drugs and programs are public
+   - Encourages discovery and usage
+   - No sensitive data exposed
+
+================================================================================
+TESTING RLS POLICIES
+================================================================================
+
+Test 1: User Privacy
+--------------------
+```sql
+-- As user A
+SELECT * FROM users WHERE id = '<user-b-id>'; -- Should return empty
+
+-- As admin
+SELECT * FROM users; -- Should return all users
+```
+
+Test 2: Public Data Access
+---------------------------
+```sql
+-- As anonymous user (not logged in)
+SELECT * FROM drugs WHERE active = true; -- Should work
+SELECT * FROM programs WHERE active = true; -- Should work
+```
+
+Test 3: User Activity Privacy
+------------------------------
+```sql
+-- As user A
+INSERT INTO user_activity (user_id, medication_name, action_type)
+VALUES ('<user-b-id>', 'Test', 'test'); -- Should fail
+
+SELECT * FROM user_activity
+WHERE user_id = '<user-b-id>'; -- Should return empty
+```
+
+Test 4: Admin Operations
+-------------------------
+```sql
+-- As non-admin
+SELECT * FROM admin_actions; -- Should return empty
+CALL toggle_user_blocked('<user-id>', true); -- Should error
+
+-- As admin
+SELECT * FROM admin_actions; -- Should return all actions
+```
+
+Test 5: Contact Form
+--------------------
+```sql
+-- As anonymous user
+INSERT INTO contact_submissions (full_name, email, message)
+VALUES ('Test', 'test@example.com', 'Test'); -- Should work
+
+SELECT * FROM contact_submissions; -- Should return empty (no SELECT policy)
+```
+
+================================================================================
+BYPASSING RLS (ADMIN/SERVICE ROLE ONLY)
+================================================================================
+
+Service Role:
+- Bypasses all RLS policies
+- Used for system operations
+- NEVER exposed to client
+- Stored securely on server
+
+When to Use Service Role:
+- Background jobs
+- Bulk operations
+- System maintenance
+- Edge functions with elevated privileges
+
+When NOT to Use:
+- Client-side queries
+- User-facing operations
+- Anything exposed to frontend
+
+Security:
+- Service role key is secret
+- Never sent to client
+- Only used in server-side code
+
+================================================================================
+RLS PERFORMANCE CONSIDERATIONS
+================================================================================
+
+Performance Impact:
+- Minimal overhead for simple policies
+- Indexed columns (auth.uid(), active) are fast
+- Complex policies may slow queries
+
+Optimization Tips:
+1. Keep policies simple
+2. Use indexed columns in USING clauses
+3. Avoid complex subqueries in policies
+4. Use helper functions (is_admin) for reusability
+5. Test with EXPLAIN ANALYZE
+
+Index Requirements:
+- user_id columns should be indexed
+- active boolean should be indexed
+- Foreign keys automatically indexed
+
+================================================================================
+END OF SECURITY POLICIES DOCUMENTATION
+================================================================================

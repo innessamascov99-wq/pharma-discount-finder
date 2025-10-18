@@ -1,0 +1,815 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - INDEXES & PERFORMANCE OPTIMIZATION
+================================================================================
+
+This document describes all database indexes, their purposes, and performance
+optimization strategies.
+
+================================================================================
+INDEX TYPES USED
+================================================================================
+
+1. B-tree Indexes (Default)
+   - Used for: Equality and range queries
+   - Best for: Primary keys, foreign keys, timestamps
+   - Supports: <, <=, =, >=, >, ORDER BY
+
+2. GIN Indexes (Generalized Inverted Index)
+   - Used for: Full-text search, array operations
+   - Best for: Text search with pg_trgm
+   - Supports: Similarity matching, pattern matching
+
+3. Unique Indexes
+   - Enforces: Data uniqueness
+   - Created by: PRIMARY KEY, UNIQUE constraints
+   - Automatic: Cannot be bypassed
+
+================================================================================
+USERS TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key constraint and fast lookups
+Created By: PRIMARY KEY constraint
+
+Usage:
+- Direct user lookup by ID
+- Foreign key joins from other tables
+- Authentication checks
+
+Performance:
+- O(log n) lookup time
+- Essential for data integrity
+
+---------------------------------------
+
+Index 2: UNIQUE INDEX on email
+-------------------------------
+Type: B-tree (unique)
+Column: email (text)
+Purpose: Ensure email uniqueness, fast email lookup
+Created By: UNIQUE constraint
+
+Usage:
+- Login by email
+- Check if email exists during signup
+- User search by email (admin)
+
+Performance:
+- O(log n) lookup time
+- Prevents duplicate accounts
+
+Query Examples:
+```sql
+SELECT * FROM users WHERE email = 'user@example.com';
+```
+
+---------------------------------------
+
+Index 3: idx_users_email
+-------------------------
+Type: B-tree
+Column: email (text)
+Purpose: Explicit index for email queries
+
+Note: May be redundant with UNIQUE constraint index
+Consider: Remove if UNIQUE constraint already creates index
+
+---------------------------------------
+
+Index 4: idx_users_is_admin
+----------------------------
+Type: B-tree
+Column: is_admin (boolean)
+Purpose: Fast filtering of admin users
+
+Usage:
+- Admin dashboard user lists
+- Policy checks for admin operations
+- Admin user counts
+
+Query Examples:
+```sql
+SELECT * FROM users WHERE is_admin = true;
+SELECT COUNT(*) FROM users WHERE is_admin = true;
+```
+
+Performance:
+- Efficient for low-cardinality column
+- Boolean indexes are compact
+
+---------------------------------------
+
+Index 5: idx_users_is_blocked
+------------------------------
+Type: B-tree
+Column: is_blocked (boolean)
+Purpose: Fast filtering of blocked users
+
+Usage:
+- Admin dashboard showing blocked users
+- Login validation checks
+- User management queries
+
+Query Examples:
+```sql
+SELECT * FROM users WHERE is_blocked = true;
+```
+
+---------------------------------------
+
+Index 6: idx_users_last_login
+------------------------------
+Type: B-tree (DESC)
+Column: last_login (timestamptz, descending)
+Purpose: Sort users by recent activity
+
+Usage:
+- Admin dashboard showing recently active users
+- Identify inactive accounts
+- Activity reports
+
+Query Examples:
+```sql
+SELECT * FROM users ORDER BY last_login DESC LIMIT 10;
+SELECT * FROM users WHERE last_login < NOW() - INTERVAL '90 days';
+```
+
+Performance:
+- DESC ordering matches common query pattern
+- Timestamp indexes are efficient
+
+================================================================================
+DRUGS TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key and foreign key target
+
+Usage:
+- Direct drug lookup
+- Foreign key joins from drugs_programs
+- User activity references
+
+---------------------------------------
+
+Index 2: idx_drugs_medication_name
+-----------------------------------
+Type: B-tree
+Column: medication_name (text)
+Purpose: Standard lookups by brand name
+
+Usage:
+- Exact name lookups
+- Sorting by name
+- Name-based filtering
+
+Query Examples:
+```sql
+SELECT * FROM drugs WHERE medication_name = 'Lipitor';
+SELECT * FROM drugs ORDER BY medication_name;
+```
+
+---------------------------------------
+
+Index 3: idx_drugs_generic_name
+--------------------------------
+Type: B-tree
+Column: generic_name (text)
+Purpose: Lookups by generic name
+
+Usage:
+- Generic name searches
+- Sorting by generic name
+- Filtering
+
+---------------------------------------
+
+Index 4: idx_drugs_active
+--------------------------
+Type: B-tree
+Column: active (boolean)
+Purpose: Filter active/inactive drugs
+
+Usage:
+- Public drug listings (WHERE active = true)
+- Admin views of inactive drugs
+- Drug counts
+
+Query Examples:
+```sql
+SELECT * FROM drugs WHERE active = true;
+```
+
+---------------------------------------
+
+Index 5: idx_drugs_medication_name_trgm
+----------------------------------------
+Type: GIN (pg_trgm)
+Column: medication_name (text)
+Purpose: Fuzzy text search and similarity matching
+
+Usage:
+- search_drugs() function
+- Autocomplete suggestions
+- Typo-tolerant search
+
+Query Examples:
+```sql
+SELECT * FROM drugs WHERE medication_name % 'liptor';  -- Finds 'Lipitor'
+SELECT * FROM drugs WHERE medication_name ILIKE '%insu%';
+```
+
+Performance:
+- Enables fast fuzzy matching
+- Supports similarity operator (%)
+- Essential for search functionality
+
+---------------------------------------
+
+Index 6: idx_drugs_generic_name_trgm
+-------------------------------------
+Type: GIN (pg_trgm)
+Column: generic_name (text)
+Purpose: Fuzzy search on generic names
+
+Usage:
+- search_drugs() function
+- Search by generic name
+- Similar drug finding
+
+---------------------------------------
+
+Index 7: idx_drugs_drug_class_trgm
+-----------------------------------
+Type: GIN (pg_trgm)
+Column: drug_class (text)
+Purpose: Search by therapeutic class
+
+Usage:
+- search_drugs() function
+- Find drugs in same class
+- Category-based search
+
+Query Examples:
+```sql
+SELECT * FROM drugs WHERE drug_class % 'antibiotic';
+```
+
+================================================================================
+PROGRAMS TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key and foreign key target
+
+Usage:
+- Direct program lookup
+- Foreign key joins from drugs_programs
+- Saved programs references
+
+---------------------------------------
+
+Index 2: idx_programs_manufacturer
+-----------------------------------
+Type: B-tree
+Column: manufacturer (text)
+Purpose: Filter programs by manufacturer
+
+Usage:
+- Manufacturer-specific listings
+- Admin program management
+- Analytics by manufacturer
+
+Query Examples:
+```sql
+SELECT * FROM programs WHERE manufacturer = 'Pfizer';
+```
+
+---------------------------------------
+
+Index 3: idx_programs_active
+-----------------------------
+Type: B-tree
+Column: active (boolean)
+Purpose: Filter active programs
+
+Usage:
+- Public program listings
+- Admin management of inactive programs
+
+Query Examples:
+```sql
+SELECT * FROM programs WHERE active = true;
+```
+
+---------------------------------------
+
+Index 4: idx_programs_program_name_trgm
+----------------------------------------
+Type: GIN (pg_trgm)
+Column: program_name (text)
+Purpose: Fuzzy search on program names
+
+Usage:
+- search_programs() function
+- Autocomplete
+- Typo-tolerant search
+
+---------------------------------------
+
+Index 5: idx_programs_manufacturer_trgm
+----------------------------------------
+Type: GIN (pg_trgm)
+Column: manufacturer (text)
+Purpose: Fuzzy search on manufacturer names
+
+Usage:
+- search_programs() function
+- Find programs by manufacturer
+
+================================================================================
+DRUGS_PROGRAMS JUNCTION TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key
+
+---------------------------------------
+
+Index 2: idx_drugs_programs_drug_id
+------------------------------------
+Type: B-tree
+Column: drug_id (uuid)
+Purpose: Fast lookups of programs for a drug
+
+Usage:
+- get_programs_for_drug() function
+- JOIN operations from drugs side
+
+Query Examples:
+```sql
+SELECT * FROM drugs_programs WHERE drug_id = '<uuid>';
+```
+
+Performance:
+- Critical for join performance
+- Foreign key relationship
+
+---------------------------------------
+
+Index 3: idx_drugs_programs_program_id
+---------------------------------------
+Type: B-tree
+Column: program_id (uuid)
+Purpose: Fast lookups of drugs for a program
+
+Usage:
+- Find all drugs covered by a program
+- JOIN operations from programs side
+
+---------------------------------------
+
+Index 4: UNIQUE INDEX on (drug_id, program_id)
+-----------------------------------------------
+Type: B-tree (unique, composite)
+Columns: drug_id, program_id
+Purpose: Prevent duplicate relationships
+
+Benefits:
+- Enforces uniqueness
+- Can be used for lookups
+- Implicitly indexed for queries
+
+Query Examples:
+```sql
+-- Check if relationship exists
+SELECT EXISTS (
+  SELECT 1 FROM drugs_programs
+  WHERE drug_id = '<drug-uuid>'
+  AND program_id = '<program-uuid>'
+);
+```
+
+================================================================================
+USER_ACTIVITY TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key
+
+---------------------------------------
+
+Index 2: idx_user_activity_user_id
+-----------------------------------
+Type: B-tree
+Column: user_id (uuid)
+Purpose: Fast filtering by user
+
+Usage:
+- User dashboard showing activity history
+- RLS policy enforcement
+- User-specific queries
+
+Query Examples:
+```sql
+SELECT * FROM user_activity WHERE user_id = auth.uid();
+```
+
+Performance:
+- Essential for RLS performance
+- Foreign key relationship
+
+---------------------------------------
+
+Index 3: idx_user_activity_created_at
+--------------------------------------
+Type: B-tree (DESC)
+Column: created_at (timestamptz, descending)
+Purpose: Sort by recent activity
+
+Usage:
+- Recent activity lists
+- Time-based filtering
+- Activity analytics
+
+Query Examples:
+```sql
+SELECT * FROM user_activity
+ORDER BY created_at DESC
+LIMIT 20;
+```
+
+Performance:
+- DESC ordering matches query pattern
+- Efficient for "recent items" queries
+
+================================================================================
+SAVED_PROGRAMS TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key
+
+---------------------------------------
+
+Index 2: idx_saved_programs_user_id
+------------------------------------
+Type: B-tree
+Column: user_id (uuid)
+Purpose: Fast filtering by user
+
+Usage:
+- User dashboard showing saved programs
+- RLS policy enforcement
+
+Query Examples:
+```sql
+SELECT * FROM saved_programs WHERE user_id = auth.uid();
+```
+
+---------------------------------------
+
+Index 3: UNIQUE INDEX on (user_id, program_id)
+-----------------------------------------------
+Type: B-tree (unique, composite)
+Columns: user_id, program_id
+Purpose: Prevent duplicate saves
+
+Benefits:
+- Uniqueness enforcement
+- Composite index for lookups
+- Used in JOIN operations
+
+Query Examples:
+```sql
+-- Check if user saved program
+SELECT EXISTS (
+  SELECT 1 FROM saved_programs
+  WHERE user_id = auth.uid()
+  AND program_id = '<program-uuid>'
+);
+```
+
+================================================================================
+ADMIN_ACTIONS TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key
+
+---------------------------------------
+
+Index 2: idx_admin_actions_admin_id
+------------------------------------
+Type: B-tree
+Column: admin_id (uuid)
+Purpose: Filter actions by admin
+
+Usage:
+- View actions performed by specific admin
+- Admin accountability reports
+
+Query Examples:
+```sql
+SELECT * FROM admin_actions WHERE admin_id = '<admin-uuid>';
+```
+
+---------------------------------------
+
+Index 3: idx_admin_actions_target_user_id
+------------------------------------------
+Type: B-tree
+Column: target_user_id (uuid)
+Purpose: Filter actions affecting specific user
+
+Usage:
+- View all actions affecting a user
+- User history timeline
+
+Query Examples:
+```sql
+SELECT * FROM admin_actions WHERE target_user_id = '<user-uuid>';
+```
+
+---------------------------------------
+
+Index 4: idx_admin_actions_created_at
+--------------------------------------
+Type: B-tree (DESC)
+Column: created_at (timestamptz, descending)
+Purpose: Sort by recent actions
+
+Usage:
+- Recent admin activity
+- Audit log chronological order
+
+Query Examples:
+```sql
+SELECT * FROM admin_actions ORDER BY created_at DESC LIMIT 50;
+```
+
+================================================================================
+CONTACT_SUBMISSIONS TABLE INDEXES
+================================================================================
+
+Index 1: PRIMARY KEY on id
+---------------------------
+Type: B-tree (unique)
+Column: id (uuid)
+Purpose: Primary key
+
+Note: No additional indexes currently defined
+
+Recommendation:
+Consider adding:
+- idx_contact_submissions_created_at (DESC) for chronological sorting
+- idx_contact_submissions_read for filtering unread submissions
+
+================================================================================
+INDEX MAINTENANCE & MONITORING
+================================================================================
+
+Automatic Maintenance:
+- PostgreSQL autovacuum handles index maintenance
+- Indexes are automatically updated on INSERT/UPDATE/DELETE
+- No manual maintenance required for small-medium databases
+
+Manual Maintenance (if needed):
+```sql
+-- Reindex a specific index
+REINDEX INDEX idx_drugs_medication_name;
+
+-- Reindex entire table
+REINDEX TABLE drugs;
+
+-- Reindex entire database (rare)
+REINDEX DATABASE database_name;
+```
+
+When to Reindex:
+- After bulk data loads
+- If queries become slow
+- After major updates
+- Database corruption (rare)
+
+Monitoring Index Usage:
+```sql
+-- Check index usage statistics
+SELECT
+  schemaname,
+  tablename,
+  indexname,
+  idx_scan,
+  idx_tup_read,
+  idx_tup_fetch
+FROM pg_stat_user_indexes
+WHERE schemaname = 'public'
+ORDER BY idx_scan DESC;
+```
+
+Identifying Unused Indexes:
+```sql
+-- Find indexes that are never used
+SELECT
+  schemaname,
+  tablename,
+  indexname
+FROM pg_stat_user_indexes
+WHERE idx_scan = 0
+AND schemaname = 'public';
+```
+
+================================================================================
+QUERY OPTIMIZATION STRATEGIES
+================================================================================
+
+1. Use WHERE Clauses on Indexed Columns
+   ```sql
+   -- Good: Uses idx_drugs_active
+   SELECT * FROM drugs WHERE active = true;
+
+   -- Bad: Table scan
+   SELECT * FROM drugs WHERE description LIKE '%test%';
+   ```
+
+2. Leverage Composite Indexes
+   ```sql
+   -- Good: Uses UNIQUE(drug_id, program_id)
+   SELECT * FROM drugs_programs
+   WHERE drug_id = '<uuid>' AND program_id = '<uuid>';
+   ```
+
+3. Use LIMIT for Large Result Sets
+   ```sql
+   -- Prevents loading entire table
+   SELECT * FROM user_activity
+   ORDER BY created_at DESC
+   LIMIT 20;
+   ```
+
+4. Avoid SELECT *
+   ```sql
+   -- Good: Only retrieves needed columns
+   SELECT id, medication_name FROM drugs;
+
+   -- Less efficient: Retrieves all columns
+   SELECT * FROM drugs;
+   ```
+
+5. Use JOINs Properly
+   ```sql
+   -- Good: Indexed foreign keys make this fast
+   SELECT d.*, p.*
+   FROM drugs d
+   JOIN drugs_programs dp ON dp.drug_id = d.id
+   JOIN programs p ON p.id = dp.program_id
+   WHERE d.active = true AND p.active = true;
+   ```
+
+6. Filter Before Joining
+   ```sql
+   -- Good: Reduces join size
+   SELECT d.*, p.*
+   FROM drugs d
+   JOIN drugs_programs dp ON dp.drug_id = d.id
+   JOIN programs p ON p.id = dp.program_id
+   WHERE d.active = true  -- Filter early
+   AND p.active = true;
+   ```
+
+================================================================================
+EXPLAIN ANALYZE USAGE
+================================================================================
+
+Use EXPLAIN ANALYZE to understand query performance:
+
+```sql
+EXPLAIN ANALYZE
+SELECT * FROM drugs
+WHERE medication_name % 'insulin'
+ORDER BY medication_name;
+```
+
+Key Metrics:
+- Planning Time: Time to plan query
+- Execution Time: Time to execute query
+- Rows: Number of rows processed
+- Cost: Estimated query cost
+
+Look For:
+- "Index Scan" (good)
+- "Seq Scan" (potentially bad for large tables)
+- "Bitmap Index Scan" (good for multiple conditions)
+
+================================================================================
+PERFORMANCE BENCHMARKS
+================================================================================
+
+Expected Performance (approximate):
+
+Fast Queries (<10ms):
+- Single row lookup by ID
+- Foreign key joins
+- Boolean filters with indexes
+
+Medium Queries (10-50ms):
+- Text search with GIN indexes
+- Multi-table joins
+- Aggregations on indexed columns
+
+Slower Queries (50-200ms):
+- Full-text search across multiple fields
+- Complex aggregations
+- Large result sets without LIMIT
+
+If Queries are Slower:
+1. Check EXPLAIN ANALYZE output
+2. Verify indexes exist and are being used
+3. Consider adding missing indexes
+4. Review RLS policy complexity
+5. Check for table bloat (VACUUM)
+
+================================================================================
+CACHING STRATEGIES
+================================================================================
+
+Application-Level Caching:
+- Cache frequently accessed data (drugs, programs)
+- Invalidate cache on updates
+- Use Redis or similar for distributed caching
+
+Database-Level:
+- PostgreSQL query cache (automatic)
+- Materialized views for complex aggregations
+- Connection pooling (Supabase handles this)
+
+API-Level:
+- CDN caching for public data
+- HTTP cache headers
+- Edge caching (Supabase Edge Functions)
+
+================================================================================
+SCALING CONSIDERATIONS
+================================================================================
+
+Current Design Scalability:
+- Handles 10,000s of drugs and programs efficiently
+- Supports 100,000s of users
+- Activity tracking scales with proper indexes
+
+Future Optimization:
+- Partitioning user_activity by date if grows large
+- Read replicas for heavy read workloads
+- Materialized views for complex analytics
+
+Signs You Need Scaling:
+- Queries consistently >200ms
+- Database CPU consistently >80%
+- Disk I/O bottlenecks
+- Connection pool exhaustion
+
+================================================================================
+INDEX SIZE MONITORING
+================================================================================
+
+Check Index Sizes:
+```sql
+SELECT
+  tablename,
+  indexname,
+  pg_size_pretty(pg_relation_size(indexrelid)) as index_size
+FROM pg_stat_user_indexes
+WHERE schemaname = 'public'
+ORDER BY pg_relation_size(indexrelid) DESC;
+```
+
+Total Database Size:
+```sql
+SELECT pg_size_pretty(pg_database_size(current_database()));
+```
+
+================================================================================
+END OF INDEXES & PERFORMANCE DOCUMENTATION
+================================================================================

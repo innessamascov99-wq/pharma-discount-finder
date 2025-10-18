@@ -1,0 +1,257 @@
+================================================================================
+PHARMACEUTICAL DISCOUNT FINDER - ACTIVITY & TRACKING TABLES
+================================================================================
+
+This document describes tables used for tracking user activity, saved programs,
+and administrative actions.
+
+================================================================================
+TABLE 1: USER_ACTIVITY
+================================================================================
+
+Purpose: Tracks all user interactions with drugs and programs for analytics
+
+Schema: public.user_activity
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each activity record
+
+- user_id (uuid, NOT NULL)
+  - References auth.users(id) with CASCADE delete
+  - Links activity to specific user account
+
+- medication_name (text, NOT NULL)
+  - Name of the drug that was interacted with
+  - Stored as text for flexibility and historical tracking
+
+- action_type (text, NOT NULL, DEFAULT 'viewed')
+  - Type of action performed
+  - Common values: viewed, saved, downloaded, searched, clicked
+
+- created_at (timestamptz, DEFAULT now())
+  - When the action occurred
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- INDEX idx_user_activity_user_id on user_id
+- INDEX idx_user_activity_created_at on created_at (DESC)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Users can view only their own activity
+- Users can insert their own activity records
+
+Policies:
+---------
+- "Users can view own activity"
+  - FOR SELECT TO authenticated
+  - USING (auth.uid() = user_id)
+
+- "Users can insert own activity"
+  - FOR INSERT TO authenticated
+  - WITH CHECK (auth.uid() = user_id)
+
+Usage:
+------
+This table is used for:
+- User dashboard showing recent searches and views
+- Admin analytics showing most popular medications
+- Personalization and recommendations
+- Understanding user behavior patterns
+
+Example Actions:
+----------------
+- "searched" - User performed a search
+- "viewed" - User viewed drug details
+- "saved" - User saved a program
+- "clicked" - User clicked on a program link
+- "downloaded" - User downloaded program information
+
+================================================================================
+TABLE 2: SAVED_PROGRAMS
+================================================================================
+
+Purpose: Allows users to bookmark programs for easy access later
+
+Schema: public.saved_programs
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each saved program
+
+- user_id (uuid, NOT NULL)
+  - References auth.users(id) with CASCADE delete
+  - The user who saved the program
+
+- program_id (uuid, NOT NULL)
+  - References pharma_programs(id) with CASCADE delete
+  - Note: May reference different program tables depending on migration state
+  - Could also reference public.programs(id)
+
+- created_at (timestamptz, DEFAULT now())
+  - When the program was saved
+
+Constraints:
+------------
+- UNIQUE(user_id, program_id)
+  - Prevents duplicate saves
+  - A user can only save the same program once
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- INDEX idx_saved_programs_user_id on user_id
+- UNIQUE INDEX on (user_id, program_id)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Users can view only their own saved programs
+- Users can insert their own saved programs
+- Users can delete their own saved programs
+
+Policies:
+---------
+- "Users can view own saved programs"
+  - FOR SELECT TO authenticated
+  - USING (auth.uid() = user_id)
+
+- "Users can insert own saved programs"
+  - FOR INSERT TO authenticated
+  - WITH CHECK (auth.uid() = user_id)
+
+- "Users can delete own saved programs"
+  - FOR DELETE TO authenticated
+  - USING (auth.uid() = user_id)
+
+Usage:
+------
+This table enables:
+- User dashboard displaying saved/bookmarked programs
+- Quick access to programs of interest
+- Tracking which programs users find most useful
+- Email notifications about saved program changes
+
+================================================================================
+TABLE 3: ADMIN_ACTIONS
+================================================================================
+
+Purpose: Audit log of all administrative operations for compliance and security
+
+Schema: public.admin_actions
+
+Columns:
+--------
+- id (uuid, PRIMARY KEY, DEFAULT gen_random_uuid())
+  - Unique identifier for each action
+
+- admin_id (uuid, NOT NULL)
+  - References auth.users(id) with CASCADE delete
+  - The administrator who performed the action
+
+- target_user_id (uuid)
+  - References auth.users(id) with SET NULL on delete
+  - The user who was affected by the action
+  - Can be NULL for system-wide actions
+
+- action_type (text, NOT NULL)
+  - Type of administrative action
+  - Common values: block, unblock, grant_admin, revoke_admin
+
+- details (jsonb, DEFAULT '{}')
+  - Additional information about the action
+  - Flexible JSON structure for context
+
+- created_at (timestamptz, NOT NULL, DEFAULT now())
+  - When the action was performed
+
+Indexes:
+--------
+- PRIMARY KEY on id
+- INDEX idx_admin_actions_admin_id on admin_id
+- INDEX idx_admin_actions_target_user_id on target_user_id
+- INDEX idx_admin_actions_created_at on created_at (DESC)
+
+Row Level Security:
+-------------------
+- ENABLED
+- Only admins can view admin actions
+- Only admins can insert admin actions
+- Admin ID must match authenticated user on insert
+
+Policies:
+---------
+- "Admins can view all admin actions"
+  - FOR SELECT TO authenticated
+  - USING (is_admin())
+
+- "Admins can insert admin actions"
+  - FOR INSERT TO authenticated
+  - WITH CHECK (is_admin() AND auth.uid() = admin_id)
+
+Action Types:
+-------------
+- "block" - User account blocked
+- "unblock" - User account unblocked
+- "grant_admin" - Admin privileges granted to user
+- "revoke_admin" - Admin privileges revoked from user
+
+Details Field Structure:
+------------------------
+The JSONB details field typically contains:
+{
+  "blocked": true/false,           // For block/unblock actions
+  "is_admin": true/false,          // For admin grant/revoke actions
+  "reason": "string",              // Optional reason for action
+  "previous_value": any,           // Previous state before change
+  "notes": "string"                // Additional notes
+}
+
+Usage:
+------
+This table provides:
+- Complete audit trail of admin operations
+- Compliance and accountability
+- Investigation of user management changes
+- Admin dashboard showing recent actions
+- Filtering and searching of administrative history
+
+Security Importance:
+--------------------
+This audit log is critical for:
+- Tracking who made what changes and when
+- Preventing unauthorized modifications
+- Meeting regulatory compliance requirements
+- Investigating security incidents
+- Maintaining system integrity
+
+================================================================================
+ACTIVITY TABLES SUMMARY
+================================================================================
+
+Total Tables: 3
+- user_activity: User interaction tracking
+- saved_programs: User bookmarking functionality
+- admin_actions: Administrative audit logging
+
+All activity tables use:
+- UUID primary keys
+- Timestamptz for temporal tracking
+- Row Level Security for data isolation
+- Cascade deletes to maintain referential integrity
+
+These tables work together to provide:
+- User engagement analytics
+- Personalized user experience
+- Administrative oversight
+- Compliance and audit trails
+- System security monitoring
+
+================================================================================
+END OF ACTIVITY TABLES DOCUMENTATION
+================================================================================

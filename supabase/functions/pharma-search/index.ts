@@ -9,6 +9,7 @@ const corsHeaders = {
 
 interface SearchRequest {
   query: string;
+  type?: 'drugs' | 'programs' | 'both';
   limit?: number;
 }
 
@@ -35,7 +36,7 @@ Deno.serve(async (req: Request) => {
     const supabaseServiceKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY")!;
     const supabase = createClient(supabaseUrl, supabaseServiceKey);
 
-    const { query, limit = 20 }: SearchRequest = await req.json();
+    const { query, type = 'both', limit = 20 }: SearchRequest = await req.json();
 
     if (!query || query.trim().length === 0) {
       return new Response(
@@ -47,99 +48,60 @@ Deno.serve(async (req: Request) => {
       );
     }
 
-    console.log("Searching for:", query);
+    console.log("Searching for:", query, "type:", type);
 
-    const lowerSearchTerm = query.toLowerCase().trim();
-    const searchWords = lowerSearchTerm.split(/\s+/).filter(w => w.length > 1);
+    const searchTerm = query.toLowerCase().trim();
+    const results: any = { drugs: [], programs: [] };
 
-    if (searchWords.length === 0) {
-      return new Response(
-        JSON.stringify({
-          results: [],
-          count: 0,
-          method: "empty_query"
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
+    // Search drugs
+    if (type === 'drugs' || type === 'both') {
+      const { data: drugsData, error: drugsError } = await supabase
+        .from('drugs')
+        .select('*')
+        .eq('active', true)
+        .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
+        .order('medication_name')
+        .limit(limit);
+
+      if (drugsError) {
+        console.error("Drugs search error:", drugsError);
+      } else {
+        results.drugs = (drugsData || []).map(drug => ({
+          ...drug,
+          similarity: 0.8
+        }));
+      }
     }
 
-    const orConditions = searchWords.flatMap(word => [
-      `medication_name.ilike.%${word}%`,
-      `generic_name.ilike.%${word}%`,
-      `manufacturer.ilike.%${word}%`,
-      `program_name.ilike.%${word}%`,
-      `program_description.ilike.%${word}%`
-    ]).join(',');
+    // Search programs
+    if (type === 'programs' || type === 'both') {
+      const { data: programsData, error: programsError } = await supabase
+        .from('programs')
+        .select('*')
+        .eq('active', true)
+        .or(`program_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+        .order('program_name')
+        .limit(limit);
 
-    console.log("Search conditions:", orConditions);
-
-    const { data, error } = await supabase
-      .from('pharma_programs')
-      .select('*')
-      .eq('active', true)
-      .or(orConditions)
-      .limit(50);
-
-    if (error) {
-      console.error("Database error:", error);
-      throw new Error(`Database query failed: ${error.message}`);
+      if (programsError) {
+        console.error("Programs search error:", programsError);
+      } else {
+        results.programs = (programsData || []).map(program => ({
+          ...program,
+          similarity: 0.8
+        }));
+      }
     }
-
-    console.log("Found results:", data?.length || 0);
-
-    if (!data || data.length === 0) {
-      return new Response(
-        JSON.stringify({
-          results: [],
-          count: 0,
-          method: "text_search"
-        }),
-        {
-          status: 200,
-          headers: { ...corsHeaders, "Content-Type": "application/json" },
-        }
-      );
-    }
-
-    const results = data.map(program => {
-      let relevanceScore = 0;
-      const medName = program.medication_name?.toLowerCase() || '';
-      const genName = program.generic_name?.toLowerCase() || '';
-      const mfg = program.manufacturer?.toLowerCase() || '';
-      const progName = program.program_name?.toLowerCase() || '';
-
-      searchWords.forEach(word => {
-        if (medName === word) relevanceScore += 100;
-        else if (medName.startsWith(word)) relevanceScore += 80;
-        else if (medName.includes(word)) relevanceScore += 50;
-
-        if (genName === word) relevanceScore += 90;
-        else if (genName.startsWith(word)) relevanceScore += 70;
-        else if (genName.includes(word)) relevanceScore += 40;
-
-        if (mfg.includes(word)) relevanceScore += 30;
-        if (progName.includes(word)) relevanceScore += 20;
-      });
-
-      return {
-        ...program,
-        similarity: relevanceScore / 100
-      };
-    });
-
-    const sorted = results
-      .filter(r => r.similarity && r.similarity > 0)
-      .sort((a, b) => (b.similarity || 0) - (a.similarity || 0))
-      .slice(0, limit);
 
     return new Response(
       JSON.stringify({
-        results: sorted,
-        count: sorted.length,
-        method: "text_search"
+        drugs: results.drugs,
+        programs: results.programs,
+        count: {
+          drugs: results.drugs.length,
+          programs: results.programs.length,
+          total: results.drugs.length + results.programs.length
+        }
       }),
       {
         status: 200,

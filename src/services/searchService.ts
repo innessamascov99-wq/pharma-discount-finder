@@ -49,9 +49,15 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
   }
 
   const searchTerm = query.trim();
+  const searchPattern = `%${searchTerm}%`;
 
   const { data, error } = await supabase
-    .rpc('search_drugs_rpc', { search_query: searchTerm });
+    .from('drugs')
+    .select('*')
+    .eq('active', true)
+    .or(`medication_name.ilike.${searchPattern},generic_name.ilike.${searchPattern},drug_class.ilike.${searchPattern},indication.ilike.${searchPattern}`)
+    .order('medication_name')
+    .limit(20);
 
   if (error) {
     throw new Error(error.message);

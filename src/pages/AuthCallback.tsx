@@ -3,8 +3,6 @@ import { useNavigate } from 'react-router-dom';
 import { Loader2, AlertCircle } from 'lucide-react';
 import { supabase } from '../lib/supabase';
 
-const ADMIN_EMAIL = 'pharmadiscountfinder@gmail.com';
-
 export const AuthCallback: React.FC = () => {
   const navigate = useNavigate();
   const [error, setError] = useState<string | null>(null);
@@ -25,37 +23,30 @@ export const AuthCallback: React.FC = () => {
           console.log('Session established:', data.session);
           const user = data.session.user;
 
-          // Check if user profile exists, if not create one
-          const { data: existingProfile } = await supabase
-            .from('user_profiles')
-            .select('id')
-            .eq('user_id', user.id)
+          // Wait a moment for the trigger to create the user record
+          await new Promise(resolve => setTimeout(resolve, 500));
+
+          // Check admin status from database
+          const { data: userData, error: userError } = await supabase
+            .from('users')
+            .select('is_admin')
+            .eq('id', user.id)
             .maybeSingle();
 
-          if (!existingProfile) {
-            console.log('Creating user profile for OAuth user');
-            // Extract name from user metadata (Google OAuth provides this)
-            const fullName = user.user_metadata?.full_name || '';
-            const nameParts = fullName.split(' ');
-            const firstName = nameParts[0] || user.email?.split('@')[0] || '';
-            const lastName = nameParts.slice(1).join(' ') || '';
-
-            const { error: profileError } = await supabase
-              .from('user_profiles')
-              .insert({
-                user_id: user.id,
-                first_name: firstName,
-                last_name: lastName,
-              });
-
-            if (profileError) {
-              console.error('Failed to create profile:', profileError);
-            } else {
-              console.log('User profile created successfully');
-            }
+          if (userError) {
+            console.error('Error fetching user data:', userError);
           }
 
-          const isAdmin = user.email === ADMIN_EMAIL;
+          const isAdmin = userData?.is_admin || false;
+          console.log('User admin status:', isAdmin);
+
+          // Update last login
+          try {
+            await supabase.rpc('update_last_login');
+          } catch (err) {
+            console.error('Error updating last login:', err);
+          }
+
           navigate(isAdmin ? '/admin' : '/dashboard');
         } else {
           console.log('No session found, redirecting to login');

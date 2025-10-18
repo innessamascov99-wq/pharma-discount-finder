@@ -28,18 +28,36 @@ interface AuthProviderProps {
   children: React.ReactNode;
 }
 
-const ADMIN_EMAIL = 'pharmadiscountfinder@gmail.com';
-
 export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [user, setUser] = useState<User | null>(null);
   const [session, setSession] = useState<Session | null>(null);
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
+  const checkAdminStatus = async (userId: string): Promise<boolean> => {
+    try {
+      const { data, error } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', userId)
+        .maybeSingle();
+
+      if (error) {
+        console.error('Error checking admin status:', error);
+        return false;
+      }
+
+      return data?.is_admin || false;
+    } catch (error) {
+      console.error('Error checking admin status:', error);
+      return false;
+    }
+  };
+
   useEffect(() => {
     console.log('AuthProvider: Initializing auth state');
 
-    supabase.auth.getSession().then(({ data: { session }, error }) => {
+    supabase.auth.getSession().then(async ({ data: { session }, error }) => {
       if (error) {
         console.error('Error getting session:', error);
       } else {
@@ -47,12 +65,19 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
       setSession(session);
       setUser(session?.user ?? null);
-      setIsAdmin(session?.user?.email === ADMIN_EMAIL);
+
+      if (session?.user) {
+        const adminStatus = await checkAdminStatus(session.user.id);
+        setIsAdmin(adminStatus);
+      } else {
+        setIsAdmin(false);
+      }
+
       setLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((event, session) => {
-      (() => {
+      (async () => {
         console.log('Auth state change:', event, session ? 'Session exists' : 'No session');
 
         if (event === 'SIGNED_IN') {
@@ -65,7 +90,14 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
         setSession(session);
         setUser(session?.user ?? null);
-        setIsAdmin(session?.user?.email === ADMIN_EMAIL);
+
+        if (session?.user) {
+          const adminStatus = await checkAdminStatus(session.user.id);
+          setIsAdmin(adminStatus);
+        } else {
+          setIsAdmin(false);
+        }
+
         setLoading(false);
       })();
     });
@@ -91,6 +123,12 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       console.log('Sign in successful, session created:', data.session);
       setSession(data.session);
       setUser(data.session.user);
+
+      try {
+        await supabase.rpc('update_last_login');
+      } catch (err) {
+        console.error('Error updating last login:', err);
+      }
     }
 
     if (error) {

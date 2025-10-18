@@ -7,7 +7,6 @@ import {
   Pill,
   Loader2,
   BarChart3,
-  TrendingUp,
   Heart,
   DollarSign,
   Activity,

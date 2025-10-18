@@ -92,14 +92,49 @@ If edge functions don't work, the Supabase dashboard can manually reload the sch
 3. Click "Restart PostgREST" or "Reload Schema Cache"
 
 ## Status
-- ✓ Database tables and functions exist
+- ✓ Database tables exist: drugs, programs, postgrest_cache_reload (3 tables)
+- ✓ RPC functions exist: search_drugs_rpc, search_programs_rpc (2 functions)
+- ✓ Data populated: 40 drugs, 40 programs
 - ✓ RLS policies configured correctly
 - ✓ Permissions granted to anon/authenticated roles
-- ✓ Edge function deployed
-- ⏳ Waiting for edge function propagation
-- ✗ PostgREST schema cache not updated
+- ✓ Edge function deployed: search-drugs
+- ✗ PostgREST schema cache completely frozen (not responding to ANY changes)
 
-## Next Steps
-The edge function should become accessible within a few minutes. If it doesn't:
-1. Manually restart PostgREST from the Supabase dashboard
-2. Or contact Supabase support to reload the schema cache
+## Critical Finding
+PostgREST's schema cache on this Supabase hosted instance:
+- Does NOT respond to NOTIFY signals
+- Does NOT recognize newly created tables
+- Does NOT pick up schema changes
+- **REQUIRES manual reload from Supabase Dashboard**
+
+## Manual Reload Required
+To fix this issue, you need to manually reload PostgREST's schema cache:
+
+### Option 1: Supabase Dashboard
+1. Go to https://supabase.com/dashboard/project/nuhfqkhplldontxtoxkg
+2. Navigate to **Settings** → **API**
+3. Look for **"Reload Schema"** or **"Restart API"** button
+4. Click to force PostgREST to reload
+
+### Option 2: Supabase CLI (if available)
+```bash
+supabase db reset --db-url "postgresql://[your-connection-string]"
+```
+
+### Option 3: Contact Support
+If the above options aren't available, contact Supabase support to manually reload the PostgREST schema cache for project `nuhfqkhplldontxtoxkg`.
+
+## Verification After Reload
+Once reloaded, these endpoints should work:
+```bash
+# Test table access
+curl https://nuhfqkhplldontxtoxkg.supabase.co/rest/v1/drugs?limit=1
+
+# Test RPC function
+curl -X POST https://nuhfqkhplldontxtoxkg.supabase.co/rest/v1/rpc/search_drugs_rpc \
+  -H "Content-Type: application/json" \
+  -d '{"search_query": "ozempic"}'
+
+# Test new reload table
+curl https://nuhfqkhplldontxtoxkg.supabase.co/rest/v1/postgrest_cache_reload?limit=1
+```

@@ -48,16 +48,39 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
     return [];
   }
 
-  const { data, error } = await supabase.rpc('search_drugs', {
-    search_query: query.trim()
-  });
+  const searchTerm = query.trim().toLowerCase();
 
-  if (error) {
-    console.error('Error searching drugs:', error);
-    throw new Error(`Search failed: ${error.message}`);
+  try {
+    const { data, error } = await supabase.rpc('search_drugs', {
+      search_query: searchTerm
+    });
+
+    if (!error && data) {
+      return data;
+    }
+
+    console.warn('RPC function not available, falling back to direct query');
+  } catch (e) {
+    console.warn('RPC call failed, using fallback', e);
   }
 
-  return data || [];
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from('drugs')
+    .select('*')
+    .eq('active', true)
+    .or(`medication_name.ilike.%${searchTerm}%,generic_name.ilike.%${searchTerm}%,drug_class.ilike.%${searchTerm}%,indication.ilike.%${searchTerm}%`)
+    .order('medication_name')
+    .limit(20);
+
+  if (fallbackError) {
+    console.error('Error searching drugs:', fallbackError);
+    throw new Error(`Search failed: ${fallbackError.message}`);
+  }
+
+  return (fallbackData || []).map(drug => ({
+    ...drug,
+    similarity: 0.5
+  }));
 };
 
 export const searchPrograms = async (query: string): Promise<Program[]> => {
@@ -65,29 +88,72 @@ export const searchPrograms = async (query: string): Promise<Program[]> => {
     return [];
   }
 
-  const { data, error } = await supabase.rpc('search_programs', {
-    search_query: query.trim()
-  });
+  const searchTerm = query.trim().toLowerCase();
 
-  if (error) {
-    console.error('Error searching programs:', error);
-    throw new Error(`Search failed: ${error.message}`);
+  try {
+    const { data, error } = await supabase.rpc('search_programs', {
+      search_query: searchTerm
+    });
+
+    if (!error && data) {
+      return data;
+    }
+
+    console.warn('RPC function not available, falling back to direct query');
+  } catch (e) {
+    console.warn('RPC call failed, using fallback', e);
   }
 
-  return data || [];
+  const { data: fallbackData, error: fallbackError } = await supabase
+    .from('programs')
+    .select('*')
+    .eq('active', true)
+    .or(`program_name.ilike.%${searchTerm}%,manufacturer.ilike.%${searchTerm}%,description.ilike.%${searchTerm}%`)
+    .order('program_name')
+    .limit(20);
+
+  if (fallbackError) {
+    console.error('Error searching programs:', fallbackError);
+    throw new Error(`Search failed: ${fallbackError.message}`);
+  }
+
+  return (fallbackData || []).map(program => ({
+    ...program,
+    similarity: 0.5
+  }));
 };
 
 export const getProgramsForDrug = async (drugId: string): Promise<Program[]> => {
-  const { data, error } = await supabase.rpc('get_programs_for_drug', {
-    drug_id_param: drugId
-  });
+  try {
+    const { data, error } = await supabase.rpc('get_programs_for_drug', {
+      drug_id_param: drugId
+    });
 
-  if (error) {
-    console.error('Error getting programs for drug:', error);
+    if (!error && data) {
+      return data;
+    }
+
+    console.warn('RPC function not available, falling back to direct query');
+  } catch (e) {
+    console.warn('RPC call failed, using fallback', e);
+  }
+
+  const { data: joinData, error: joinError } = await supabase
+    .from('drugs_programs')
+    .select(`
+      program_id,
+      programs (*)
+    `)
+    .eq('drug_id', drugId);
+
+  if (joinError) {
+    console.error('Error getting programs for drug:', joinError);
     return [];
   }
 
-  return data || [];
+  return (joinData || [])
+    .filter(item => item.programs)
+    .map(item => item.programs as unknown as Program);
 };
 
 export const getAllDrugs = async (): Promise<Drug[]> => {

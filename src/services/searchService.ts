@@ -1,10 +1,15 @@
 import { supabase } from '../lib/supabase';
 
-const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL;
+const isDevelopment = import.meta.env.DEV;
+
+const EDGE_FUNCTION_URL = isDevelopment
+  ? '/api/supabase/functions/v1/db-query'
+  : `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/db-query`;
+
 const SUPABASE_ANON_KEY = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 async function callEdgeFunction(type: string, params: any = {}) {
-  const response = await fetch(`${SUPABASE_URL}/functions/v1/db-query`, {
+  const response = await fetch(EDGE_FUNCTION_URL, {
     method: 'POST',
     headers: {
       'Content-Type': 'application/json',

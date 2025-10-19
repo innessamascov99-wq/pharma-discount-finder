@@ -122,7 +122,15 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200 dark:border-gray-700">
+        <div className={`fixed bottom-6 right-6 w-96 h-[600px] ${
+          isMonochrome
+            ? 'bg-gray-200'
+            : 'bg-white dark:bg-gray-800'
+        } rounded-lg shadow-2xl flex flex-col z-50 border ${
+          isMonochrome
+            ? 'border-gray-400'
+            : 'border-gray-200 dark:border-gray-700'
+        }`}>
           <div className={`${
             isMonochrome
               ? 'bg-gray-400 text-white'
@@ -159,7 +167,9 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                       ? isMonochrome
                         ? 'bg-gray-600 text-white'
                         : 'bg-pink-800 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                      : isMonochrome
+                        ? 'bg-gray-300 text-gray-900'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}
                 >
                   <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
@@ -182,7 +192,11 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
+                <div className={`${
+                  isMonochrome
+                    ? 'bg-gray-300'
+                    : 'bg-gray-100 dark:bg-gray-700'
+                } rounded-lg p-3`}>
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />

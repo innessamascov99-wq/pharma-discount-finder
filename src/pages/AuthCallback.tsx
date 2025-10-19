@@ -10,21 +10,30 @@ export const AuthCallback: React.FC = () => {
   useEffect(() => {
     const handleAuthCallback = async () => {
       try {
-        const { data, error: authError } = await supabase.auth.getSession();
+        console.log('AuthCallback: Processing OAuth callback');
+        console.log('Current URL:', window.location.href);
 
-        if (authError) {
-          console.error('Auth callback error:', authError);
-          setError(authError.message);
+        // The Supabase client with detectSessionInUrl: true will automatically
+        // detect and process the OAuth callback. We just need to wait a moment
+        // for it to complete, then check for the session.
+        await new Promise(resolve => setTimeout(resolve, 1500));
+
+        // Get the current session (should be established by now)
+        const { data, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          console.error('Error getting session:', sessionError);
+          setError(sessionError.message);
           setTimeout(() => navigate('/login'), 3000);
           return;
         }
 
         if (data.session) {
-          console.log('Session established:', data.session);
+          console.log('Session established:', data.session.user.email);
           const user = data.session.user;
 
-          // Wait a moment for the trigger to create the user record
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Wait for the trigger to create the user record
+          await new Promise(resolve => setTimeout(resolve, 1000));
 
           // Check admin status from database
           const { data: userData, error: userError } = await supabase
@@ -35,6 +44,7 @@ export const AuthCallback: React.FC = () => {
 
           if (userError) {
             console.error('Error fetching user data:', userError);
+            console.log('User not found in database, they might be new');
           }
 
           const isAdmin = userData?.is_admin || false;
@@ -44,13 +54,14 @@ export const AuthCallback: React.FC = () => {
           try {
             await supabase.rpc('update_last_login');
           } catch (err) {
-            console.error('Error updating last login:', err);
+            console.error('Error updating last login (may not exist yet):', err);
           }
 
-          navigate(isAdmin ? '/admin' : '/dashboard');
+          console.log('Redirecting to:', isAdmin ? '/admin' : '/dashboard');
+          navigate(isAdmin ? '/admin' : '/dashboard', { replace: true });
         } else {
-          console.log('No session found, redirecting to login');
-          navigate('/login');
+          console.log('No session found after OAuth, redirecting to login');
+          setTimeout(() => navigate('/login', { replace: true }), 1000);
         }
       } catch (err) {
         console.error('Unexpected callback error:', err);

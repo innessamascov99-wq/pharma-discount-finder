@@ -124,16 +124,16 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       {isOpen && (
         <div className={`fixed bottom-6 right-6 w-96 h-[600px] ${
           isMonochrome
-            ? 'bg-gray-700'
+            ? 'bg-gray-200'
             : 'bg-white dark:bg-gray-800'
         } rounded-lg shadow-2xl flex flex-col z-50 border ${
           isMonochrome
-            ? 'border-gray-600'
+            ? 'border-gray-400'
             : 'border-gray-200 dark:border-gray-700'
         }`}>
           <div className={`${
             isMonochrome
-              ? 'bg-gray-700 text-white border-b border-gray-600'
+              ? 'bg-gray-400 text-white'
               : 'bg-pink-800 text-white'
           } p-4 rounded-t-lg flex justify-between items-center`}>
             <div>
@@ -146,7 +146,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
               onClick={() => setIsOpen(false)}
               className={`${
                 isMonochrome
-                  ? 'hover:bg-gray-600 text-white'
+                  ? 'hover:bg-gray-700 text-white'
                   : 'hover:bg-pink-900 text-white'
               } p-1 rounded transition-colors`}
               aria-label="Close chat"
@@ -156,7 +156,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
           </div>
 
           <div className={`flex-1 overflow-y-auto p-4 space-y-4 ${
-            isMonochrome ? 'bg-gray-700' : ''
+            isMonochrome ? 'bg-gray-200' : ''
           }`}>
             {messages.map((msg, idx) => (
               <div
@@ -170,7 +170,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                         ? 'bg-gray-600 text-white'
                         : 'bg-pink-800 text-white'
                       : isMonochrome
-                        ? 'bg-gray-800 text-white'
+                        ? 'bg-gray-300 text-gray-900'
                         : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}
                 >
@@ -179,11 +179,9 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                     className={`text-xs mt-1 ${
                       msg.role === 'user'
                         ? isMonochrome
-                          ? 'text-gray-400'
+                          ? 'text-gray-200'
                           : 'text-pink-100'
-                        : isMonochrome
-                          ? 'text-gray-400'
-                          : 'text-gray-500 dark:text-gray-400'
+                        : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -198,7 +196,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
               <div className="flex justify-start">
                 <div className={`${
                   isMonochrome
-                    ? 'bg-gray-800'
+                    ? 'bg-gray-300'
                     : 'bg-gray-100 dark:bg-gray-700'
                 } rounded-lg p-3`}>
                   <div className="flex space-x-2">
@@ -214,7 +212,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
 
           <div className={`p-4 border-t ${
             isMonochrome
-              ? 'bg-gray-700 border-gray-600'
+              ? 'bg-gray-300 border-gray-400'
               : 'border-gray-200 dark:border-gray-700'
           }`}>
             <div className="flex space-x-2">
@@ -226,7 +224,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                 placeholder="Type your message..."
                 className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                   isMonochrome
-                    ? 'bg-gray-800 border-gray-600 text-white placeholder-gray-400 focus:ring-gray-500'
+                    ? 'bg-white border-gray-400 text-gray-900 placeholder-gray-500 focus:ring-gray-600'
                     : 'border-gray-300 focus:ring-pink-800'
                 } dark:bg-gray-700 dark:text-white dark:border-gray-600`}
                 disabled={isLoading}
@@ -236,9 +234,9 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                 disabled={isLoading || !inputValue.trim()}
                 className={`${
                   isMonochrome
-                    ? 'bg-gray-600 hover:bg-gray-500 text-white'
+                    ? 'bg-gray-600 hover:bg-gray-700 text-white'
                     : 'bg-pink-800 hover:bg-pink-900 text-white'
-                } disabled:bg-gray-800 disabled:text-gray-500 p-2 rounded-lg transition-colors`}
+                } disabled:bg-gray-400 disabled:text-gray-600 p-2 rounded-lg transition-colors`}
                 aria-label="Send message"
               >
                 <Send size={20} />

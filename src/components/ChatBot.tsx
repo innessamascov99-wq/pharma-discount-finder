@@ -50,14 +50,24 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
     setIsLoading(true);
 
     try {
-      const { data: programs, error } = await supabase
-        .from('pharma_programs')
-        .select('*')
-        .or(`medication_name.ilike.%${query}%,manufacturer.ilike.%${query}%,program_name.ilike.%${query}%`)
-        .eq('active', true)
-        .limit(5);
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_DRUGS_URL || import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_DRUGS_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (error) throw error;
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/rpc/search_drugs`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          },
+          body: JSON.stringify({ search_term: query }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Search failed');
+      const programs = await response.json();
 
       let responseText = '';
       if (programs && programs.length > 0) {
@@ -110,11 +120,11 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className={`fixed bottom-6 right-6 ${
+          className={`fixed bottom-6 right-6 rounded-full p-4 transition-all duration-200 hover:scale-110 z-50 ${
             isMonochrome
-              ? 'bg-gray-600 hover:bg-gray-700 text-white'
-              : 'bg-pink-800 hover:bg-pink-900 text-white'
-          } rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50`}
+              ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-lg'
+              : 'bg-pink-800 hover:bg-pink-900 text-white shadow-lg'
+          }`}
           aria-label="Open chat"
         >
           <MessageCircle size={24} />
@@ -122,12 +132,16 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       )}
 
       {isOpen && (
-        <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200 dark:border-gray-700">
-          <div className={`${
+        <div className={`fixed bottom-6 right-6 w-96 h-[600px] rounded-lg flex flex-col z-50 border ${
+          isMonochrome
+            ? 'bg-white border-gray-300 shadow-2xl'
+            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-2xl'
+        }`}>
+          <div className={`p-4 rounded-t-lg flex justify-between items-center ${
             isMonochrome
-              ? 'bg-gray-600 text-white'
+              ? 'bg-gray-800 text-white'
               : 'bg-pink-800 text-white'
-          } p-4 rounded-t-lg flex justify-between items-center`}>
+          }`}>
             <div>
               <h3 className="font-semibold text-lg">Chat with {name}</h3>
               <p className={`text-sm ${
@@ -136,11 +150,9 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
             </div>
             <button
               onClick={() => setIsOpen(false)}
-              className={`${
-                isMonochrome
-                  ? 'hover:bg-gray-700 text-white'
-                  : 'hover:bg-pink-900 text-white'
-              } p-1 rounded transition-colors`}
+              className={`text-white p-1 rounded transition-colors ${
+                isMonochrome ? 'hover:bg-gray-900' : 'hover:bg-pink-900'
+              }`}
               aria-label="Close chat"
             >
               <X size={20} />
@@ -157,9 +169,11 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                   className={`max-w-[80%] rounded-lg p-3 ${
                     msg.role === 'user'
                       ? isMonochrome
-                        ? 'bg-gray-600 text-white'
+                        ? 'bg-gray-800 text-white'
                         : 'bg-pink-800 text-white'
-                      : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
+                      : isMonochrome
+                        ? 'bg-gray-100 text-gray-900'
+                        : 'bg-gray-100 dark:bg-gray-700 text-gray-900 dark:text-white'
                   }`}
                 >
                   <div className="whitespace-pre-wrap text-sm">{msg.content}</div>
@@ -167,9 +181,11 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                     className={`text-xs mt-1 ${
                       msg.role === 'user'
                         ? isMonochrome
-                          ? 'text-gray-200'
+                          ? 'text-gray-300'
                           : 'text-pink-100'
-                        : 'text-gray-500 dark:text-gray-400'
+                        : isMonochrome
+                          ? 'text-gray-500'
+                          : 'text-gray-500 dark:text-gray-400'
                     }`}
                   >
                     {new Date(msg.timestamp).toLocaleTimeString([], {
@@ -182,7 +198,9 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
             ))}
             {isLoading && (
               <div className="flex justify-start">
-                <div className="bg-gray-100 dark:bg-gray-700 rounded-lg p-3">
+                <div className={`rounded-lg p-3 ${
+                  isMonochrome ? 'bg-gray-100' : 'bg-gray-100 dark:bg-gray-700'
+                }`}>
                   <div className="flex space-x-2">
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce" />
                     <div className="w-2 h-2 bg-gray-400 rounded-full animate-bounce delay-100" />
@@ -194,7 +212,9 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
             <div ref={messagesEndRef} />
           </div>
 
-          <div className="p-4 border-t border-gray-200 dark:border-gray-700">
+          <div className={`p-4 border-t ${
+            isMonochrome ? 'border-gray-300' : 'border-gray-200 dark:border-gray-700'
+          }`}>
             <div className="flex space-x-2">
               <input
                 type="text"
@@ -204,19 +224,19 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                 placeholder="Type your message..."
                 className={`flex-1 px-4 py-2 border rounded-lg focus:outline-none focus:ring-2 ${
                   isMonochrome
-                    ? 'bg-gray-500 border-gray-400 text-white placeholder-gray-200 focus:ring-gray-600'
-                    : 'border-gray-300 focus:ring-pink-800'
-                } dark:bg-gray-700 dark:text-white dark:border-gray-600`}
+                    ? 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 focus:ring-gray-500'
+                    : 'border-gray-300 focus:ring-pink-800 dark:bg-gray-700 dark:text-white dark:border-gray-600'
+                }`}
                 disabled={isLoading}
               />
               <button
                 onClick={sendMessage}
                 disabled={isLoading || !inputValue.trim()}
-                className={`${
+                className={`text-white p-2 rounded-lg transition-colors disabled:opacity-50 ${
                   isMonochrome
-                    ? 'bg-gray-600 hover:bg-gray-700 text-white'
-                    : 'bg-pink-800 hover:bg-pink-900 text-white'
-                } disabled:bg-gray-400 disabled:text-gray-600 p-2 rounded-lg transition-colors`}
+                    ? 'bg-gray-800 hover:bg-gray-900'
+                    : 'bg-pink-800 hover:bg-pink-900'
+                }`}
                 aria-label="Send message"
               >
                 <Send size={20} />

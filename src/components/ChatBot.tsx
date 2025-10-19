@@ -50,14 +50,24 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
     setIsLoading(true);
 
     try {
-      const { data: programs, error } = await supabase
-        .from('pharma_programs')
-        .select('*')
-        .or(`medication_name.ilike.%${query}%,manufacturer.ilike.%${query}%,program_name.ilike.%${query}%`)
-        .eq('active', true)
-        .limit(5);
+      const SUPABASE_URL = import.meta.env.VITE_SUPABASE_DRUGS_URL || import.meta.env.VITE_SUPABASE_URL;
+      const SUPABASE_KEY = import.meta.env.VITE_SUPABASE_DRUGS_ANON_KEY || import.meta.env.VITE_SUPABASE_ANON_KEY;
 
-      if (error) throw error;
+      const response = await fetch(
+        `${SUPABASE_URL}/rest/v1/rpc/search_drugs`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+            'apikey': SUPABASE_KEY,
+            'Authorization': `Bearer ${SUPABASE_KEY}`,
+          },
+          body: JSON.stringify({ search_term: query }),
+        }
+      );
+
+      if (!response.ok) throw new Error('Search failed');
+      const programs = await response.json();
 
       let responseText = '';
       if (programs && programs.length > 0) {
@@ -112,7 +122,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-6 right-6 rounded-full p-4 transition-all duration-200 hover:scale-110 z-50 ${
             isMonochrome
-              ? 'bg-gray-700 hover:bg-gray-800 text-white shadow-lg'
+              ? 'bg-gray-800 hover:bg-gray-900 text-white shadow-lg'
               : 'bg-pink-800 hover:bg-pink-900 text-white shadow-lg'
           }`}
           aria-label="Open chat"
@@ -129,19 +139,19 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
         }`}>
           <div className={`p-4 rounded-t-lg flex justify-between items-center ${
             isMonochrome
-              ? 'bg-gray-700 text-white'
+              ? 'bg-gray-800 text-white'
               : 'bg-pink-800 text-white'
           }`}>
             <div>
               <h3 className="font-semibold text-lg">Chat with {name}</h3>
               <p className={`text-sm ${
-                isMonochrome ? 'text-gray-300' : 'text-pink-100'
+                isMonochrome ? 'text-gray-200' : 'text-pink-100'
               }`}>Ask about medications & programs</p>
             </div>
             <button
               onClick={() => setIsOpen(false)}
               className={`text-white p-1 rounded transition-colors ${
-                isMonochrome ? 'hover:bg-gray-800' : 'hover:bg-pink-900'
+                isMonochrome ? 'hover:bg-gray-900' : 'hover:bg-pink-900'
               }`}
               aria-label="Close chat"
             >
@@ -159,7 +169,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                   className={`max-w-[80%] rounded-lg p-3 ${
                     msg.role === 'user'
                       ? isMonochrome
-                        ? 'bg-gray-700 text-white'
+                        ? 'bg-gray-800 text-white'
                         : 'bg-pink-800 text-white'
                       : isMonochrome
                         ? 'bg-gray-100 text-gray-900'
@@ -224,7 +234,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
                 disabled={isLoading || !inputValue.trim()}
                 className={`text-white p-2 rounded-lg transition-colors disabled:opacity-50 ${
                   isMonochrome
-                    ? 'bg-gray-700 hover:bg-gray-800'
+                    ? 'bg-gray-800 hover:bg-gray-900'
                     : 'bg-pink-800 hover:bg-pink-900'
                 }`}
                 aria-label="Send message"

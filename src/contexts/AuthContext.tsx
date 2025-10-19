@@ -143,7 +143,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const signInWithGoogle = async () => {
     try {
-      const redirectUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co/auth/v1/callback';
+      const redirectUrl = `${window.location.origin}/auth/callback`;
       console.log('Initiating Google OAuth with redirect:', redirectUrl);
       console.log('Current origin:', window.location.origin);
 
@@ -189,7 +189,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const resetPassword = async (email: string) => {
     const { error } = await supabase.auth.resetPasswordForEmail(email, {
-      redirectTo: 'https://nuhfqkhplldontxtoxkg.supabase.co/auth/v1/callback',
+      redirectTo: `${window.location.origin}/reset-password`,
     });
     return { error };
   };

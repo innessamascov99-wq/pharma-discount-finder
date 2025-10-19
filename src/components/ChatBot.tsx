@@ -125,13 +125,13 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
         <div className="fixed bottom-6 right-6 w-96 h-[600px] bg-white dark:bg-gray-800 rounded-lg shadow-2xl flex flex-col z-50 border border-gray-200 dark:border-gray-700">
           <div className={`${
             isMonochrome
-              ? 'bg-gray-600 text-white'
+              ? 'bg-gray-400 text-white'
               : 'bg-pink-800 text-white'
           } p-4 rounded-t-lg flex justify-between items-center`}>
             <div>
               <h3 className="font-semibold text-lg">Chat with {name}</h3>
               <p className={`text-sm ${
-                isMonochrome ? 'text-gray-200' : 'text-pink-100'
+                isMonochrome ? 'text-white' : 'text-pink-100'
               }`}>Ask about medications & programs</p>
             </div>
             <button

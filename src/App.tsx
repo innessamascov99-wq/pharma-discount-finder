@@ -55,47 +55,48 @@ function AppContent() {
       )}
 
       {(showContent || isAuthPage) && (
-        <div className="min-h-screen bg-background animate-in fade-in duration-700">
-          {!isAuthPage && !isDashboardPage && <Header />}
-          {isDashboardPage && <Header />}
+        <>
+          <div className="min-h-screen bg-background animate-in fade-in duration-700">
+            {!isAuthPage && !isDashboardPage && <Header />}
+            {isDashboardPage && <Header />}
 
-          <main>
-            <Routes>
-              <Route path="/" element={<Home />} />
-              <Route path="/login" element={<Login />} />
-              <Route path="/signup" element={<Signup />} />
-              <Route path="/forgot-password" element={<ForgotPassword />} />
-              <Route path="/reset-password" element={<ResetPassword />} />
-              <Route path="/auth/callback" element={<AuthCallback />} />
-              <Route path="/faq" element={<FAQ />} />
-              <Route path="/about" element={<About />} />
-              <Route path="/contact" element={<Contact />} />
-              <Route path="/programs" element={<Programs />} />
-              <Route path="/search" element={<Search />} />
-              <Route
-                path="/dashboard"
-                element={
-                  <ProtectedRoute>
-                    <UserDashboard />
-                  </ProtectedRoute>
-                }
-              />
-              <Route
-                path="/admin"
-                element={
-                  <ProtectedRoute requireAdmin={true}>
-                    <AdminDashboard />
-                  </ProtectedRoute>
-                }
-              />
-            </Routes>
-          </main>
+            <main>
+              <Routes>
+                <Route path="/" element={<Home />} />
+                <Route path="/login" element={<Login />} />
+                <Route path="/signup" element={<Signup />} />
+                <Route path="/forgot-password" element={<ForgotPassword />} />
+                <Route path="/reset-password" element={<ResetPassword />} />
+                <Route path="/auth/callback" element={<AuthCallback />} />
+                <Route path="/faq" element={<FAQ />} />
+                <Route path="/about" element={<About />} />
+                <Route path="/contact" element={<Contact />} />
+                <Route path="/programs" element={<Programs />} />
+                <Route path="/search" element={<Search />} />
+                <Route
+                  path="/dashboard"
+                  element={
+                    <ProtectedRoute>
+                      <UserDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+                <Route
+                  path="/admin"
+                  element={
+                    <ProtectedRoute requireAdmin={true}>
+                      <AdminDashboard />
+                    </ProtectedRoute>
+                  }
+                />
+              </Routes>
+            </main>
 
-          {!isAuthPage && !isDashboardPage && <Footer />}
-        </div>
+            {!isAuthPage && !isDashboardPage && <Footer />}
+          </div>
+          <ChatBot />
+        </>
       )}
-
-      {(showContent || isAuthPage) && <ChatBot />}
     </>
   );
 }

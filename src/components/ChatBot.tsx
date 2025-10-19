@@ -110,10 +110,10 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       {!isOpen && (
         <button
           onClick={() => setIsOpen(true)}
-          className={`fixed bottom-6 right-6 rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50 ${
+          className={`fixed bottom-6 right-6 rounded-full p-4 transition-all duration-200 hover:scale-110 z-50 ${
             isMonochrome
-              ? 'bg-gray-600 hover:bg-gray-700 text-white'
-              : 'bg-pink-800 hover:bg-pink-900 text-white'
+              ? 'bg-gray-600 hover:bg-gray-700 text-white shadow-[0_8px_30px_rgb(0,0,0,0.4)]'
+              : 'bg-pink-800 hover:bg-pink-900 text-white shadow-lg'
           }`}
           aria-label="Open chat"
         >
@@ -122,10 +122,10 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
       )}
 
       {isOpen && (
-        <div className={`fixed bottom-6 right-6 w-96 h-[600px] rounded-lg shadow-2xl flex flex-col z-50 border ${
+        <div className={`fixed bottom-6 right-6 w-96 h-[600px] rounded-lg flex flex-col z-50 border ${
           isMonochrome
-            ? 'bg-gray-700 border-gray-600'
-            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700'
+            ? 'bg-gray-700 border-gray-600 shadow-[0_20px_50px_rgb(0,0,0,0.5)]'
+            : 'bg-white dark:bg-gray-800 border-gray-200 dark:border-gray-700 shadow-2xl'
         }`}>
           <div className={`p-4 rounded-t-lg flex justify-between items-center ${
             isMonochrome

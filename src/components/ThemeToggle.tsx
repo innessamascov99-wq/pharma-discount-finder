@@ -7,7 +7,7 @@ export const ThemeToggle: React.FC = () => {
   const { theme, setTheme } = useTheme();
 
   const themes = [
-    { value: 'light' as const, icon: Sun, label: 'Light' },
+    { value: 'light' as const, icon: Sun, label: 'Default' },
     { value: 'dark' as const, icon: Moon, label: 'Dark' },
     { value: 'monochrome' as const, icon: CircleDot, label: 'Monochrome' }
   ];

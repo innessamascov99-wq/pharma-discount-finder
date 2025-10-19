@@ -3,6 +3,7 @@ import { BrowserRouter as Router, Routes, Route, useLocation } from 'react-route
 import { InitialAnimation } from './components/InitialAnimation';
 import { Header } from './components/Header';
 import { Footer } from './components/Footer';
+import { ChatBot } from './components/ChatBot';
 import { ProtectedRoute } from './components/ProtectedRoute';
 import { Home } from './pages/Home';
 import { Login } from './pages/Login';
@@ -91,6 +92,7 @@ function AppContent() {
           </main>
 
           {!isAuthPage && !isDashboardPage && <Footer />}
+          <ChatBot />
         </div>
       )}
     </>

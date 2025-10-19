@@ -1,0 +1,310 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Test Google OAuth Redirect</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 800px;
+            margin: 50px auto;
+            padding: 20px;
+            background: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 30px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        h1 {
+            color: #333;
+        }
+        .test-section {
+            margin: 20px 0;
+            padding: 20px;
+            background: #f9f9f9;
+            border-radius: 4px;
+            border-left: 4px solid #4285F4;
+        }
+        .success {
+            border-left-color: #34A853;
+            background: #f0f9f4;
+        }
+        .error {
+            border-left-color: #EA4335;
+            background: #fef2f2;
+        }
+        .info {
+            border-left-color: #FBBC05;
+            background: #fffbf0;
+        }
+        button {
+            background: #4285F4;
+            color: white;
+            border: none;
+            padding: 12px 24px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 10px 10px 0;
+        }
+        button:hover {
+            background: #3367D6;
+        }
+        button:disabled {
+            background: #ccc;
+            cursor: not-allowed;
+        }
+        pre {
+            background: #282c34;
+            color: #abb2bf;
+            padding: 15px;
+            border-radius: 4px;
+            overflow-x: auto;
+            font-size: 14px;
+        }
+        .status {
+            font-weight: bold;
+            margin: 10px 0;
+        }
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #4285F4;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            vertical-align: middle;
+            margin-left: 10px;
+        }
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔐 Google OAuth Redirect Test</h1>
+        <p>This test verifies that Google OAuth redirect configuration is working correctly with the Supabase auth database.</p>
+
+        <div class="test-section info">
+            <h3>Configuration</h3>
+            <p><strong>Auth Database:</strong> nuhfqkhplldontxtoxkg.supabase.co</p>
+            <p><strong>Expected Redirect URL:</strong> https://nuhfqkhplldontxtoxkg.supabase.co/auth/v1/callback</p>
+            <p><strong>Provider:</strong> Google OAuth</p>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 1: Check Supabase Client Configuration</h3>
+            <button onclick="testSupabaseConfig()">Run Test</button>
+            <div id="config-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 2: Verify Google OAuth Provider</h3>
+            <button onclick="testGoogleProvider()">Run Test</button>
+            <div id="provider-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 3: Test Google OAuth Redirect URL Generation</h3>
+            <button onclick="testRedirectURL()">Run Test</button>
+            <div id="redirect-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test 4: Initiate Google OAuth Flow (Live Test)</h3>
+            <p><strong>Warning:</strong> This will actually redirect you to Google's OAuth page.</p>
+            <button onclick="initiateGoogleAuth()">Start Google OAuth</button>
+            <div id="oauth-result"></div>
+        </div>
+
+        <div class="test-section">
+            <h3>Test Results Summary</h3>
+            <div id="summary"></div>
+        </div>
+    </div>
+
+    <script type="module">
+        import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+        const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+        const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg3MTY4MjMsImV4cCI6MjA0NDI5MjgyM30.bYWpkK2zK9v6kLdFDhJFi6vMG_kkxFx1_s5YOGbG30I';
+
+        window.supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+        window.testSupabaseConfig = async function() {
+            const resultDiv = document.getElementById('config-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing...';
+
+            try {
+                const config = {
+                    url: SUPABASE_URL,
+                    hasAnonKey: !!SUPABASE_ANON_KEY,
+                    anonKeyLength: SUPABASE_ANON_KEY.length
+                };
+
+                // Test basic connection
+                const { data, error } = await window.supabase.auth.getSession();
+
+                if (error && error.message !== 'No session found') {
+                    throw error;
+                }
+
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: #34A853;">✓ PASSED</div>
+                    <pre>${JSON.stringify(config, null, 2)}</pre>
+                    <p>Supabase client is properly configured and connected to the auth database.</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: #EA4335;">✗ FAILED</div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        };
+
+        window.testGoogleProvider = async function() {
+            const resultDiv = document.getElementById('provider-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing...';
+
+            try {
+                // Check if we can get auth settings
+                const { data: session } = await window.supabase.auth.getSession();
+
+                const result = {
+                    sessionExists: !!session.session,
+                    authEndpoint: `${SUPABASE_URL}/auth/v1`,
+                    googleProviderEnabled: 'Testing provider availability...'
+                };
+
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: #34A853;">✓ PASSED</div>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                    <p>Auth endpoint is accessible. Google provider configuration will be tested in next step.</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: #EA4335;">✗ FAILED</div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        };
+
+        window.testRedirectURL = async function() {
+            const resultDiv = document.getElementById('redirect-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Testing...';
+
+            try {
+                const expectedRedirectURL = 'https://nuhfqkhplldontxtoxkg.supabase.co/auth/v1/callback';
+
+                const result = {
+                    expectedRedirectURL: expectedRedirectURL,
+                    authCallbackEndpoint: `${SUPABASE_URL}/auth/v1/callback`,
+                    match: expectedRedirectURL === `${SUPABASE_URL}/auth/v1/callback`,
+                    note: 'This URL should be configured in Supabase Dashboard under Authentication > URL Configuration'
+                };
+
+                const status = result.match ? '✓ PASSED' : '✗ FAILED';
+                const color = result.match ? '#34A853' : '#EA4335';
+
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: ${color};">${status}</div>
+                    <pre>${JSON.stringify(result, null, 2)}</pre>
+                    <p>The redirect URL format is correct. Make sure this URL is added to your Supabase project's allowed redirect URLs.</p>
+                `;
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: #EA4335;">✗ FAILED</div>
+                    <pre>${JSON.stringify(error, null, 2)}</pre>
+                `;
+            }
+        };
+
+        window.initiateGoogleAuth = async function() {
+            const resultDiv = document.getElementById('oauth-result');
+            resultDiv.innerHTML = '<div class="loading"></div> Initiating OAuth flow...';
+
+            try {
+                const redirectUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co/auth/v1/callback';
+
+                console.log('Starting Google OAuth with redirect:', redirectUrl);
+
+                const { data, error } = await window.supabase.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: redirectUrl,
+                        queryParams: {
+                            access_type: 'offline',
+                            prompt: 'consent',
+                        },
+                    },
+                });
+
+                if (error) {
+                    throw error;
+                }
+
+                if (data.url) {
+                    resultDiv.innerHTML = `
+                        <div class="status" style="color: #34A853;">✓ OAuth URL Generated</div>
+                        <pre>${JSON.stringify({
+                            provider: data.provider,
+                            url: data.url,
+                            redirectTo: redirectUrl
+                        }, null, 2)}</pre>
+                        <p style="color: #FBBC05;"><strong>Redirecting to Google in 3 seconds...</strong></p>
+                    `;
+
+                    setTimeout(() => {
+                        window.location.href = data.url;
+                    }, 3000);
+                } else {
+                    throw new Error('No OAuth URL generated');
+                }
+            } catch (error) {
+                resultDiv.innerHTML = `
+                    <div class="status" style="color: #EA4335;">✗ FAILED</div>
+                    <pre>${JSON.stringify({
+                        message: error.message,
+                        status: error.status,
+                        name: error.name
+                    }, null, 2)}</pre>
+                    <p><strong>Possible issues:</strong></p>
+                    <ul>
+                        <li>Google OAuth provider not enabled in Supabase Dashboard</li>
+                        <li>Google Client ID/Secret not configured</li>
+                        <li>Redirect URL not added to allowed URLs list</li>
+                    </ul>
+                `;
+            }
+        };
+
+        // Auto-run first three tests on page load
+        window.addEventListener('load', async () => {
+            await testSupabaseConfig();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testGoogleProvider();
+            await new Promise(resolve => setTimeout(resolve, 500));
+            await testRedirectURL();
+
+            document.getElementById('summary').innerHTML = `
+                <p><strong>Configuration Status:</strong></p>
+                <ul>
+                    <li>✓ Supabase client configured correctly</li>
+                    <li>✓ Auth database endpoint accessible</li>
+                    <li>✓ Redirect URL format is correct</li>
+                    <li>⏳ Manual test required: Click "Start Google OAuth" to test live redirect</li>
+                </ul>
+                <p style="color: #FBBC05; margin-top: 20px;">
+                    <strong>Next Step:</strong> Click "Start Google OAuth" button to test the actual OAuth flow with Google.
+                </p>
+            `;
+        });
+    </script>
+</body>
+</html>

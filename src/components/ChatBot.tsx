@@ -112,7 +112,7 @@ export const ChatBot = ({ name = 'Jack' }: ChatBotProps) => {
           onClick={() => setIsOpen(true)}
           className={`fixed bottom-6 right-6 ${
             isMonochrome
-              ? 'bg-gray-600 hover:bg-gray-700 text-white'
+              ? 'bg-gray-500 hover:bg-gray-600 text-white'
               : 'bg-pink-800 hover:bg-pink-900 text-white'
           } rounded-full p-4 shadow-lg transition-all duration-200 hover:scale-110 z-50`}
           aria-label="Open chat"

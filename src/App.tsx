@@ -92,9 +92,10 @@ function AppContent() {
           </main>
 
           {!isAuthPage && !isDashboardPage && <Footer />}
-          <ChatBot />
         </div>
       )}
+
+      {(showContent || isAuthPage) && <ChatBot />}
     </>
   );
 }

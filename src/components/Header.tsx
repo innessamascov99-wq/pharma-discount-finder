@@ -47,16 +47,16 @@ export const Header: React.FC = () => {
       <div className="max-w-7xl mx-auto px-6">
         <div className="flex items-center justify-between h-16">
           {/* Logo */}
-          <Link to="/" className="flex flex-col">
+          <Link to="/" className="flex flex-col group">
             <div className="flex items-center gap-3">
-              <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg animate-pulse-glow" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
-                <Pill className="w-6 h-6 text-white drop-shadow-md animate-wiggle" />
+              <div className="w-10 h-10 rounded-lg flex items-center justify-center shadow-lg group-hover:shadow-xl transition-all duration-300 dark:shadow-cyan-500/20" style={{ background: 'linear-gradient(135deg, #0EA5E9 0%, #10B981 100%)' }}>
+                <Pill className="w-6 h-6 text-white drop-shadow-md group-hover:scale-110 transition-transform duration-300" />
               </div>
               <div className="flex flex-col">
-                <span className="text-xl font-bold tracking-tight">
+                <span className="text-xl font-bold tracking-tight group-hover:text-primary transition-colors duration-300">
                   Pharma Discount Finder
                 </span>
-                <span className="text-xs text-muted-foreground font-medium">
+                <span className="text-xs text-muted-foreground font-medium dark:text-cyan-400/80">
                   Medication Made Affordable
                 </span>
               </div>
@@ -70,17 +70,19 @@ export const Header: React.FC = () => {
                 <a
                   key={link.name}
                   href={link.href}
-                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                  className="text-foreground hover:text-primary dark:hover:text-cyan-400 transition-colors duration-200 font-medium relative group"
                 >
                   {link.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-500 to-emerald-500 dark:from-cyan-400 dark:to-emerald-400 group-hover:w-full transition-all duration-300"></span>
                 </a>
               ) : (
                 <Link
                   key={link.name}
                   to={link.href}
-                  className="text-foreground hover:text-primary transition-colors duration-200 font-medium"
+                  className="text-foreground hover:text-primary dark:hover:text-cyan-400 transition-colors duration-200 font-medium relative group"
                 >
                   {link.name}
+                  <span className="absolute -bottom-1 left-0 w-0 h-0.5 bg-gradient-to-r from-cyan-500 to-emerald-500 dark:from-cyan-400 dark:to-emerald-400 group-hover:w-full transition-all duration-300"></span>
                 </Link>
               )
             ))}
@@ -92,34 +94,37 @@ export const Header: React.FC = () => {
             {user ? (
               <DropdownMenu
                 trigger={
-                  <Button variant="ghost" size="sm" className="gap-2">
-                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+                  <Button variant="ghost" size="sm" className="gap-2 hover:bg-accent/50 dark:hover:bg-accent/20">
+                    <div className="w-8 h-8 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 dark:from-cyan-400 dark:to-emerald-400 flex items-center justify-center shadow-lg dark:shadow-cyan-500/30">
                       <User className="w-4 h-4 text-white" />
                     </div>
-                    <span className="hidden lg:inline">{user.email}</span>
+                    <span className="hidden lg:inline dark:text-cyan-100">{user.email}</span>
                   </Button>
                 }
               >
-                <DropdownMenuLabel>{user.email}</DropdownMenuLabel>
+                <DropdownMenuLabel className="dark:text-cyan-100">{user.email}</DropdownMenuLabel>
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  icon={<LayoutDashboard className="w-4 h-4" />}
+                  icon={<LayoutDashboard className="w-4 h-4 dark:text-cyan-400" />}
                   onClick={() => navigate('/dashboard')}
+                  className="dark:hover:bg-accent/30"
                 >
                   Dashboard
                 </DropdownMenuItem>
                 {isAdmin && (
                   <DropdownMenuItem
-                    icon={<Shield className="w-4 h-4" />}
+                    icon={<Shield className="w-4 h-4 dark:text-emerald-400" />}
                     onClick={() => navigate('/admin')}
+                    className="dark:hover:bg-accent/30"
                   >
                     Admin Portal
                   </DropdownMenuItem>
                 )}
                 <DropdownMenuSeparator />
                 <DropdownMenuItem
-                  icon={<LogOut className="w-4 h-4" />}
+                  icon={<LogOut className="w-4 h-4 dark:text-red-400" />}
                   onClick={handleSignOut}
+                  className="dark:hover:bg-accent/30"
                 >
                   Sign Out
                 </DropdownMenuItem>
@@ -139,13 +144,13 @@ export const Header: React.FC = () => {
           {/* Mobile Menu Button */}
           <button
             onClick={toggleMenu}
-            className="md:hidden p-2 rounded-lg hover:bg-accent transition-colors duration-200"
+            className="md:hidden p-2 rounded-lg hover:bg-accent dark:hover:bg-accent/30 transition-colors duration-200"
             aria-label="Toggle menu"
           >
             {isMenuOpen ? (
-              <X className="w-6 h-6 text-foreground" />
+              <X className="w-6 h-6 text-foreground dark:text-cyan-400" />
             ) : (
-              <Menu className="w-6 h-6 text-foreground" />
+              <Menu className="w-6 h-6 text-foreground dark:text-cyan-400" />
             )}
           </button>
         </div>

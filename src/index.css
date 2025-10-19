@@ -60,7 +60,7 @@
     --ring: 199 89% 48%;
   }
 
-  .grayscale {
+  .monochrome {
     --background: 0 0% 100%;
     --foreground: 0 0% 10%;
     --card: 0 0% 100%;

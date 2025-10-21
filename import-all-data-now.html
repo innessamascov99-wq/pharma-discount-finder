@@ -1,0 +1,155 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Import All Data to Database</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body { font-family: monospace; padding: 20px; background: #1a1a1a; color: #0f0; }
+    .success { color: #0f0; }
+    .error { color: #f00; }
+    .info { color: #ff0; }
+    button { padding: 10px 20px; margin: 10px 0; font-size: 16px; cursor: pointer; }
+    pre { background: #000; padding: 10px; border: 1px solid #333; overflow-x: auto; }
+  </style>
+</head>
+<body>
+  <h1>🚀 Import All Data to Supabase</h1>
+  <p class="info">Database: https://nuhfqkhplldontxtoxkg.supabase.co</p>
+
+  <button onclick="checkAndImport()">Check Tables & Import Data</button>
+
+  <div id="output"></div>
+
+  <script type="module">
+    const { createClient } = supabase;
+
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const client = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function log(message, type = 'info') {
+      const output = document.getElementById('output');
+      const className = type === 'error' ? 'error' : type === 'success' ? 'success' : 'info';
+      output.innerHTML += `<div class="${className}">${message}</div>`;
+      console.log(message);
+    }
+
+    async function checkTable(tableName) {
+      try {
+        const { count, error } = await client
+          .from(tableName)
+          .select('*', { count: 'exact', head: true });
+
+        if (error) {
+          log(`❌ Table '${tableName}': ${error.message}`, 'error');
+          return { exists: false, count: 0, error };
+        } else {
+          log(`✅ Table '${tableName}': EXISTS with ${count || 0} rows`, 'success');
+          return { exists: true, count: count || 0 };
+        }
+      } catch (err) {
+        log(`❌ Table '${tableName}': ${err.message}`, 'error');
+        return { exists: false, count: 0, error: err };
+      }
+    }
+
+    window.checkAndImport = async function() {
+      document.getElementById('output').innerHTML = '';
+      log('🔍 Checking database tables...', 'info');
+      log('');
+
+      // Check all tables
+      const drugsCheck = await checkTable('drugs');
+      const programsCheck = await checkTable('programs');
+      const dpCheck = await checkTable('drugs_programs');
+
+      log('');
+
+      // Load exported data
+      log('📦 Loading exported data...', 'info');
+
+      try {
+        const [drugsResponse, programsResponse, dpResponse] = await Promise.all([
+          fetch('/exported-drugs.json'),
+          fetch('/exported-programs.json'),
+          fetch('/exported-drugs-programs.json')
+        ]);
+
+        const drugs = await drugsResponse.json();
+        const programs = await programsResponse.json();
+        const drugsPrograms = await dpResponse.json();
+
+        log(`   Drugs: ${drugs.length} records`, 'info');
+        log(`   Programs: ${programs.length} records`, 'info');
+        log(`   Relationships: ${drugsPrograms.length} records`, 'info');
+        log('');
+
+        // Import data if tables are empty
+        if (drugsCheck.exists && drugsCheck.count === 0) {
+          log('📥 Importing drugs...', 'info');
+          const { data, error } = await client
+            .from('drugs')
+            .insert(drugs)
+            .select();
+
+          if (error) {
+            log(`❌ Error importing drugs: ${error.message}`, 'error');
+            log(`   Details: ${JSON.stringify(error)}`, 'error');
+          } else {
+            log(`✅ Imported ${data.length} drugs`, 'success');
+          }
+          log('');
+        }
+
+        if (programsCheck.exists && programsCheck.count === 0) {
+          log('📥 Importing programs...', 'info');
+          const { data, error } = await client
+            .from('programs')
+            .insert(programs)
+            .select();
+
+          if (error) {
+            log(`❌ Error importing programs: ${error.message}`, 'error');
+            log(`   Details: ${JSON.stringify(error)}`, 'error');
+          } else {
+            log(`✅ Imported ${data.length} programs`, 'success');
+          }
+          log('');
+        }
+
+        if (dpCheck.exists && dpCheck.count === 0) {
+          log('📥 Importing drug-program relationships...', 'info');
+          const { data, error } = await client
+            .from('drugs_programs')
+            .insert(drugsPrograms)
+            .select();
+
+          if (error) {
+            log(`❌ Error importing relationships: ${error.message}`, 'error');
+            log(`   Details: ${JSON.stringify(error)}`, 'error');
+          } else {
+            log(`✅ Imported ${data.length} relationships`, 'success');
+          }
+          log('');
+        }
+
+        // Final verification
+        log('🔍 Final verification...', 'info');
+        const finalDrugs = await checkTable('drugs');
+        const finalPrograms = await checkTable('programs');
+        const finalDP = await checkTable('drugs_programs');
+        log('');
+
+        log('🎉 COMPLETE!', 'success');
+        log(`   Drugs: ${finalDrugs.count}`, 'success');
+        log(`   Programs: ${finalPrograms.count}`, 'success');
+        log(`   Relationships: ${finalDP.count}`, 'success');
+
+      } catch (err) {
+        log(`❌ Error: ${err.message}`, 'error');
+      }
+    };
+  </script>
+</body>
+</html>

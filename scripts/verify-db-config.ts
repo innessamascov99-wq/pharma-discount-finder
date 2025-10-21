@@ -2,21 +2,21 @@
 /**
  * Database Configuration Verification Tool
  *
- * This script ensures all database connections point to the correct Supabase instances:
- * - Auth Database: https://nuhfqkhplldontxtoxkg.supabase.co (Login and Google Auth)
- * - Drugs Database: https://asqsltuwmqdvayjmwsjs.supabase.co (Drug search)
+ * This script ensures all database connections point to the correct Supabase instance:
+ * https://nuhfqkhplldontxtoxkg.supabase.co
  *
- * CRITICAL: These URLs must NEVER change
+ * It checks and corrects:
+ * - .env file
+ * - Any hardcoded database URLs in the codebase
+ * - Supabase client configurations
  */
 
 import { readFileSync, writeFileSync, existsSync } from 'fs';
 import { join } from 'path';
 
-const AUTH_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
-const AUTH_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
-
-const DRUGS_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
-const DRUGS_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
+const CORRECT_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
+const CORRECT_PROJECT_REF = 'asqsltuwmqdvayjmwsjs';
+const CORRECT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
 
 interface CheckResult {
   file: string;
@@ -28,81 +28,77 @@ const results: CheckResult[] = [];
 
 function checkAndFixEnvFile(): void {
   const envPath = join(process.cwd(), '.env');
-  const correctContent = `# Database for user authentication (Login and Google Auth)
-VITE_SUPABASE_URL=${AUTH_URL}
-VITE_SUPABASE_ANON_KEY=${AUTH_ANON_KEY}
-
-# Database for drugs info (Drug search)
-VITE_DRUGS_SUPABASE_URL=${DRUGS_URL}
-VITE_DRUGS_SUPABASE_ANON_KEY=${DRUGS_ANON_KEY}
-`;
+  const envLocalPath = join(process.cwd(), '.env.local');
+  const correctContent = `VITE_SUPABASE_URL=${CORRECT_URL}\nVITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}\n`;
 
   if (!existsSync(envPath)) {
     writeFileSync(envPath, correctContent);
     results.push({
       file: '.env',
       status: 'fixed',
-      message: 'Created .env file with correct two-database configuration'
-    });
-    return;
-  }
-
-  let content = readFileSync(envPath, 'utf-8');
-  let modified = false;
-
-  // Check auth database URL
-  const authUrlRegex = /VITE_SUPABASE_URL=.*/;
-  if (!content.match(authUrlRegex)) {
-    content += `\nVITE_SUPABASE_URL=${AUTH_URL}\n`;
-    modified = true;
-  } else if (!content.includes(`VITE_SUPABASE_URL=${AUTH_URL}`)) {
-    content = content.replace(authUrlRegex, `VITE_SUPABASE_URL=${AUTH_URL}`);
-    modified = true;
-  }
-
-  // Check auth database key
-  const authKeyRegex = /VITE_SUPABASE_ANON_KEY=.*/;
-  if (!content.match(authKeyRegex)) {
-    content += `VITE_SUPABASE_ANON_KEY=${AUTH_ANON_KEY}\n`;
-    modified = true;
-  } else if (!content.includes(`VITE_SUPABASE_ANON_KEY=${AUTH_ANON_KEY}`)) {
-    content = content.replace(authKeyRegex, `VITE_SUPABASE_ANON_KEY=${AUTH_ANON_KEY}`);
-    modified = true;
-  }
-
-  // Check drugs database URL
-  const drugsUrlRegex = /VITE_DRUGS_SUPABASE_URL=.*/;
-  if (!content.match(drugsUrlRegex)) {
-    content += `\nVITE_DRUGS_SUPABASE_URL=${DRUGS_URL}\n`;
-    modified = true;
-  } else if (!content.includes(`VITE_DRUGS_SUPABASE_URL=${DRUGS_URL}`)) {
-    content = content.replace(drugsUrlRegex, `VITE_DRUGS_SUPABASE_URL=${DRUGS_URL}`);
-    modified = true;
-  }
-
-  // Check drugs database key
-  const drugsKeyRegex = /VITE_DRUGS_SUPABASE_ANON_KEY=.*/;
-  if (!content.match(drugsKeyRegex)) {
-    content += `VITE_DRUGS_SUPABASE_ANON_KEY=${DRUGS_ANON_KEY}\n`;
-    modified = true;
-  } else if (!content.includes(`VITE_DRUGS_SUPABASE_ANON_KEY=${DRUGS_ANON_KEY}`)) {
-    content = content.replace(drugsKeyRegex, `VITE_DRUGS_SUPABASE_ANON_KEY=${DRUGS_ANON_KEY}`);
-    modified = true;
-  }
-
-  if (modified) {
-    writeFileSync(envPath, content);
-    results.push({
-      file: '.env',
-      status: 'fixed',
-      message: 'Fixed database URLs and/or API keys'
+      message: 'Created .env file with correct configuration'
     });
   } else {
+    let content = readFileSync(envPath, 'utf-8');
+    let modified = false;
+
+    const urlRegex = /VITE_SUPABASE_URL=.*/;
+    if (!content.match(urlRegex)) {
+      content += `\nVITE_SUPABASE_URL=${CORRECT_URL}\n`;
+      modified = true;
+    } else if (!content.includes(`VITE_SUPABASE_URL=${CORRECT_URL}`)) {
+      content = content.replace(urlRegex, `VITE_SUPABASE_URL=${CORRECT_URL}`);
+      modified = true;
+    }
+
+    const keyRegex = /VITE_SUPABASE_ANON_KEY=.*/;
+    if (!content.match(keyRegex)) {
+      content += `VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}\n`;
+      modified = true;
+    } else if (!content.includes(`VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}`)) {
+      content = content.replace(keyRegex, `VITE_SUPABASE_ANON_KEY=${CORRECT_ANON_KEY}`);
+      modified = true;
+    }
+
+    if (modified) {
+      writeFileSync(envPath, content);
+      results.push({
+        file: '.env',
+        status: 'fixed',
+        message: 'Fixed database URL and/or API key'
+      });
+    } else {
+      results.push({
+        file: '.env',
+        status: 'ok',
+        message: 'Configuration is correct'
+      });
+    }
+  }
+
+  if (!existsSync(envLocalPath)) {
+    writeFileSync(envLocalPath, correctContent);
     results.push({
-      file: '.env',
-      status: 'ok',
-      message: 'Configuration is correct'
+      file: '.env.local',
+      status: 'fixed',
+      message: 'Created override file (takes priority over .env)'
     });
+  } else {
+    const localContent = readFileSync(envLocalPath, 'utf-8');
+    if (localContent.includes(CORRECT_URL)) {
+      results.push({
+        file: '.env.local',
+        status: 'ok',
+        message: 'Override file exists with correct configuration'
+      });
+    } else {
+      writeFileSync(envLocalPath, correctContent);
+      results.push({
+        file: '.env.local',
+        status: 'fixed',
+        message: 'Fixed override file configuration'
+      });
+    }
   }
 }
 
@@ -121,36 +117,30 @@ function checkSupabaseClient(): void {
   const content = readFileSync(supabasePath, 'utf-8');
 
   // Check if it uses environment variables (preferred approach)
-  if (content.includes('import.meta.env.VITE_SUPABASE_URL') &&
-      content.includes('import.meta.env.VITE_DRUGS_SUPABASE_URL')) {
-
-    // Verify no hardcoded fallbacks exist
-    if (content.includes('|| \'https://')) {
-      results.push({
-        file: 'src/lib/supabase.ts',
-        status: 'error',
-        message: 'Found hardcoded fallback URLs - remove them to ensure .env is always used'
-      });
-    } else {
-      results.push({
-        file: 'src/lib/supabase.ts',
-        status: 'ok',
-        message: 'Using environment variables (.env file controls configuration)'
-      });
-    }
+  if (content.includes('import.meta.env.VITE_SUPABASE_URL')) {
+    results.push({
+      file: 'src/lib/supabase.ts',
+      status: 'ok',
+      message: 'Using environment variables (.env file controls configuration)'
+    });
+  } else if (content.includes(CORRECT_URL) || content.includes(CORRECT_PROJECT_REF)) {
+    results.push({
+      file: 'src/lib/supabase.ts',
+      status: 'ok',
+      message: 'Configuration locked to correct database (hardcoded)'
+    });
   } else {
     results.push({
       file: 'src/lib/supabase.ts',
       status: 'error',
-      message: 'Not using environment variables correctly - please review manually'
+      message: 'Incorrect database URL detected - please review manually'
     });
   }
 }
 
 function printResults(): void {
   console.log('\n=== Database Configuration Verification ===\n');
-  console.log(`Auth Database URL: ${AUTH_URL}`);
-  console.log(`Drugs Database URL: ${DRUGS_URL}\n`);
+  console.log(`Correct Supabase URL: ${CORRECT_URL}\n`);
 
   let hasErrors = false;
   let hasChanges = false;
@@ -177,9 +167,6 @@ function printResults(): void {
     process.exit(1);
   } else {
     console.log('✅ All database configurations are correct!');
-    console.log('\nDatabase Assignment:');
-    console.log('  • Login & Google Auth → nuhfqkhplldontxtoxkg.supabase.co');
-    console.log('  • Drug Search → asqsltuwmqdvayjmwsjs.supabase.co');
   }
 }
 

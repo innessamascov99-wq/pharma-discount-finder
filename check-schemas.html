@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Check Schemas</title>
+</head>
+<body>
+  <h1>Checking Available Schemas</h1>
+  <pre id="output"></pre>
+
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    const supabase = createClient(
+      'https://nuhfqkhplldontxtoxkg.supabase.co',
+      'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE'
+    );
+
+    const output = document.getElementById('output');
+
+    // Check what schemas PostgREST exposes
+    const { data, error } = await supabase.rpc('get_schemas');
+
+    if (error) {
+      output.textContent = `Error: ${error.message}\n\nLet's try querying information_schema directly...`;
+
+      // Try a direct SQL query
+      const { data: schemaData, error: schemaError } = await supabase
+        .from('pg_namespace')
+        .select('nspname');
+
+      if (schemaError) {
+        output.textContent += `\n\nSchema error: ${schemaError.message}`;
+        output.textContent += `\n\nPostgREST may only be exposing the 'public' schema.`;
+      }
+    } else {
+      output.textContent = JSON.stringify(data, null, 2);
+    }
+  </script>
+</body>
+</html>

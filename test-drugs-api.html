@@ -1,0 +1,65 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Drugs API</title>
+  <style>
+    body { font-family: monospace; padding: 20px; }
+    pre { background: #f4f4f4; padding: 10px; overflow-x: auto; }
+    .error { color: red; }
+    .success { color: green; }
+  </style>
+</head>
+<body>
+  <h1>Testing Drugs API Endpoint</h1>
+  <div id="output"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const output = document.getElementById('output');
+
+    function log(message, type = 'info') {
+      const div = document.createElement('div');
+      div.className = type;
+      div.textContent = message;
+      output.appendChild(div);
+    }
+
+    async function testDirectAPI() {
+      log('Testing direct REST API call to /rest/v1/drugs...');
+
+      try {
+        const response = await fetch(`${SUPABASE_URL}/rest/v1/drugs?select=*&limit=1`, {
+          headers: {
+            'apikey': SUPABASE_ANON_KEY,
+            'Authorization': `Bearer ${SUPABASE_ANON_KEY}`
+          }
+        });
+
+        log(`Response status: ${response.status}`);
+
+        const text = await response.text();
+        log(`Response body: ${text}`);
+
+        if (response.ok) {
+          const data = JSON.parse(text);
+          log('✓ API call successful!', 'success');
+          log(`Found ${data.length} drugs`);
+          if (data.length > 0) {
+            log(JSON.stringify(data[0], null, 2));
+          }
+        } else {
+          log(`✗ API call failed: ${text}`, 'error');
+        }
+      } catch (error) {
+        log(`✗ Error: ${error.message}`, 'error');
+      }
+    }
+
+    testDirectAPI();
+  </script>
+</body>
+</html>

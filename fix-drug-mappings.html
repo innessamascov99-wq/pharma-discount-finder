@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Fix Drug-Program Mappings</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: Arial, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+    }
+    button {
+      background: #10b981;
+      color: white;
+      border: none;
+      padding: 15px 30px;
+      font-size: 16px;
+      border-radius: 8px;
+      cursor: pointer;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #059669;
+    }
+    #output {
+      margin-top: 20px;
+      padding: 15px;
+      background: #f3f4f6;
+      border-radius: 8px;
+      white-space: pre-wrap;
+      font-family: monospace;
+    }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <h1>Fix Drug-Program Mappings</h1>
+  <p>This will check and fix the drug-program mappings in your database.</p>
+
+  <button onclick="checkAndFixMappings()">Check & Fix Mappings</button>
+
+  <div id="output"></div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg0ODgxMzEsImV4cCI6MjA0NDA2NDEzMX0.j6S0qPyH2kMBf_C0fVbKv9QxGUNWyZnxuA_31i6hH3M';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function log(message, type = 'info') {
+      const output = document.getElementById('output');
+      const className = type === 'success' ? 'success' : type === 'error' ? 'error' : 'info';
+      output.innerHTML += `<span class="${className}">${message}</span>\n`;
+      console.log(message);
+    }
+
+    async function checkAndFixMappings() {
+      const output = document.getElementById('output');
+      output.innerHTML = '';
+
+      try {
+        log('=== Checking Database Status ===', 'info');
+
+        // Get current counts
+        const { data: drugs, error: drugsError } = await supabase
+          .from('drugs')
+          .select('id, medication_name');
+
+        if (drugsError) throw drugsError;
+
+        const { data: programs, error: programsError } = await supabase
+          .from('programs')
+          .select('id, program_name');
+
+        if (programsError) throw programsError;
+
+        const { data: currentMappings, error: mappingsError } = await supabase
+          .from('drugs_programs')
+          .select('*');
+
+        if (mappingsError) throw mappingsError;
+
+        log(`✓ Found ${drugs.length} drugs`, 'success');
+        log(`✓ Found ${programs.length} programs`, 'success');
+        log(`✓ Found ${currentMappings.length} existing mappings`, 'success');
+
+        // Create some smart mappings based on drug names
+        log('\n=== Creating New Mappings ===', 'info');
+
+        const mappingsToAdd = [];
+
+        // Map each drug to 2-3 relevant programs
+        for (const drug of drugs) {
+          const drugName = drug.medication_name.toLowerCase();
+
+          // Find copay card programs
+          const copayPrograms = programs.filter(p =>
+            p.program_name.toLowerCase().includes('copay') ||
+            p.program_name.toLowerCase().includes('savings')
+          ).slice(0, 1);
+
+          // Find patient assistance programs
+          const assistancePrograms = programs.filter(p =>
+            p.program_name.toLowerCase().includes('patient assistance') ||
+            p.program_name.toLowerCase().includes('pap')
+          ).slice(0, 1);
+
+          // Find discount card programs
+          const discountPrograms = programs.filter(p =>
+            p.program_name.toLowerCase().includes('discount') &&
+            !p.program_name.toLowerCase().includes('copay')
+          ).slice(0, 1);
+
+          // Combine programs for this drug
+          const relevantPrograms = [...copayPrograms, ...assistancePrograms, ...discountPrograms];
+
+          for (const program of relevantPrograms) {
+            // Check if mapping already exists
+            const exists = currentMappings.some(m =>
+              m.drug_id === drug.id && m.program_id === program.id
+            );
+
+            if (!exists) {
+              mappingsToAdd.push({
+                drug_id: drug.id,
+                program_id: program.id
+              });
+            }
+          }
+        }
+
+        log(`\nFound ${mappingsToAdd.length} new mappings to add`, 'info');
+
+        if (mappingsToAdd.length > 0) {
+          // Insert in batches
+          const batchSize = 10;
+          let inserted = 0;
+
+          for (let i = 0; i < mappingsToAdd.length; i += batchSize) {
+            const batch = mappingsToAdd.slice(i, i + batchSize);
+            const { error: insertError } = await supabase
+              .from('drugs_programs')
+              .insert(batch);
+
+            if (insertError) {
+              log(`✗ Error inserting batch: ${insertError.message}`, 'error');
+            } else {
+              inserted += batch.length;
+              log(`✓ Inserted ${batch.length} mappings`, 'success');
+            }
+          }
+
+          log(`\n✓ Total mappings inserted: ${inserted}`, 'success');
+        }
+
+        // Final count
+        const { data: finalMappings, error: finalError } = await supabase
+          .from('drugs_programs')
+          .select('*');
+
+        if (!finalError) {
+          log(`\n=== FINAL RESULT ===`, 'info');
+          log(`✓ Total mappings in database: ${finalMappings.length}`, 'success');
+        }
+
+      } catch (error) {
+        log(`✗ Error: ${error.message}`, 'error');
+        console.error(error);
+      }
+    }
+  </script>
+</body>
+</html>

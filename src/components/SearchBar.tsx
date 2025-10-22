@@ -16,9 +16,9 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => 
     'Trulicity',
     'Jardiance',
     'Humira',
-    'Lantus',
-    'Farxiga',
-    'Humalog'
+    'Enbrel',
+    'Stelara',
+    'Lantus'
   ];
 
   useEffect(() => {

@@ -11,14 +11,14 @@ export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => 
   const [isFocused, setIsFocused] = useState(false);
 
   const popularMeds = [
-    'Mounjaro',
     'Ozempic',
-    'Jardiance',
-    'Januvia',
+    'Mounjaro',
     'Trulicity',
+    'Jardiance',
     'Humira',
-    'Eliquis',
-    'Xarelto'
+    'Lantus',
+    'Farxiga',
+    'Humalog'
   ];
 
   useEffect(() => {

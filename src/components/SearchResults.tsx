@@ -26,11 +26,14 @@ interface SearchResultsProps {
 const DrugCard: React.FC<{ drug: Drug }> = ({ drug }) => {
   const [isExpanded, setIsExpanded] = useState(false);
   const [programs, setPrograms] = useState<Program[]>([]);
+  const [pricing, setPricing] = useState<PharmacyPricing[]>([]);
   const [loadingPrograms, setLoadingPrograms] = useState(false);
+  const [loadingPricing, setLoadingPricing] = useState(false);
 
   useEffect(() => {
-    if (isExpanded && programs.length === 0) {
-      loadPrograms();
+    if (isExpanded) {
+      if (programs.length === 0) loadPrograms();
+      if (pricing.length === 0) loadPricing();
     }
   }, [isExpanded]);
 
@@ -45,6 +48,22 @@ const DrugCard: React.FC<{ drug: Drug }> = ({ drug }) => {
       setLoadingPrograms(false);
     }
   };
+
+  const loadPricing = async () => {
+    setLoadingPricing(true);
+    try {
+      const data = await getPharmacyPricingForDrug(drug.id);
+      setPricing(data);
+    } catch (error) {
+      console.error('Failed to load pricing:', error);
+    } finally {
+      setLoadingPricing(false);
+    }
+  };
+
+  const lowestPrice = pricing.length > 0
+    ? Math.min(...pricing.filter(p => p.price_usd).map(p => p.price_usd!))
+    : null;
 
   return (
     <div className="bg-card border rounded-xl overflow-hidden hover:shadow-lg transition-all duration-300">
@@ -73,12 +92,20 @@ const DrugCard: React.FC<{ drug: Drug }> = ({ drug }) => {
               <span className="font-medium">{drug.manufacturer}</span>
             </div>
 
-            {drug.typical_retail_price && (
-              <div className="flex items-center gap-2 text-base font-semibold text-orange-600 dark:text-orange-400">
-                <DollarSign className="w-5 h-5" />
-                <span>Typical Price: {drug.typical_retail_price}</span>
-              </div>
-            )}
+            <div className="space-y-2">
+              {drug.typical_retail_price && (
+                <div className="flex items-center gap-2 text-base font-semibold text-orange-600 dark:text-orange-400">
+                  <DollarSign className="w-5 h-5" />
+                  <span>Typical Price: {drug.typical_retail_price}</span>
+                </div>
+              )}
+              {lowestPrice && (
+                <div className="flex items-center gap-2 text-base font-bold text-green-600 dark:text-green-400">
+                  <Tag className="w-5 h-5" />
+                  <span>Best Price Found: ${lowestPrice.toFixed(2)}</span>
+                </div>
+              )}
+            </div>
           </div>
         </div>
 
@@ -122,6 +149,66 @@ const DrugCard: React.FC<{ drug: Drug }> = ({ drug }) => {
 
         {isExpanded && (
           <div className="space-y-4 mt-6 pt-6 border-t animate-fade-in">
+            {loadingPricing ? (
+              <div className="bg-muted/30 rounded-lg p-4">
+                <div className="h-4 bg-muted rounded animate-pulse mb-2" />
+                <div className="h-4 bg-muted rounded w-3/4 animate-pulse" />
+              </div>
+            ) : pricing.length > 0 && (
+              <div className="bg-gradient-to-r from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20 border border-blue-200 dark:border-blue-800 rounded-lg p-5">
+                <div className="flex items-center gap-2 mb-4">
+                  <DollarSign className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                  <h5 className="font-bold text-base text-blue-900 dark:text-blue-100">
+                    Pharmacy Pricing Comparison
+                  </h5>
+                </div>
+                <div className="grid md:grid-cols-2 gap-3">
+                  {pricing.map((price) => (
+                    <div
+                      key={price.id}
+                      className="bg-white dark:bg-gray-900 border border-blue-200 dark:border-blue-800 rounded-lg p-4"
+                    >
+                      <div className="flex items-start justify-between mb-2">
+                        <div className="flex-1">
+                          <h6 className="font-bold text-sm text-foreground">
+                            {price.pharmacy_name}
+                          </h6>
+                          {price.drug_type && (
+                            <Badge variant="outline" className="text-xs mt-1">
+                              {price.drug_type}
+                            </Badge>
+                          )}
+                        </div>
+                        {price.price_usd && (
+                          <div className="text-right">
+                            <span className="text-xl font-bold text-blue-600 dark:text-blue-400">
+                              ${price.price_usd.toFixed(2)}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                      {price.discount_description && (
+                        <p className="text-xs text-muted-foreground mt-2 leading-relaxed">
+                          {price.discount_description}
+                        </p>
+                      )}
+                      {price.source_url && (
+                        <a
+                          href={price.source_url}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="inline-flex items-center gap-1.5 mt-3 text-xs text-blue-600 dark:text-blue-400 hover:underline"
+                        >
+                          <ExternalLink className="w-3 h-3" />
+                          View Details
+                        </a>
+                      )}
+                    </div>
+                  ))}
+                </div>
+              </div>
+            )}
+
             {drug.description && (
               <div>
                 <h5 className="font-semibold text-sm mb-2 flex items-center gap-2">

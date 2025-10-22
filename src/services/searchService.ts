@@ -20,6 +20,20 @@ export interface Drug {
   similarity?: number;
 }
 
+export interface PharmacyPricing {
+  id: string;
+  drug_id: string | null;
+  drug_name: string;
+  drug_type: string | null;
+  pharmacy_name: string;
+  price_usd: number | null;
+  discount_price_usd: number | null;
+  discount_description: string | null;
+  source_url: string | null;
+  created_at: string;
+  updated_at: string;
+}
+
 export interface Program {
   id: string;
   program_name: string;
@@ -208,5 +222,21 @@ export const getProgramsByManufacturer = async (manufacturer: string): Promise<P
   } catch (error) {
     console.error('Get programs by manufacturer error:', error);
     throw error;
+  }
+};
+
+export const getPharmacyPricingForDrug = async (drugId: string): Promise<PharmacyPricing[]> => {
+  try {
+    const { data, error } = await searchSupabase
+      .from('pharmacy_pricing')
+      .select('*')
+      .eq('drug_id', drugId)
+      .order('price_usd', { ascending: true });
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Get pharmacy pricing error:', error);
+    return [];
   }
 };

@@ -1,0 +1,38 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Reload PostgREST via API</title>
+</head>
+<body>
+  <h1>Force PostgREST Schema Reload</h1>
+  <button id="reloadBtn">Reload PostgREST Cache</button>
+  <pre id="output"></pre>
+
+  <script>
+    document.getElementById('reloadBtn').addEventListener('click', async () => {
+      const output = document.getElementById('output');
+      output.textContent = 'Sending reload signal...';
+
+      try {
+        // Method 1: Send NOTIFY via SQL
+        const response = await fetch('https://nuhfqkhplldontxtoxkg.supabase.co/rest/v1/rpc/reload_postgrest', {
+          method: 'POST',
+          headers: {
+            'apikey': 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE',
+            'Authorization': 'Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE',
+            'Content-Type': 'application/json'
+          }
+        });
+
+        if (response.ok) {
+          output.textContent = 'PostgREST reload signal sent successfully!\nWait 5-10 seconds then test again.';
+        } else {
+          output.textContent = `Error: ${response.status} ${response.statusText}\n${await response.text()}`;
+        }
+      } catch (error) {
+        output.textContent = `Error: ${error.message}`;
+      }
+    });
+  </script>
+</body>
+</html>

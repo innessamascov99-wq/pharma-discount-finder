@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Create New Admin Account</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    input {
+      width: 100%;
+      padding: 12px;
+      margin: 10px 0;
+      border: 1px solid #ddd;
+      border-radius: 4px;
+      font-size: 16px;
+      box-sizing: border-box;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+      width: 100%;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    button:disabled {
+      background: #ccc;
+      cursor: not-allowed;
+    }
+    .result {
+      margin-top: 20px;
+      padding: 15px;
+      border-radius: 4px;
+    }
+    .success {
+      background: #e8f5e9;
+      color: #2e7d32;
+      border: 1px solid #4CAF50;
+    }
+    .error {
+      background: #ffebee;
+      color: #c62828;
+      border: 1px solid #f44336;
+    }
+    .info {
+      background: #e3f2fd;
+      color: #1565c0;
+      border: 1px solid #2196F3;
+      margin-bottom: 20px;
+    }
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Create New Admin Account</h1>
+
+    <div class="info">
+      <strong>📝 Instructions:</strong>
+      <p>This will create a new admin account and automatically set the is_admin flag to true.</p>
+    </div>
+
+    <form id="createForm">
+      <label><strong>Email:</strong></label>
+      <input type="email" id="email" placeholder="admin@example.com" required value="admin@pharma.com">
+
+      <label><strong>Password:</strong></label>
+      <input type="password" id="password" placeholder="Min 6 characters" required value="Admin123!">
+
+      <label><strong>First Name:</strong></label>
+      <input type="text" id="firstName" placeholder="First Name" value="Admin">
+
+      <label><strong>Last Name:</strong></label>
+      <input type="text" id="lastName" placeholder="Last Name" value="User">
+
+      <button type="submit" id="submitBtn">Create Admin Account</button>
+    </form>
+
+    <div id="result"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    document.getElementById('createForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+
+      const submitBtn = document.getElementById('submitBtn');
+      const resultDiv = document.getElementById('result');
+
+      submitBtn.disabled = true;
+      submitBtn.textContent = 'Creating account...';
+      resultDiv.innerHTML = '';
+
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+      const firstName = document.getElementById('firstName').value;
+      const lastName = document.getElementById('lastName').value;
+
+      try {
+        // Step 1: Create auth user
+        resultDiv.innerHTML += '<div class="result info">Step 1: Creating auth user...</div>';
+
+        const { data: signUpData, error: signUpError } = await supabase.auth.signUp({
+          email: email,
+          password: password,
+          options: {
+            data: {
+              first_name: firstName,
+              last_name: lastName
+            }
+          }
+        });
+
+        if (signUpError) {
+          throw new Error(`Sign up failed: ${signUpError.message}`);
+        }
+
+        resultDiv.innerHTML += '<div class="result success">✅ Auth user created!</div>';
+        resultDiv.innerHTML += `<pre>User ID: ${signUpData.user.id}\nEmail: ${signUpData.user.email}</pre>`;
+
+        // Step 2: Wait a moment for trigger to create user record
+        resultDiv.innerHTML += '<div class="result info">Step 2: Waiting for user profile creation...</div>';
+        await new Promise(resolve => setTimeout(resolve, 2000));
+
+        // Step 3: Update to admin
+        resultDiv.innerHTML += '<div class="result info">Step 3: Setting admin flag...</div>';
+
+        const { data: updateData, error: updateError } = await supabase
+          .from('users')
+          .update({ is_admin: true })
+          .eq('id', signUpData.user.id)
+          .select();
+
+        if (updateError) {
+          throw new Error(`Failed to set admin flag: ${updateError.message}`);
+        }
+
+        resultDiv.innerHTML += '<div class="result success">✅ Admin flag set!</div>';
+
+        // Step 4: Verify
+        resultDiv.innerHTML += '<div class="result info">Step 4: Verifying admin status...</div>';
+
+        const { data: verifyData, error: verifyError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', signUpData.user.id)
+          .maybeSingle();
+
+        if (verifyError) {
+          throw new Error(`Verification failed: ${verifyError.message}`);
+        }
+
+        resultDiv.innerHTML += '<div class="result success">✅ Verification complete!</div>';
+        resultDiv.innerHTML += `<pre>${JSON.stringify(verifyData, null, 2)}</pre>`;
+
+        // Success summary
+        resultDiv.innerHTML += `
+          <div class="result success">
+            <h3>🎉 Admin Account Created Successfully!</h3>
+            <p><strong>Email:</strong> ${email}</p>
+            <p><strong>Password:</strong> ${password}</p>
+            <p><strong>is_admin:</strong> ${verifyData.is_admin}</p>
+            <hr style="margin: 15px 0;">
+            <p><strong>You can now login with these credentials and you will be redirected to /admin</strong></p>
+          </div>
+        `;
+
+        // Sign out the newly created user
+        await supabase.auth.signOut();
+
+      } catch (error) {
+        resultDiv.innerHTML += `<div class="result error">❌ Error: ${error.message}</div>`;
+      } finally {
+        submitBtn.disabled = false;
+        submitBtn.textContent = 'Create Admin Account';
+      }
+    });
+  </script>
+</body>
+</html>

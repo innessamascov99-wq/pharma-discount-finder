@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useNavigate } from 'react-router-dom';
 import {
   Users,
   TrendingUp,
@@ -9,7 +10,11 @@ import {
   Award,
   Clock,
   Pill,
-  Sparkles
+  Sparkles,
+  Database,
+  Upload,
+  Download,
+  ArrowRight
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui';
 import {
@@ -24,6 +29,7 @@ import {
 import { getAllDrugs, Drug } from '../services/searchService';
 
 export const AdminMain: React.FC = () => {
+  const navigate = useNavigate();
   const [loading, setLoading] = useState(true);
   const [timeRange, setTimeRange] = useState<7 | 30 | 90>(30);
   const [stats, setStats] = useState({
@@ -385,6 +391,89 @@ export const AdminMain: React.FC = () => {
               </p>
               <p className="text-sm text-muted-foreground mt-1">
                 Top Program Searches
+              </p>
+            </div>
+          </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 shadow-lg bg-gradient-to-br from-blue-50 to-cyan-50 dark:from-blue-950/20 dark:to-cyan-950/20">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-12 h-12 rounded-xl bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center shadow-lg">
+              <Database className="w-6 h-6 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-xl">Database Management</CardTitle>
+              <CardDescription>
+                Upload, download, and manage drugs & programs data
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            <div
+              onClick={() => navigate('/admin?tab=database')}
+              className="group p-4 rounded-lg bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer border border-border hover:border-primary"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-blue-50 dark:bg-blue-950/20">
+                  <Upload className="w-5 h-5 text-blue-600 dark:text-blue-400" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Upload Drugs</h3>
+              <p className="text-xs text-muted-foreground">
+                Import medication data via CSV
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/admin?tab=database')}
+              className="group p-4 rounded-lg bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer border border-border hover:border-primary"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-emerald-50 dark:bg-emerald-950/20">
+                  <Download className="w-5 h-5 text-emerald-600 dark:text-emerald-400" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Download Drugs</h3>
+              <p className="text-xs text-muted-foreground">
+                Export all medication records
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/admin?tab=database')}
+              className="group p-4 rounded-lg bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer border border-border hover:border-primary"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-violet-50 dark:bg-violet-950/20">
+                  <Upload className="w-5 h-5 text-violet-600 dark:text-violet-400" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Upload Programs</h3>
+              <p className="text-xs text-muted-foreground">
+                Import assistance programs
+              </p>
+            </div>
+
+            <div
+              onClick={() => navigate('/admin?tab=database')}
+              className="group p-4 rounded-lg bg-white dark:bg-slate-900 hover:shadow-md transition-all cursor-pointer border border-border hover:border-primary"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 rounded-lg bg-amber-50 dark:bg-amber-950/20">
+                  <Download className="w-5 h-5 text-amber-600 dark:text-amber-400" />
+                </div>
+                <ArrowRight className="w-4 h-4 text-muted-foreground group-hover:text-primary group-hover:translate-x-1 transition-all" />
+              </div>
+              <h3 className="font-semibold mb-1">Download Programs</h3>
+              <p className="text-xs text-muted-foreground">
+                Export all program records
               </p>
             </div>
           </div>

@@ -44,6 +44,7 @@ export const AdminDatabase: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Drug[]>([]);
   const [searching, setSearching] = useState(false);
   const [searchError, setSearchError] = useState<string | null>(null);
+  const [downloading, setDownloading] = useState(false);
 
   const parseCSV = (text: string): { headers: string[]; rows: CSVRow[] } => {
     const lines = text.split('\n').filter((line) => line.trim());
@@ -234,6 +235,60 @@ export const AdminDatabase: React.FC = () => {
     window.URL.revokeObjectURL(url);
   };
 
+  const downloadDatabaseData = async () => {
+    setDownloading(true);
+    try {
+      const { data, error } = await searchSupabase
+        .from(selectedTable)
+        .select('*')
+        .eq('active', true);
+
+      if (error) throw error;
+
+      if (!data || data.length === 0) {
+        alert(`No data found in ${selectedTable} table`);
+        return;
+      }
+
+      let csvContent = '';
+
+      if (selectedTable === 'drugs') {
+        csvContent = 'medication_name,generic_name,manufacturer,drug_class,indication,dosage_forms,common_dosages,typical_retail_price,description,side_effects,warnings\n';
+        data.forEach((row: any) => {
+          csvContent += `${escapeCsvValue(row.medication_name)},${escapeCsvValue(row.generic_name)},${escapeCsvValue(row.manufacturer)},${escapeCsvValue(row.drug_class)},${escapeCsvValue(row.indication)},${escapeCsvValue(row.dosage_forms)},${escapeCsvValue(row.common_dosages)},${escapeCsvValue(row.typical_retail_price)},${escapeCsvValue(row.description)},${escapeCsvValue(row.side_effects)},${escapeCsvValue(row.warnings)}\n`;
+        });
+      } else {
+        csvContent = 'program_name,program_type,manufacturer,description,eligibility_criteria,income_requirements,insurance_requirements,discount_details,program_url,phone_number,email,enrollment_process,required_documents,coverage_duration,renewal_required\n';
+        data.forEach((row: any) => {
+          csvContent += `${escapeCsvValue(row.program_name)},${escapeCsvValue(row.program_type)},${escapeCsvValue(row.manufacturer)},${escapeCsvValue(row.description)},${escapeCsvValue(row.eligibility_criteria)},${escapeCsvValue(row.income_requirements)},${escapeCsvValue(row.insurance_requirements)},${escapeCsvValue(row.discount_details)},${escapeCsvValue(row.program_url)},${escapeCsvValue(row.phone_number)},${escapeCsvValue(row.email)},${escapeCsvValue(row.enrollment_process)},${escapeCsvValue(row.required_documents)},${escapeCsvValue(row.coverage_duration)},${row.renewal_required}\n`;
+        });
+      }
+
+      const blob = new Blob([csvContent], { type: 'text/csv' });
+      const url = window.URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = `${selectedTable}_export_${new Date().toISOString().split('T')[0]}.csv`;
+      document.body.appendChild(a);
+      a.click();
+      document.body.removeChild(a);
+      window.URL.revokeObjectURL(url);
+    } catch (error: any) {
+      alert(`Download failed: ${error.message}`);
+    } finally {
+      setDownloading(false);
+    }
+  };
+
+  const escapeCsvValue = (value: any): string => {
+    if (value === null || value === undefined) return '';
+    const stringValue = String(value);
+    if (stringValue.includes(',') || stringValue.includes('"') || stringValue.includes('\n')) {
+      return `"${stringValue.replace(/"/g, '""')}"`;
+    }
+    return stringValue;
+  };
+
   const clearData = () => {
     setCsvData([]);
     setHeaders([]);
@@ -274,10 +329,30 @@ export const AdminDatabase: React.FC = () => {
           <h2 className="text-2xl font-bold">Database Management</h2>
           <p className="text-muted-foreground">Search, upload and manage database records</p>
         </div>
-        <Button onClick={downloadTemplate} variant="outline" className="gap-2">
-          <Download className="w-4 h-4" />
-          Download Template
-        </Button>
+        <div className="flex gap-2">
+          <Button onClick={downloadTemplate} variant="outline" className="gap-2">
+            <FileText className="w-4 h-4" />
+            Download Template
+          </Button>
+          <Button
+            onClick={downloadDatabaseData}
+            variant="default"
+            className="gap-2"
+            disabled={downloading}
+          >
+            {downloading ? (
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                Downloading...
+              </>
+            ) : (
+              <>
+                <Download className="w-4 h-4" />
+                Download {selectedTable === 'drugs' ? 'Drugs' : 'Programs'}
+              </>
+            )}
+          </Button>
+        </div>
       </div>
 
       <Card className="border-0 shadow-lg">

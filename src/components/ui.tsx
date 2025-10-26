@@ -241,7 +241,7 @@ export const Tabs: React.FC<TabsProps> = ({ defaultValue, children, className, o
     <div className={className}>
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child, { value, onChange: handleChange } as any);
+          return React.cloneElement(child, { value, currentValue: value, onChange: handleChange } as any);
         }
         return child;
       })}

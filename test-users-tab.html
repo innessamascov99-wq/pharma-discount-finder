@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Test Users Tab API</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+</head>
+<body>
+  <h1>Test Users Tab API</h1>
+  <div id="output"></div>
+
+  <script type="module">
+    const { createClient } = supabase;
+
+    const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const client = createClient(supabaseUrl, supabaseKey);
+    const output = document.getElementById('output');
+
+    async function test() {
+      try {
+        output.innerHTML += '<p><strong>Step 1:</strong> Testing anon access to users table...</p>';
+
+        // Test without authentication (should fail or return empty due to RLS)
+        const { data: anonData, error: anonError } = await client
+          .from('users')
+          .select('*', { count: 'exact' })
+          .limit(5);
+
+        if (anonError) {
+          output.innerHTML += `<p style="color: orange;">⚠️ Anon access blocked (expected): ${anonError.message}</p>`;
+        } else {
+          output.innerHTML += `<p style="color: blue;">ℹ️ Anon returned ${anonData?.length || 0} users (count: ${anonData?.length || 0})</p>`;
+        }
+
+        output.innerHTML += '<p><strong>Step 2:</strong> Signing in as admin...</p>';
+
+        // Try pharma.admin@gmail.com first
+        let authResult = await client.auth.signInWithPassword({
+          email: 'pharma.admin@gmail.com',
+          password: 'Admin@123'
+        });
+
+        if (authResult.error) {
+          output.innerHTML += `<p style="color: orange;">⚠️ First admin login failed, trying second admin...</p>`;
+
+          // Try admin@pharma.com
+          authResult = await client.auth.signInWithPassword({
+            email: 'admin@pharma.com',
+            password: 'Admin@123'
+          });
+        }
+
+        if (authResult.error) {
+          output.innerHTML += `<p style="color: red;">❌ Both admin logins failed: ${authResult.error.message}</p>`;
+          output.innerHTML += '<p>Please create an admin account or verify credentials.</p>';
+          return;
+        }
+
+        output.innerHTML += `<p style="color: green;">✅ Logged in as: ${authResult.data.user.email}</p>`;
+
+        output.innerHTML += '<p><strong>Step 3:</strong> Querying users table...</p>';
+
+        const { data: users, error: usersError, count } = await client
+          .from('users')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false })
+          .limit(10);
+
+        if (usersError) {
+          output.innerHTML += `<p style="color: red;">❌ Users query error: ${usersError.message}</p>`;
+          output.innerHTML += `<p>Details: ${JSON.stringify(usersError, null, 2)}</p>`;
+        } else {
+          output.innerHTML += `<p style="color: green;">✅ Users query successful!</p>`;
+          output.innerHTML += `<p><strong>Total users:</strong> ${count}</p>`;
+          output.innerHTML += `<p><strong>Retrieved:</strong> ${users?.length || 0} users</p>`;
+
+          if (users && users.length > 0) {
+            output.innerHTML += '<table border="1" cellpadding="10" style="margin-top: 20px; border-collapse: collapse;">';
+            output.innerHTML += '<tr><th>Email</th><th>Name</th><th>Admin</th><th>Blocked</th><th>Created</th></tr>';
+            users.forEach(user => {
+              output.innerHTML += `<tr>
+                <td>${user.email}</td>
+                <td>${user.first_name || ''} ${user.last_name || ''}</td>
+                <td>${user.is_admin ? '✅' : '❌'}</td>
+                <td>${user.is_blocked ? '🚫' : '✅'}</td>
+                <td>${new Date(user.created_at).toLocaleDateString()}</td>
+              </tr>`;
+            });
+            output.innerHTML += '</table>';
+          }
+        }
+
+      } catch (error) {
+        output.innerHTML += `<p style="color: red;">❌ Unexpected error: ${error.message}</p>`;
+        console.error('Test error:', error);
+      }
+    }
+
+    test();
+  </script>
+</body>
+</html>

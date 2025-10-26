@@ -56,15 +56,15 @@ export const AdminDashboard: React.FC = () => {
             <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:inline-flex">
               <TabsTrigger value="main" className="gap-2">
                 <LayoutDashboard className="w-4 h-4" />
-                <span className="hidden sm:inline">Main</span>
+                <span>Main</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <Users className="w-4 h-4" />
-                <span className="hidden sm:inline">Users</span>
+                <span>Users</span>
               </TabsTrigger>
               <TabsTrigger value="database" className="gap-2">
                 <Database className="w-4 h-4" />
-                <span className="hidden sm:inline">Database</span>
+                <span>Database</span>
               </TabsTrigger>
             </TabsList>
 

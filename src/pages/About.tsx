@@ -194,12 +194,11 @@ export const About: React.FC = () => {
       <section className="py-20 bg-gradient-to-br from-blue-600 to-emerald-600">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <h2 className="text-4xl font-bold text-white mb-6">
-            Making Healthcare More Affordable
+            Find Your Discount Program
           </h2>
           <p className="text-xl text-blue-50 leading-relaxed mb-10">
             We're committed to helping patients find and access the medication assistance they need.
-            Every search, every comparison, every saved program is a step toward making healthcare
-            more accessible for everyone.
+            Every search, every comparison, every saved program helps you access the care you deserve.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
             <button className="bg-white text-blue-600 px-8 py-4 rounded-lg hover:bg-blue-50 transition-colors font-semibold text-lg shadow-lg hover:shadow-xl transform hover:-translate-y-1 duration-200">

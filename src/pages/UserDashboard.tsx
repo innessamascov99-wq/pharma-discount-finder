@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Search,
@@ -12,11 +12,13 @@ import {
   ArrowRight,
   Sparkles
 } from 'lucide-react';
-import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Badge } from '../components/ui';
+import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { searchDrugs, Drug, getAllDrugs } from '../services/searchService';
 import { getTopPrograms, TopProgram } from '../services/adminService';
+import { SearchBar } from '../components/SearchBar';
+import { SearchResults } from '../components/SearchResults';
 
 interface UserProfile {
   first_name: string;
@@ -32,7 +34,7 @@ export const UserDashboard: React.FC = () => {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Drug[]>([]);
-  const [searching, setSearching] = useState(false);
+  const [isSearching, setIsSearching] = useState(false);
   const [popularDrugs, setPopularDrugs] = useState<Drug[]>([]);
 
   useEffect(() => {
@@ -74,28 +76,26 @@ export const UserDashboard: React.FC = () => {
   };
 
 
-  const handleSearch = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!searchQuery.trim()) return;
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
 
-    setSearching(true);
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+
     try {
-      const results = await searchDrugs(searchQuery);
+      const results = await searchDrugs(query);
       setSearchResults(results);
-
-      if (user && searchQuery.trim()) {
-        await supabase.from('user_activity').insert({
-          user_id: user.id,
-          medication_name: searchQuery,
-          action_type: 'searched',
-        });
-      }
     } catch (error) {
       console.error('Search error:', error);
+      setSearchResults([]);
     } finally {
-      setSearching(false);
+      setIsSearching(false);
     }
-  };
+  }, []);
 
   const getTimeAgo = (timestamp: string) => {
     const now = new Date();
@@ -184,95 +184,22 @@ export const UserDashboard: React.FC = () => {
           ))}
         </div>
 
-        <Card className="mb-8 border-0 shadow-lg overflow-hidden">
-          <div className="bg-gradient-to-br from-blue-500/10 via-cyan-500/5 to-emerald-500/10 p-8">
-            <div className="max-w-3xl mx-auto">
-              <div className="text-center mb-6">
-                <h2 className="text-2xl font-bold mb-2">Search for Medications</h2>
-                <p className="text-muted-foreground">
-                  Find discount programs and savings opportunities
-                </p>
-              </div>
-
-              <form onSubmit={handleSearch}>
-                <div className="relative">
-                  <Search className="absolute left-4 top-1/2 transform -translate-y-1/2 w-5 h-5 text-muted-foreground" />
-                  <Input
-                    type="text"
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
-                    placeholder="Search by medication name, manufacturer, or condition..."
-                    className="pl-12 h-14 text-base shadow-sm"
-                    disabled={searching}
-                  />
-                  <Button
-                    type="submit"
-                    className="absolute right-2 top-1/2 transform -translate-y-1/2 h-10"
-                    disabled={searching}
-                  >
-                    {searching ? <Loader2 className="w-4 h-4 animate-spin" /> : 'Search'}
-                  </Button>
-                </div>
-              </form>
-            </div>
+        <section className="mb-8">
+          <div className="text-center mb-8">
+            <h2 className="text-2xl font-bold mb-2">Search for Medications</h2>
+            <p className="text-muted-foreground">
+              Find discount programs and savings opportunities
+            </p>
           </div>
 
-          {searchResults.length > 0 && (
-            <CardContent className="p-6">
-              <div className="flex items-center justify-between mb-4">
-                <h3 className="text-lg font-semibold">Search Results</h3>
-                <Badge>{searchResults.length} found</Badge>
-              </div>
-              <div className="space-y-4 max-h-[600px] overflow-y-auto pr-2">
-                {searchResults.map((drug) => (
-                  <Card key={drug.id} className="border hover:shadow-md transition-shadow">
-                    <CardContent className="p-6">
-                      <div className="flex items-start justify-between gap-4 mb-4">
-                        <div className="flex-1">
-                          <h4 className="text-xl font-bold text-primary mb-2">
-                            {drug.medication_name}
-                          </h4>
-                          {drug.generic_name && (
-                            <p className="text-sm text-muted-foreground mb-1">
-                              Generic: {drug.generic_name}
-                            </p>
-                          )}
-                          <p className="text-sm text-muted-foreground">
-                            {drug.manufacturer}
-                          </p>
-                        </div>
-                        {drug.typical_retail_price && (
-                          <div className="bg-emerald-50 dark:bg-emerald-950/20 text-emerald-700 dark:text-emerald-400 px-4 py-2 rounded-lg text-center">
-                            <p className="text-xs font-medium">Retail Price</p>
-                            <p className="text-lg font-bold whitespace-nowrap">
-                              {drug.typical_retail_price}
-                            </p>
-                          </div>
-                        )}
-                      </div>
+          <SearchBar onSearch={handleSearch} isLoading={isSearching} />
 
-                      {drug.indication && (
-                        <p className="text-sm text-muted-foreground mb-3">
-                          <span className="font-semibold">Used for:</span> {drug.indication}
-                        </p>
-                      )}
-
-                      <Button
-                        variant="default"
-                        size="sm"
-                        onClick={() => navigate('/search')}
-                        className="gap-2"
-                      >
-                        View Assistance Programs
-                        <ArrowRight className="w-4 h-4" />
-                      </Button>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </CardContent>
-          )}
-        </Card>
+          <SearchResults
+            results={searchResults}
+            isLoading={isSearching}
+            searchQuery={searchQuery}
+          />
+        </section>
 
         <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
           <Card className="border-0 shadow-lg">

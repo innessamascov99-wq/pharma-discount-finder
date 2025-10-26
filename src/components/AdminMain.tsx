@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
   Users,
@@ -26,7 +26,9 @@ import {
   TopProgram,
   RecentActivity,
 } from '../services/adminService';
-import { getAllDrugs, Drug } from '../services/searchService';
+import { getAllDrugs, Drug, searchDrugs } from '../services/searchService';
+import { SearchBar } from './SearchBar';
+import { SearchResults } from './SearchResults';
 
 export const AdminMain: React.FC = () => {
   const navigate = useNavigate();
@@ -42,6 +44,9 @@ export const AdminMain: React.FC = () => {
   const [topPrograms, setTopPrograms] = useState<TopProgram[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
   const [popularDrugs, setPopularDrugs] = useState<Drug[]>([]);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Drug[]>([]);
+  const [isSearching, setIsSearching] = useState(false);
 
   useEffect(() => {
     loadData();
@@ -103,10 +108,48 @@ export const AdminMain: React.FC = () => {
     );
   }
 
+  const handleSearch = useCallback(async (query: string) => {
+    setSearchQuery(query);
+
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      return;
+    }
+
+    setIsSearching(true);
+
+    try {
+      const results = await searchDrugs(query);
+      setSearchResults(results);
+    } catch (error) {
+      console.error('Search error:', error);
+      setSearchResults([]);
+    } finally {
+      setIsSearching(false);
+    }
+  }, []);
+
   const maxUsers = getMaxValue(userStats);
 
   return (
     <div className="space-y-6">
+      <section className="mb-8">
+        <div className="text-center mb-8">
+          <h2 className="text-2xl font-bold mb-2">Search Medications</h2>
+          <p className="text-muted-foreground">
+            Find medications and discount programs
+          </p>
+        </div>
+
+        <SearchBar onSearch={handleSearch} isLoading={isSearching} />
+
+        <SearchResults
+          results={searchResults}
+          isLoading={isSearching}
+          searchQuery={searchQuery}
+        />
+      </section>
+
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Dashboard Overview</h2>

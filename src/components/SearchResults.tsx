@@ -14,7 +14,7 @@ import {
   Tag,
   Syringe
 } from 'lucide-react';
-import { Drug, Program, getProgramsForDrug } from '../services/searchService';
+import { Drug, Program, getProgramsForDrug, PharmacyPricing, getPharmacyPricingForDrug } from '../services/searchService';
 import { Badge } from './ui';
 
 interface SearchResultsProps {

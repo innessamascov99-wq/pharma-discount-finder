@@ -52,9 +52,9 @@ export const UserDashboard: React.FC = () => {
     setLoading(true);
 
     const { data: profile } = await supabase
-      .from('user_profiles')
+      .from('users')
       .select('first_name, last_name')
-      .eq('user_id', user.id)
+      .eq('id', user.id)
       .maybeSingle();
 
     if (profile) {

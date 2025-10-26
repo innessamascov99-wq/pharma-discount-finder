@@ -1,8 +1,10 @@
 import React, { useState } from 'react';
+import { useNavigate } from 'react-router-dom';
 import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const FAQ: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
+  const navigate = useNavigate();
 
   const faqs = [
     {
@@ -48,7 +50,7 @@ export const FAQ: React.FC = () => {
   ];
 
   return (
-    <div className="min-h-screen bg-white dark:bg-slate-950">
+    <div className="min-h-screen bg-white dark:bg-slate-950 pt-16">
       <section className="bg-gradient-to-br from-blue-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 py-16 lg:py-24">
         <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
           <div className="flex items-center justify-center mb-6">
@@ -100,10 +102,16 @@ export const FAQ: React.FC = () => {
             Can't find what you're looking for? We're here to help.
           </p>
           <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold">
+            <button
+              onClick={() => navigate('/contact')}
+              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
+            >
               Contact Support
             </button>
-            <button className="border-2 border-blue-600 text-blue-600 px-8 py-3 rounded-lg hover:bg-blue-50 transition-colors font-semibold">
+            <button
+              onClick={() => navigate('/contact')}
+              className="border-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500 px-8 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors font-semibold"
+            >
               Request Coverage
             </button>
           </div>

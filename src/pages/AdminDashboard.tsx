@@ -3,14 +3,12 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
-  Database,
   Shield,
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminMain } from '../components/AdminMain';
-import { AdminUsers } from '../components/AdminUsers';
-import { AdminDatabase } from '../components/AdminDatabase';
+import { AdminUsersTab } from '../components/AdminUsersTab';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
 
 export const AdminDashboard: React.FC = () => {
@@ -52,32 +50,24 @@ export const AdminDashboard: React.FC = () => {
             </div>
           </div>
 
-          <Tabs defaultValue="main" className="w-full">
-            <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:inline-flex">
-              <TabsTrigger value="main" className="gap-2">
+          <Tabs defaultValue="dashboard" className="w-full">
+            <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:inline-flex">
+              <TabsTrigger value="dashboard" className="gap-2">
                 <LayoutDashboard className="w-4 h-4" />
-                <span>Main</span>
+                <span>Dashboard</span>
               </TabsTrigger>
               <TabsTrigger value="users" className="gap-2">
                 <Users className="w-4 h-4" />
                 <span>Users</span>
               </TabsTrigger>
-              <TabsTrigger value="database" className="gap-2">
-                <Database className="w-4 h-4" />
-                <span>Database</span>
-              </TabsTrigger>
             </TabsList>
 
-            <TabsContent value="main">
+            <TabsContent value="dashboard">
               <AdminMain />
             </TabsContent>
 
             <TabsContent value="users">
-              <AdminUsers />
-            </TabsContent>
-
-            <TabsContent value="database">
-              <AdminDatabase />
+              <AdminUsersTab />
             </TabsContent>
           </Tabs>
         </div>

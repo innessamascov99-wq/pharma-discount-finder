@@ -1,12 +1,13 @@
 import React, { useState } from 'react';
-import { BarChart3, Activity, Pill, Database } from 'lucide-react';
+import { BarChart3, Activity, Pill, Database, Users } from 'lucide-react';
 import { DashboardOverview } from './DashboardOverview';
 import { DashboardActivity } from './DashboardActivity';
 import { DashboardMedications } from './DashboardMedications';
 import { AdminDatabase } from './AdminDatabase';
+import { AdminUsersTab } from './AdminUsersTab';
 
 export const AdminMain: React.FC = () => {
-  const [activePage, setActivePage] = useState<'overview' | 'activity' | 'medications' | 'database'>('overview');
+  const [activePage, setActivePage] = useState<'overview' | 'activity' | 'medications' | 'users' | 'database'>('overview');
 
   return (
     <div className="space-y-0">
@@ -45,6 +46,17 @@ export const AdminMain: React.FC = () => {
           Medications
         </button>
         <button
+          onClick={() => setActivePage('users')}
+          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors border-b-2 -mb-px ${
+            activePage === 'users'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-500 bg-background'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/50'
+          }`}
+        >
+          <Users className="w-4 h-4" />
+          Users
+        </button>
+        <button
           onClick={() => setActivePage('database')}
           className={`flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors border-b-2 -mb-px ${
             activePage === 'database'
@@ -61,6 +73,7 @@ export const AdminMain: React.FC = () => {
         {activePage === 'overview' && <DashboardOverview />}
         {activePage === 'activity' && <DashboardActivity />}
         {activePage === 'medications' && <DashboardMedications />}
+        {activePage === 'users' && <AdminUsersTab />}
         {activePage === 'database' && <AdminDatabase />}
       </div>
     </div>

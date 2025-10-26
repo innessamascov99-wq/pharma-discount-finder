@@ -4,7 +4,7 @@ import { AdminNewUsers } from './AdminNewUsers';
 import { AdminAllUsers } from './AdminAllUsers';
 
 export const AdminUsersTab: React.FC = () => {
-  const [activePage, setActivePage] = useState<'new' | 'all'>('new');
+  const [activePage, setActivePage] = useState<'new' | 'all'>('all');
 
   return (
     <div className="space-y-0">

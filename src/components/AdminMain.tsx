@@ -1,11 +1,12 @@
 import React, { useState } from 'react';
-import { BarChart3, Activity, Pill } from 'lucide-react';
+import { BarChart3, Activity, Pill, Database } from 'lucide-react';
 import { DashboardOverview } from './DashboardOverview';
 import { DashboardActivity } from './DashboardActivity';
 import { DashboardMedications } from './DashboardMedications';
+import { AdminDatabase } from './AdminDatabase';
 
 export const AdminMain: React.FC = () => {
-  const [activePage, setActivePage] = useState<'overview' | 'activity' | 'medications'>('overview');
+  const [activePage, setActivePage] = useState<'overview' | 'activity' | 'medications' | 'database'>('overview');
 
   return (
     <div className="space-y-0">
@@ -43,12 +44,24 @@ export const AdminMain: React.FC = () => {
           <Pill className="w-4 h-4" />
           Medications
         </button>
+        <button
+          onClick={() => setActivePage('database')}
+          className={`flex items-center gap-2 px-4 py-3 font-medium text-sm transition-colors border-b-2 -mb-px ${
+            activePage === 'database'
+              ? 'border-blue-600 text-blue-600 dark:border-blue-500 dark:text-blue-500 bg-background'
+              : 'border-transparent text-muted-foreground hover:text-foreground hover:bg-background/50'
+          }`}
+        >
+          <Database className="w-4 h-4" />
+          Database
+        </button>
       </div>
 
       <div className="pt-6">
         {activePage === 'overview' && <DashboardOverview />}
         {activePage === 'activity' && <DashboardActivity />}
         {activePage === 'medications' && <DashboardMedications />}
+        {activePage === 'database' && <AdminDatabase />}
       </div>
     </div>
   );

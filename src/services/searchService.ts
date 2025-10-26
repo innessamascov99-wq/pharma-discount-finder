@@ -1,4 +1,5 @@
 import { searchSupabase } from '../lib/supabase';
+import { supabase } from '../lib/supabase';
 
 export interface Drug {
   id: string;
@@ -57,6 +58,24 @@ export interface Program {
   similarity?: number;
 }
 
+const logActivity = async (actionType: string, medicationName?: string, drugId?: string, searchQuery?: string) => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (user) {
+      await searchSupabase.rpc('log_user_activity', {
+        p_action_type: actionType,
+        p_medication_name: medicationName || null,
+        p_drug_id: drugId || null,
+        p_program_id: null,
+        p_search_query: searchQuery || null,
+        p_metadata: {}
+      });
+    }
+  } catch (error) {
+    console.error('Failed to log activity:', error);
+  }
+};
+
 export const searchDrugs = async (query: string): Promise<Drug[]> => {
   if (!query || query.trim().length < 2) {
     return [];
@@ -74,7 +93,14 @@ export const searchDrugs = async (query: string): Promise<Drug[]> => {
       .limit(20);
 
     if (error) throw error;
-    return (data || []).map(drug => ({ ...drug, similarity: 0.8 }));
+
+    const results = (data || []).map(drug => ({ ...drug, similarity: 0.8 }));
+
+    if (results.length > 0) {
+      await logActivity('search', results[0].medication_name, undefined, searchTerm);
+    }
+
+    return results;
   } catch (error) {
     console.error('Search error:', error);
     throw error;
@@ -167,6 +193,11 @@ export const getDrugById = async (id: string): Promise<Drug | null> => {
       .maybeSingle();
 
     if (error) throw error;
+
+    if (data) {
+      await logActivity('viewed', data.medication_name, data.id);
+    }
+
     return data;
   } catch (error) {
     console.error('Get drug by id error:', error);
@@ -184,6 +215,11 @@ export const getProgramById = async (id: string): Promise<Program | null> => {
       .maybeSingle();
 
     if (error) throw error;
+
+    if (data) {
+      await logActivity('clicked_program', data.program_name, undefined);
+    }
+
     return data;
   } catch (error) {
     console.error('Get program by id error:', error);

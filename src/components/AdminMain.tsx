@@ -6,15 +6,19 @@ import {
   Calendar,
   BarChart3,
   LineChart,
-  Award
+  Award,
+  Clock,
+  Pill
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui';
 import {
   getUserStatistics,
   getTopPrograms,
   getDashboardStats,
+  getRecentActivity,
   UserStatistic,
   TopProgram,
+  RecentActivity,
 } from '../services/adminService';
 
 export const AdminMain: React.FC = () => {
@@ -28,6 +32,7 @@ export const AdminMain: React.FC = () => {
   });
   const [userStats, setUserStats] = useState<UserStatistic[]>([]);
   const [topPrograms, setTopPrograms] = useState<TopProgram[]>([]);
+  const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
 
   useEffect(() => {
     loadData();
@@ -36,15 +41,17 @@ export const AdminMain: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dashStats, userStatsData, topProgsData] = await Promise.all([
+      const [dashStats, userStatsData, topProgsData, recentActData] = await Promise.all([
         getDashboardStats(),
         getUserStatistics(timeRange),
         getTopPrograms(10),
+        getRecentActivity(20),
       ]);
 
       setStats(dashStats);
       setUserStats(userStatsData);
       setTopPrograms(topProgsData);
+      setRecentActivity(recentActData);
     } catch (error) {
       console.error('Error loading admin dashboard data:', error);
     } finally {
@@ -62,6 +69,18 @@ export const AdminMain: React.FC = () => {
       month: 'short',
       day: 'numeric',
     }).format(date);
+  };
+
+  const getTimeAgo = (timestamp: string) => {
+    const now = new Date();
+    const then = new Date(timestamp);
+    const seconds = Math.floor((now.getTime() - then.getTime()) / 1000);
+
+    if (seconds < 60) return 'Just now';
+    if (seconds < 3600) return `${Math.floor(seconds / 60)}m ago`;
+    if (seconds < 86400) return `${Math.floor(seconds / 3600)}h ago`;
+    if (seconds < 604800) return `${Math.floor(seconds / 86400)}d ago`;
+    return `${Math.floor(seconds / 604800)}w ago`;
   };
 
   if (loading) {
@@ -346,6 +365,63 @@ export const AdminMain: React.FC = () => {
               </p>
             </div>
           </div>
+        </CardContent>
+      </Card>
+
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+              <Clock className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Recent User Activity</CardTitle>
+              <CardDescription className="text-xs">
+                Latest searches and views across the platform
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {recentActivity.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No recent activity
+            </div>
+          ) : (
+            <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
+              {recentActivity.map((activity, index) => (
+                <div
+                  key={index}
+                  className="flex items-start gap-4 p-4 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center flex-shrink-0">
+                    <Pill className="w-5 h-5 text-white" />
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2 mb-1">
+                      <h4 className="font-semibold">{activity.medication_name || 'Unknown'}</h4>
+                      <span className="text-xs text-muted-foreground whitespace-nowrap">
+                        {getTimeAgo(activity.created_at)}
+                      </span>
+                    </div>
+                    <p className="text-sm text-muted-foreground mb-1">
+                      {activity.user_email || 'Anonymous user'}
+                    </p>
+                    <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                      <span className="px-2 py-1 rounded bg-background">
+                        {activity.action_type === 'viewed' && 'Viewed medication'}
+                        {activity.action_type === 'search' && 'Searched'}
+                        {activity.action_type === 'clicked_program' && 'Clicked program'}
+                      </span>
+                      {activity.search_query && (
+                        <span className="text-xs">Query: {activity.search_query}</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
         </CardContent>
       </Card>
     </div>

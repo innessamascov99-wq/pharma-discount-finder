@@ -33,6 +33,18 @@ export interface TopProgram {
   search_count: number;
 }
 
+export interface RecentActivity {
+  id: string;
+  user_id: string | null;
+  user_email: string | null;
+  action_type: string;
+  medication_name: string | null;
+  drug_id: string | null;
+  program_id: string | null;
+  search_query: string | null;
+  created_at: string;
+}
+
 export const getAllUsers = async (
   searchQuery?: string,
   page: number = 1,
@@ -152,6 +164,23 @@ export const getAdminActions = async (
   } catch (error) {
     console.error('Get admin actions error:', error);
     throw error;
+  }
+};
+
+export const getRecentActivity = async (
+  limitCount: number = 20
+): Promise<RecentActivity[]> => {
+  try {
+    const { data, error } = await supabase.rpc('get_all_recent_activity', {
+      limit_count: limitCount,
+    });
+
+    if (error) throw error;
+
+    return (data || []) as RecentActivity[];
+  } catch (error) {
+    console.error('Get recent activity error:', error);
+    return [];
   }
 };
 

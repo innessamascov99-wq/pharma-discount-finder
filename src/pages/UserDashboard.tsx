@@ -70,16 +70,16 @@ export const UserDashboard: React.FC = () => {
       setUserProfile(profile);
     }
 
-    const { data: activity, error: activityError } = await supabase
-      .from('user_activity')
-      .select('id, medication_name, action_type, created_at')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false })
-      .limit(10);
+    try {
+      const { data: activity, error: activityError } = await supabase
+        .rpc('get_user_recent_activity', { limit_count: 10 });
 
-    if (!activityError && activity) {
-      setRecentActivity(activity);
-      calculateActivityStats(activity);
+      if (!activityError && activity) {
+        setRecentActivity(activity);
+        calculateActivityStats(activity);
+      }
+    } catch (error) {
+      console.error('Failed to load activity:', error);
     }
 
     setLoading(false);
@@ -390,10 +390,11 @@ export const UserDashboard: React.FC = () => {
                       <div className="flex-1 min-w-0">
                         <h4 className="font-semibold mb-1">{activity.medication_name}</h4>
                         <p className="text-sm text-muted-foreground mb-1">
-                          {activity.action_type === 'viewed' && 'Viewed savings program'}
+                          {activity.action_type === 'viewed' && 'Viewed medication details'}
                           {activity.action_type === 'saved' && 'Saved to favorites'}
                           {activity.action_type === 'downloaded' && 'Downloaded information'}
-                          {activity.action_type === 'searched' && 'Searched for program'}
+                          {activity.action_type === 'search' && 'Searched for medication'}
+                          {activity.action_type === 'clicked_program' && 'Clicked on program'}
                         </p>
                         <div className="flex items-center gap-2 text-xs text-muted-foreground">
                           <Clock className="w-3 h-3" />

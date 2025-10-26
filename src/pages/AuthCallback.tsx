@@ -27,10 +27,10 @@ export const AuthCallback: React.FC = () => {
           // Try multiple times with exponential backoff
           let userData = null;
           let attempts = 0;
-          const maxAttempts = 5;
+          const maxAttempts = 10;
 
           while (!userData && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 500 * (attempts + 1)));
+            await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1)));
 
             const { data, error: userError } = await supabase
               .from('users')
@@ -43,6 +43,8 @@ export const AuthCallback: React.FC = () => {
               console.log('User record found:', data);
             } else if (userError) {
               console.error('Error fetching user data (attempt ' + (attempts + 1) + '):', userError);
+            } else {
+              console.log('User record not found yet, waiting... (attempt ' + (attempts + 1) + '/' + maxAttempts + ')');
             }
 
             attempts++;
@@ -50,9 +52,36 @@ export const AuthCallback: React.FC = () => {
 
           if (!userData) {
             console.error('Failed to create user record after', maxAttempts, 'attempts');
-            setError('Account setup incomplete. Please try signing in again.');
-            setTimeout(() => navigate('/login'), 3000);
-            return;
+            console.log('This may be a database trigger issue. Checking if user exists in auth.users...');
+
+            // Try to manually create the user record as a fallback
+            try {
+              const { error: insertError } = await supabase
+                .from('users')
+                .insert({
+                  id: user.id,
+                  email: user.email || '',
+                  first_name: user.user_metadata?.first_name || user.user_metadata?.full_name?.split(' ')[0] || user.user_metadata?.name?.split(' ')[0] || user.email?.split('@')[0] || '',
+                  last_name: user.user_metadata?.last_name || user.user_metadata?.full_name?.split(' ').slice(1).join(' ') || user.user_metadata?.name?.split(' ').slice(1).join(' ') || '',
+                })
+                .select('is_admin, email')
+                .single();
+
+              if (!insertError) {
+                console.log('Successfully created user record manually');
+                userData = { is_admin: false, email: user.email };
+              } else {
+                console.error('Failed to manually create user record:', insertError);
+              }
+            } catch (manualInsertError) {
+              console.error('Error during manual user creation:', manualInsertError);
+            }
+
+            if (!userData) {
+              setError('Account setup incomplete. Please try signing in again.');
+              setTimeout(() => navigate('/login'), 3000);
+              return;
+            }
           }
 
           const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com'];

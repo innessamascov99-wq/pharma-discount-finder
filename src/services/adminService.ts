@@ -118,16 +118,36 @@ export const getUserStatistics = async (
   daysBack: number = 30
 ): Promise<UserStatistic[]> => {
   try {
-    const { data, error } = await supabase.rpc('get_user_statistics', {
-      days_back: daysBack,
-    });
+    const endDate = new Date();
+    const startDate = new Date();
+    startDate.setDate(startDate.getDate() - daysBack);
+
+    const { data: users, error } = await supabase
+      .from('users')
+      .select('created_at')
+      .gte('created_at', startDate.toISOString())
+      .lte('created_at', endDate.toISOString());
 
     if (error) throw error;
 
-    return (data || []) as UserStatistic[];
+    const statsMap = new Map<string, number>();
+    for (let d = new Date(startDate); d <= endDate; d.setDate(d.getDate() + 1)) {
+      const dateStr = d.toISOString().split('T')[0];
+      statsMap.set(dateStr, 0);
+    }
+
+    (users || []).forEach(user => {
+      const dateStr = new Date(user.created_at).toISOString().split('T')[0];
+      statsMap.set(dateStr, (statsMap.get(dateStr) || 0) + 1);
+    });
+
+    return Array.from(statsMap.entries()).map(([date, new_users]) => ({
+      date,
+      new_users,
+    }));
   } catch (error) {
     console.error('Get user statistics error:', error);
-    throw error;
+    return [];
   }
 };
 
@@ -135,16 +155,36 @@ export const getTopPrograms = async (
   limitCount: number = 10
 ): Promise<TopProgram[]> => {
   try {
-    const { data, error } = await supabase.rpc('get_top_programs', {
-      limit_count: limitCount,
-    });
+    const { data: activities, error } = await supabase
+      .from('user_activity')
+      .select('medication_name')
+      .eq('action_type', 'search')
+      .not('medication_name', 'is', null)
+      .order('created_at', { ascending: false })
+      .limit(1000);
 
     if (error) throw error;
 
-    return (data || []) as TopProgram[];
+    const medicationCounts = new Map<string, number>();
+    (activities || []).forEach(activity => {
+      if (activity.medication_name) {
+        medicationCounts.set(
+          activity.medication_name,
+          (medicationCounts.get(activity.medication_name) || 0) + 1
+        );
+      }
+    });
+
+    return Array.from(medicationCounts.entries())
+      .map(([medication_name, search_count]) => ({
+        medication_name,
+        search_count,
+      }))
+      .sort((a, b) => b.search_count - a.search_count)
+      .slice(0, limitCount);
   } catch (error) {
     console.error('Get top programs error:', error);
-    throw error;
+    return [];
   }
 };
 
@@ -171,13 +211,32 @@ export const getRecentActivity = async (
   limitCount: number = 20
 ): Promise<RecentActivity[]> => {
   try {
-    const { data, error } = await supabase.rpc('get_all_recent_activity', {
-      limit_count: limitCount,
-    });
+    const { data: activities, error } = await supabase
+      .from('user_activity')
+      .select('*')
+      .order('created_at', { ascending: false })
+      .limit(limitCount);
 
     if (error) throw error;
 
-    return (data || []) as RecentActivity[];
+    const userIds = [...new Set((activities || []).map(a => a.user_id).filter(Boolean))];
+
+    let userEmails: Record<string, string> = {};
+    if (userIds.length > 0) {
+      const { data: authUsers } = await supabase.auth.admin.listUsers();
+      if (authUsers?.users) {
+        authUsers.users.forEach(user => {
+          if (user.id && user.email) {
+            userEmails[user.id] = user.email;
+          }
+        });
+      }
+    }
+
+    return (activities || []).map(activity => ({
+      ...activity,
+      user_email: activity.user_id ? userEmails[activity.user_id] || null : null,
+    })) as RecentActivity[];
   } catch (error) {
     console.error('Get recent activity error:', error);
     return [];

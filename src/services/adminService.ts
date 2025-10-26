@@ -51,6 +51,8 @@ export const getAllUsers = async (
   pageSize: number = 20
 ): Promise<{ users: UserProfile[]; total: number }> => {
   try {
+    console.log('getAllUsers called with:', { searchQuery, page, pageSize });
+
     let query = supabase
       .from('users')
       .select('*', { count: 'exact' })
@@ -66,9 +68,15 @@ export const getAllUsers = async (
     const to = from + pageSize - 1;
     query = query.range(from, to);
 
+    console.log('Executing query from', from, 'to', to);
     const { data, error, count } = await query;
 
-    if (error) throw error;
+    if (error) {
+      console.error('Supabase query error:', error);
+      throw error;
+    }
+
+    console.log('Query successful. Users:', data?.length, 'Total count:', count);
 
     return {
       users: (data || []) as UserProfile[],

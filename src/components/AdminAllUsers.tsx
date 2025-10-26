@@ -46,15 +46,18 @@ export const AdminAllUsers: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
+      console.log('Loading users with query:', searchQuery, 'page:', currentPage);
       const { users: userData, total } = await getAllUsers(
         searchQuery,
         currentPage,
         pageSize
       );
+      console.log('Loaded users:', userData.length, 'total:', total);
       setUsers(userData);
       setTotalUsers(total);
     } catch (error) {
       console.error('Error loading users:', error);
+      alert('Failed to load users. Please check your admin permissions and try again.');
     } finally {
       setLoading(false);
     }

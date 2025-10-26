@@ -8,6 +8,7 @@ import {
   XCircle,
   AlertTriangle,
   Loader2,
+  Search,
 } from 'lucide-react';
 import {
   Card,
@@ -19,6 +20,7 @@ import {
   Badge,
 } from './ui';
 import { searchSupabase } from '../lib/supabase';
+import { searchDrugs, Drug } from '../services/searchService';
 
 interface CSVRow {
   [key: string]: string;
@@ -38,6 +40,10 @@ export const AdminDatabase: React.FC = () => {
   const [uploadResult, setUploadResult] = useState<UploadResult | null>(null);
   const [selectedTable, setSelectedTable] = useState<'drugs' | 'programs'>('drugs');
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [searchQuery, setSearchQuery] = useState('');
+  const [searchResults, setSearchResults] = useState<Drug[]>([]);
+  const [searching, setSearching] = useState(false);
+  const [searchError, setSearchError] = useState<string | null>(null);
 
   const parseCSV = (text: string): { headers: string[]; rows: CSVRow[] } => {
     const lines = text.split('\n').filter((line) => line.trim());
@@ -237,18 +243,142 @@ export const AdminDatabase: React.FC = () => {
     }
   };
 
+  const handleSearch = async (query: string) => {
+    setSearchQuery(query);
+
+    if (!query || query.trim().length < 2) {
+      setSearchResults([]);
+      setSearchError(null);
+      return;
+    }
+
+    setSearching(true);
+    setSearchError(null);
+
+    try {
+      const results = await searchDrugs(query);
+      setSearchResults(results);
+    } catch (err: any) {
+      console.error('Search error:', err);
+      setSearchError(err.message || 'Failed to search drugs');
+      setSearchResults([]);
+    } finally {
+      setSearching(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
       <div className="flex items-center justify-between">
         <div>
           <h2 className="text-2xl font-bold">Database Management</h2>
-          <p className="text-muted-foreground">Upload and manage database records</p>
+          <p className="text-muted-foreground">Search, upload and manage database records</p>
         </div>
         <Button onClick={downloadTemplate} variant="outline" className="gap-2">
           <Download className="w-4 h-4" />
           Download Template
         </Button>
       </div>
+
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+              <Search className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Search Database</CardTitle>
+              <CardDescription className="text-xs">
+                Search for drugs in the database
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="relative">
+              <div className="relative bg-muted/50 border-2 border-border rounded-xl overflow-hidden">
+                <div className="flex items-center gap-4 px-6 py-4">
+                  {searching ? (
+                    <Loader2 className="w-5 h-5 text-primary animate-spin flex-shrink-0" />
+                  ) : (
+                    <Search className="w-5 h-5 text-primary flex-shrink-0" />
+                  )}
+                  <input
+                    type="text"
+                    value={searchQuery}
+                    onChange={(e) => handleSearch(e.target.value)}
+                    placeholder="Search by medication name..."
+                    className="flex-1 bg-transparent text-base font-medium text-foreground placeholder:text-muted-foreground focus:outline-none"
+                    autoComplete="off"
+                  />
+                  {searchQuery && !searching && (
+                    <button
+                      onClick={() => handleSearch('')}
+                      className="text-muted-foreground hover:text-foreground transition-colors text-sm font-medium"
+                    >
+                      Clear
+                    </button>
+                  )}
+                </div>
+                {searchQuery.length > 0 && searchQuery.length < 2 && (
+                  <div className="px-6 pb-4 text-sm text-muted-foreground">
+                    Type at least 2 characters to search
+                  </div>
+                )}
+              </div>
+            </div>
+
+            {searchError && (
+              <div className="bg-destructive/10 border border-destructive/30 rounded-lg p-4">
+                <p className="text-destructive text-sm font-medium">{searchError}</p>
+              </div>
+            )}
+
+            {searchResults.length > 0 && (
+              <div className="border rounded-lg overflow-hidden">
+                <div className="overflow-x-auto max-h-96">
+                  <table className="w-full text-sm">
+                    <thead className="bg-muted sticky top-0">
+                      <tr>
+                        <th className="text-left py-2 px-4 font-semibold">Medication</th>
+                        <th className="text-left py-2 px-4 font-semibold">Generic Name</th>
+                        <th className="text-left py-2 px-4 font-semibold">Manufacturer</th>
+                        <th className="text-left py-2 px-4 font-semibold">Drug Class</th>
+                        <th className="text-left py-2 px-4 font-semibold">Status</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {searchResults.map((drug, index) => (
+                        <tr key={drug.id || index} className="border-t hover:bg-muted/50">
+                          <td className="py-2 px-4 font-medium">{drug.medication_name}</td>
+                          <td className="py-2 px-4">{drug.generic_name}</td>
+                          <td className="py-2 px-4">{drug.manufacturer}</td>
+                          <td className="py-2 px-4">{drug.drug_class}</td>
+                          <td className="py-2 px-4">
+                            <Badge className="bg-emerald-100 text-emerald-700 dark:bg-emerald-900/20 dark:text-emerald-400 border-0">
+                              Active
+                            </Badge>
+                          </td>
+                        </tr>
+                      ))}
+                    </tbody>
+                  </table>
+                </div>
+                <div className="bg-muted/50 py-2 px-4 text-center text-sm text-muted-foreground">
+                  Found {searchResults.length} result{searchResults.length !== 1 ? 's' : ''}
+                </div>
+              </div>
+            )}
+
+            {searchQuery.length >= 2 && !searching && searchResults.length === 0 && !searchError && (
+              <div className="text-center py-8 text-muted-foreground">
+                No drugs found matching "{searchQuery}"
+              </div>
+            )}
+          </div>
+        </CardContent>
+      </Card>
 
       <Card className="border-0 shadow-lg">
         <CardHeader>

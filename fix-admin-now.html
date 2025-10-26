@@ -1,0 +1,227 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Fix Admin Status - Pharma Discount Finder</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: system-ui, -apple-system, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 10px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    button {
+      background: #3b82f6;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 6px;
+      cursor: pointer;
+      font-size: 16px;
+      margin: 10px 0;
+    }
+    button:hover {
+      background: #2563eb;
+    }
+    .output {
+      background: #f9fafb;
+      border: 1px solid #e5e7eb;
+      padding: 15px;
+      border-radius: 6px;
+      margin-top: 20px;
+      font-family: monospace;
+      white-space: pre-wrap;
+    }
+    .success { color: #10b981; }
+    .error { color: #ef4444; }
+    .info { color: #3b82f6; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔧 Fix Admin Status</h1>
+    <p>This tool will grant admin status to pharma.admin@gmail.com</p>
+
+    <button onclick="checkStatus()">1. Check Current Status</button>
+    <button onclick="fixAdmin()">2. Grant Admin Status</button>
+    <button onclick="logout()">3. Logout (if needed)</button>
+
+    <div id="output" class="output"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Mjg2MTYxMzUsImV4cCI6MjA0NDE5MjEzNX0.lT2xhfNRu8yS-x8mRZVPl6BIkXeABHGDPw8lCyRwLI0';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+    const output = document.getElementById('output');
+
+    function log(message, type = 'info') {
+      const timestamp = new Date().toLocaleTimeString();
+      output.innerHTML += `<div class="${type}">[${timestamp}] ${message}</div>`;
+    }
+
+    async function checkStatus() {
+      output.innerHTML = '';
+      log('Checking current session and status...', 'info');
+
+      try {
+        // Check auth session
+        const { data: { session }, error: sessionError } = await supabase.auth.getSession();
+
+        if (sessionError) {
+          log('Error getting session: ' + sessionError.message, 'error');
+          return;
+        }
+
+        if (!session) {
+          log('❌ No active session found. Please sign in first!', 'error');
+          log('Go to /login or /signup to create your account', 'info');
+          return;
+        }
+
+        log('✅ Active session found', 'success');
+        log('Email: ' + session.user.email, 'info');
+        log('User ID: ' + session.user.id, 'info');
+
+        // Check if user exists in users table
+        const { data: userData, error: userError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (userError) {
+          log('❌ Error checking users table: ' + userError.message, 'error');
+          return;
+        }
+
+        if (!userData) {
+          log('❌ User record NOT found in users table!', 'error');
+          log('The trigger failed to create your user record.', 'error');
+          log('Click "Grant Admin Status" to fix this.', 'info');
+          return;
+        }
+
+        log('✅ User record found in users table', 'success');
+        log('Name: ' + userData.first_name + ' ' + userData.last_name, 'info');
+        log('Is Admin: ' + userData.is_admin, userData.is_admin ? 'success' : 'error');
+
+        if (userData.email === 'pharma.admin@gmail.com' && !userData.is_admin) {
+          log('❌ You should be an admin but is_admin is false!', 'error');
+          log('Click "Grant Admin Status" to fix this.', 'info');
+        } else if (userData.is_admin) {
+          log('✅ Admin status is correct!', 'success');
+          log('Try refreshing the page or going to /admin', 'info');
+        }
+
+      } catch (err) {
+        log('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function fixAdmin() {
+      output.innerHTML = '';
+      log('Attempting to grant admin status...', 'info');
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          log('❌ No active session. Please sign in first!', 'error');
+          return;
+        }
+
+        log('Current user: ' + session.user.email, 'info');
+
+        if (session.user.email !== 'pharma.admin@gmail.com') {
+          log('❌ This tool is only for pharma.admin@gmail.com', 'error');
+          log('Your email is: ' + session.user.email, 'info');
+          return;
+        }
+
+        // Check if user record exists
+        const { data: existingUser } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .maybeSingle();
+
+        if (existingUser) {
+          // Update existing user
+          log('Updating existing user record...', 'info');
+          const { error: updateError } = await supabase
+            .from('users')
+            .update({ is_admin: true })
+            .eq('id', session.user.id);
+
+          if (updateError) {
+            log('❌ Error updating: ' + updateError.message, 'error');
+            return;
+          }
+
+          log('✅ Admin status granted!', 'success');
+        } else {
+          // Create new user record
+          log('Creating new user record...', 'info');
+          const { error: insertError } = await supabase
+            .from('users')
+            .insert({
+              id: session.user.id,
+              email: session.user.email,
+              first_name: 'Pharma',
+              last_name: 'Admin',
+              is_admin: true,
+              created_at: new Date().toISOString(),
+              updated_at: new Date().toISOString()
+            });
+
+          if (insertError) {
+            log('❌ Error creating user: ' + insertError.message, 'error');
+            return;
+          }
+
+          log('✅ User record created with admin status!', 'success');
+        }
+
+        log('Redirecting to admin portal in 2 seconds...', 'info');
+        setTimeout(() => {
+          window.location.href = '/admin';
+        }, 2000);
+
+      } catch (err) {
+        log('Error: ' + err.message, 'error');
+      }
+    }
+
+    async function logout() {
+      output.innerHTML = '';
+      log('Logging out...', 'info');
+
+      try {
+        await supabase.auth.signOut();
+        log('✅ Logged out successfully', 'success');
+        log('Redirecting to login page...', 'info');
+
+        setTimeout(() => {
+          window.location.href = '/login';
+        }, 1500);
+      } catch (err) {
+        log('Error: ' + err.message, 'error');
+      }
+    }
+
+    // Auto-check on load
+    window.onload = () => {
+      checkStatus();
+    };
+  </script>
+</body>
+</html>

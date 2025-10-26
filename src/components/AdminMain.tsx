@@ -99,15 +99,6 @@ export const AdminMain: React.FC = () => {
     return `${Math.floor(seconds / 604800)}w ago`;
   };
 
-  if (loading) {
-    return (
-      <div className="text-center py-12">
-        <div className="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
-        <p className="text-muted-foreground">Loading analytics...</p>
-      </div>
-    );
-  }
-
   const handleSearch = useCallback(async (query: string) => {
     setSearchQuery(query);
 
@@ -130,6 +121,15 @@ export const AdminMain: React.FC = () => {
   }, []);
 
   const maxUsers = getMaxValue(userStats);
+
+  if (loading) {
+    return (
+      <div className="text-center py-12">
+        <div className="inline-block w-12 h-12 border-4 border-primary border-t-transparent rounded-full animate-spin mb-4"></div>
+        <p className="text-muted-foreground">Loading analytics...</p>
+      </div>
+    );
+  }
 
   return (
     <div className="space-y-6">

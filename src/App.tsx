@@ -17,6 +17,7 @@ import { Search } from './pages/Search';
 import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthCallback } from './pages/AuthCallback';
+import { DiagnosticPage } from './pages/DiagnosticPage';
 import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
@@ -71,6 +72,7 @@ function AppContent() {
               <Route path="/contact" element={<Contact />} />
               <Route path="/programs" element={<Programs />} />
               <Route path="/search" element={<Search />} />
+              <Route path="/diagnostic" element={<DiagnosticPage />} />
               <Route
                 path="/dashboard"
                 element={

@@ -3,6 +3,7 @@ import { Link, useNavigate } from 'react-router-dom';
 import { Pill, AlertCircle, CheckCircle2, Loader2, ArrowLeft, Mail, Lock, Eye, EyeOff, User } from 'lucide-react';
 import { Button, Input } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
+import { supabase } from '../lib/supabase';
 
 export const Signup: React.FC = () => {
   const [firstName, setFirstName] = useState('');
@@ -63,14 +64,28 @@ export const Signup: React.FC = () => {
         return;
       }
 
-      if (data.user) {
-        console.log('User created successfully with metadata');
-      }
+      if (data.user && data.session) {
+        console.log('User created and signed in successfully:', data.user.email);
+        setSuccess('Account created successfully! Redirecting...');
 
-      setSuccess('Account created successfully! Redirecting to sign in...');
-      setTimeout(() => {
-        navigate('/login');
-      }, 2000);
+        // Wait for trigger to create user record, then check admin status
+        await new Promise(resolve => setTimeout(resolve, 1000));
+
+        const { data: userData } = await supabase
+          .from('users')
+          .select('is_admin')
+          .eq('id', data.user.id)
+          .maybeSingle();
+
+        const isAdmin = userData?.is_admin || false;
+        navigate(isAdmin ? '/admin' : '/dashboard');
+      } else {
+        // Email confirmation required
+        setSuccess('Account created! Please check your email to confirm your account, then sign in.');
+        setTimeout(() => {
+          navigate('/login');
+        }, 3000);
+      }
     } catch (err) {
       console.error('Unexpected error:', err);
       setError('An unexpected error occurred');

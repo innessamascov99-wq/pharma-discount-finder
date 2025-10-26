@@ -12,13 +12,24 @@ export const Contact: React.FC = () => {
   });
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [submitStatus, setSubmitStatus] = useState<'idle' | 'success' | 'error'>('idle');
+  const [errorMessage, setErrorMessage] = useState<string>('');
   const [focusedField, setFocusedField] = useState<string | null>(null);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setErrorMessage('');
+    setSubmitStatus('idle');
 
-    if (!formData.fullName.trim() || !formData.email.trim() || !formData.message.trim()) {
+    const fullName = formData.fullName.trim();
+    const email = formData.email.trim();
+    const message = formData.message.trim();
+
+    console.log('Form data:', { fullName, email, message });
+
+    if (!fullName || !email || !message) {
+      console.log('Validation failed: missing fields');
       setSubmitStatus('error');
+      setErrorMessage('Please fill in all required fields correctly.');
       setTimeout(() => setSubmitStatus('idle'), 3000);
       return;
     }
@@ -26,25 +37,30 @@ export const Contact: React.FC = () => {
     setIsSubmitting(true);
 
     try {
+      console.log('Submitting to Supabase...');
       const { error } = await supabase
         .from('contact_submissions')
         .insert({
-          full_name: formData.fullName.trim(),
-          email: formData.email.trim(),
-          message: formData.message.trim(),
+          full_name: fullName,
+          email: email,
+          message: message,
         });
 
       if (error) {
+        console.error('Supabase error:', error);
         setSubmitStatus('error');
-        setTimeout(() => setSubmitStatus('idle'), 3000);
+        setErrorMessage(error.message || 'Failed to send message. Please try again.');
+        setTimeout(() => setSubmitStatus('idle'), 5000);
       } else {
         setSubmitStatus('success');
         setFormData({ fullName: '', email: '', message: '' });
         setTimeout(() => setSubmitStatus('idle'), 6000);
       }
     } catch (error) {
+      console.error('Unexpected error:', error);
       setSubmitStatus('error');
-      setTimeout(() => setSubmitStatus('idle'), 3000);
+      setErrorMessage('An unexpected error occurred. Please try again.');
+      setTimeout(() => setSubmitStatus('idle'), 5000);
     } finally {
       setIsSubmitting(false);
     }
@@ -124,7 +140,7 @@ export const Contact: React.FC = () => {
                     <AlertCircle className="w-5 h-5 text-red-600 dark:text-red-400 flex-shrink-0 mt-0.5" />
                     <div>
                       <p className="text-red-900 dark:text-red-100 font-semibold">Error</p>
-                      <p className="text-red-800 dark:text-red-200 text-sm mt-1">Please fill in all required fields correctly.</p>
+                      <p className="text-red-800 dark:text-red-200 text-sm mt-1">{errorMessage || 'Please fill in all required fields correctly.'}</p>
                     </div>
                   </div>
                 )}

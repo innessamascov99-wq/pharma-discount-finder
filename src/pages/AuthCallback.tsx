@@ -55,8 +55,10 @@ export const AuthCallback: React.FC = () => {
             return;
           }
 
-          const isAdmin = userData?.is_admin || false;
-          console.log('User admin status:', isAdmin, 'for email:', userData.email);
+          const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com'];
+          const isAdminEmail = adminEmails.some(email => userData.email?.toLowerCase() === email.toLowerCase());
+          const isAdmin = userData?.is_admin || isAdminEmail;
+          console.log('User admin status:', isAdmin, 'for email:', userData.email, '(DB:', userData?.is_admin, ', Email match:', isAdminEmail, ')');
 
           // Update last login
           try {

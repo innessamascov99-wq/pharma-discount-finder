@@ -18,9 +18,13 @@ export const Login: React.FC = () => {
   useEffect(() => {
     if (user && !authLoading) {
       console.log('Login redirect - User:', user.email, 'isAdmin:', isAdmin);
+
+      const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com'];
+      const isAdminEmail = adminEmails.some(email => user.email?.toLowerCase() === email.toLowerCase());
+
       setTimeout(() => {
-        if (isAdmin) {
-          console.log('Redirecting to /admin');
+        if (isAdmin || isAdminEmail) {
+          console.log('Redirecting to /admin (isAdmin:', isAdmin, ', isAdminEmail:', isAdminEmail, ')');
           navigate('/admin');
         } else {
           console.log('Redirecting to /dashboard');

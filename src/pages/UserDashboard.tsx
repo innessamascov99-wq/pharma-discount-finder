@@ -16,21 +16,18 @@ import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Inpu
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
 import { searchDrugs, Drug, getAllDrugs } from '../services/searchService';
+import { getTopPrograms, TopProgram } from '../services/adminService';
 
 interface UserProfile {
   first_name: string;
   last_name: string;
 }
 
-interface ActivityStats {
-  medication_name: string;
-  count: number;
-}
 
 export const UserDashboard: React.FC = () => {
   const { user } = useAuth();
   const navigate = useNavigate();
-  const [activityStats, setActivityStats] = useState<ActivityStats[]>([]);
+  const [topSearchedMeds, setTopSearchedMeds] = useState<TopProgram[]>([]);
   const [userProfile, setUserProfile] = useState<UserProfile | null>(null);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState('');
@@ -62,15 +59,12 @@ export const UserDashboard: React.FC = () => {
     }
 
     try {
-      const [activityResult, drugsResult] = await Promise.all([
-        supabase.rpc('get_user_recent_activity', { limit_count: 10 }),
+      const [topProgs, drugsResult] = await Promise.all([
+        getTopPrograms(5),
         getAllDrugs()
       ]);
 
-      if (!activityResult.error && activityResult.data) {
-        calculateActivityStats(activityResult.data);
-      }
-
+      setTopSearchedMeds(topProgs);
       setPopularDrugs(drugsResult.slice(0, 10));
     } catch (error) {
       console.error('Failed to load activity:', error);
@@ -79,23 +73,6 @@ export const UserDashboard: React.FC = () => {
     setLoading(false);
   };
 
-  const calculateActivityStats = (activities: any[]) => {
-    const statsMap = new Map<string, number>();
-
-    activities.forEach(activity => {
-      if (activity.medication_name) {
-        const count = statsMap.get(activity.medication_name) || 0;
-        statsMap.set(activity.medication_name, count + 1);
-      }
-    });
-
-    const stats = Array.from(statsMap.entries())
-      .map(([medication_name, count]) => ({ medication_name, count }))
-      .sort((a, b) => b.count - a.count)
-      .slice(0, 5);
-
-    setActivityStats(stats);
-  };
 
   const handleSearch = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -132,15 +109,13 @@ export const UserDashboard: React.FC = () => {
     return `${Math.floor(seconds / 604800)}w ago`;
   };
 
-  const maxCount = Math.max(...activityStats.map(s => s.count), 1);
-
   const statCards = [
     {
       title: 'Total Searches',
-      value: activityStats.reduce((sum, stat) => sum + stat.count, 0),
+      value: topSearchedMeds.reduce((sum, med) => sum + Number(med.search_count), 0),
       icon: Search,
       gradient: 'from-blue-500 to-cyan-500',
-      description: 'Medications searched',
+      description: 'Across all users',
       bgColor: 'bg-blue-50 dark:bg-blue-950/20'
     },
     {
@@ -308,7 +283,7 @@ export const UserDashboard: React.FC = () => {
                 </div>
                 <div>
                   <CardTitle className="text-xl">Top Searched Medications</CardTitle>
-                  <CardDescription>Your most frequent searches</CardDescription>
+                  <CardDescription>Most searched across all users</CardDescription>
                 </div>
               </div>
             </CardHeader>
@@ -318,13 +293,13 @@ export const UserDashboard: React.FC = () => {
                   <Loader2 className="w-8 h-8 animate-spin mx-auto mb-2" />
                   Loading...
                 </div>
-              ) : activityStats.length === 0 ? (
+              ) : topSearchedMeds.length === 0 ? (
                 <div className="space-y-4">
                   <div className="text-center py-4">
                     <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
                     <h3 className="font-semibold mb-2">No search activity yet</h3>
                     <p className="text-sm text-muted-foreground mb-4">
-                      Start searching to track your most viewed medications
+                      No searches recorded across the platform yet
                     </p>
                   </div>
                   <div className="border-t pt-4">
@@ -347,20 +322,23 @@ export const UserDashboard: React.FC = () => {
                 </div>
               ) : (
                 <div className="space-y-4">
-                  {activityStats.map((stat, index) => (
-                    <div key={index} className="space-y-2">
-                      <div className="flex items-center justify-between">
-                        <span className="font-medium text-sm">{stat.medication_name}</span>
-                        <Badge variant="secondary">{stat.count} searches</Badge>
+                  {topSearchedMeds.map((med, index) => {
+                    const maxCount = topSearchedMeds[0]?.search_count || 1;
+                    return (
+                      <div key={index} className="space-y-2">
+                        <div className="flex items-center justify-between">
+                          <span className="font-medium text-sm">{med.medication_name}</span>
+                          <Badge variant="secondary">{med.search_count} searches</Badge>
+                        </div>
+                        <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
+                          <div
+                            className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-500"
+                            style={{ width: `${(med.search_count / maxCount) * 100}%` }}
+                          />
+                        </div>
                       </div>
-                      <div className="w-full bg-muted rounded-full h-2 overflow-hidden">
-                        <div
-                          className="bg-gradient-to-r from-blue-500 to-cyan-500 h-full rounded-full transition-all duration-500"
-                          style={{ width: `${(stat.count / maxCount) * 100}%` }}
-                        />
-                      </div>
-                    </div>
-                  ))}
+                    );
+                  })}
                 </div>
               )}
             </CardContent>

@@ -1,25 +1,11 @@
 import React, { useState } from 'react';
-import { Mail, Clock, MessageCircle, ChevronDown, ChevronUp, Twitter, Linkedin, Facebook } from 'lucide-react';
-import { Button, Input } from './ui';
+import { ChevronDown, ChevronUp, Twitter, Linkedin, Facebook } from 'lucide-react';
 
 export const Footer: React.FC = () => {
   const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [contactForm, setContactForm] = useState({
-    name: '',
-    email: '',
-    message: ''
-  });
 
   const toggleFaq = (index: number) => {
     setOpenFaq(openFaq === index ? null : index);
-  };
-
-  const handleContactSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    // Handle form submission
-    console.log('Contact form submitted:', contactForm);
-    // Reset form
-    setContactForm({ name: '', email: '', message: '' });
   };
 
   const faqs = [
@@ -45,103 +31,14 @@ export const Footer: React.FC = () => {
     <footer className="bg-slate-800 text-white">
       {/* Main Footer Content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12 sm:py-16">
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8 sm:gap-12 lg:gap-16">
-          
-          {/* Section 1: About Us */}
-          <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
-              About Pharma Discount Finder
-            </h3>
-            <div className="space-y-4 text-gray-300 leading-relaxed">
-              <p>
-                We help patients find verified manufacturer discount programs for brand-name prescriptions. 
-                Our mission is to make healthcare more affordable through transparency and accessibility.
-              </p>
-              <p>
-                Every program is sourced directly from official manufacturer websites and summarized 
-                in plain English.
-              </p>
-            </div>
-            <Button
-              variant="outline"
-              size="sm"
-              className="border-gray-400 text-gray-300 hover:bg-gray-700"
-            >
-              Learn More
-            </Button>
-          </div>
+        <div className="grid grid-cols-1 lg:grid-cols-1 gap-8 sm:gap-12 lg:gap-16">
 
-          {/* Section 2: Contact Information */}
-          <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
-              Get In Touch
-            </h3>
-            
-            {/* Contact Details */}
-            <div className="space-y-4 text-gray-300">
-              <div className="flex items-center gap-3">
-                <Mail className="w-5 h-5 text-primary-400" />
-                <a 
-                  href="mailto:support@pharmadiscountfinder.com"
-                  className="hover:text-primary-400 transition-colors duration-200"
-                >
-                  support@pharmadiscountfinder.com
-                </a>
-              </div>
-              
-              <div className="flex items-center gap-3">
-                <Clock className="w-5 h-5 text-primary-400" />
-                <div>
-                  <p>Monday-Friday, 9AM-5PM EST</p>
-                  <p className="text-sm text-gray-400">Response Time: Within 24 hours</p>
-                </div>
-              </div>
-            </div>
-
-            {/* Contact Form */}
-            <form onSubmit={handleContactSubmit} className="space-y-4 mt-6">
-              <Input
-                placeholder="Your Name"
-                value={contactForm.name}
-                onChange={(e) => setContactForm({...contactForm, name: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-primary-400"
-              />
-              <Input
-                type="email"
-                placeholder="Your Email"
-                value={contactForm.email}
-                onChange={(e) => setContactForm({...contactForm, email: e.target.value})}
-                className="bg-slate-700 border-slate-600 text-white placeholder-gray-400 focus:border-primary-400"
-              />
-              <textarea
-                placeholder="Your Message"
-                rows={3}
-                value={contactForm.message}
-                onChange={(e) => setContactForm({...contactForm, message: e.target.value})}
-                className="w-full px-4 py-3 rounded-lg border border-slate-600 bg-slate-700 text-white placeholder-gray-400 focus:outline-none focus:border-primary-400 focus:ring-4 focus:ring-primary-200 focus:ring-opacity-50 transition-all duration-200"
-              />
-              <Button
-                type="submit"
-                variant="default"
-                size="sm"
-                className="w-full gap-2"
-              >
-                <MessageCircle className="w-4 h-4" />
-                Send Message
-              </Button>
-            </form>
-
-            <p className="text-sm text-gray-400 italic">
-              For urgent medical concerns, please contact your healthcare provider
-            </p>
-          </div>
-
-          {/* Section 3: Quick FAQ */}
-          <div className="space-y-4 sm:space-y-6">
-            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4">
+          {/* Section: Quick FAQ */}
+          <div className="space-y-4 sm:space-y-6 max-w-3xl mx-auto">
+            <h3 className="text-lg sm:text-xl font-bold text-white mb-3 sm:mb-4 text-center">
               Frequently Asked Questions
             </h3>
-            
+
             <div className="space-y-3">
               {faqs.map((faq, index) => (
                 <div key={index} className="border-b border-slate-700 pb-3">
@@ -165,12 +62,14 @@ export const Footer: React.FC = () => {
               ))}
             </div>
 
-            <a 
-              href="#faq" 
-              className="inline-flex items-center text-primary-400 hover:text-primary-300 transition-colors duration-200 font-medium"
-            >
-              View All FAQs →
-            </a>
+            <div className="text-center">
+              <a
+                href="/faq"
+                className="inline-flex items-center text-primary-400 hover:text-primary-300 transition-colors duration-200 font-medium"
+              >
+                View All FAQs →
+              </a>
+            </div>
           </div>
         </div>
       </div>

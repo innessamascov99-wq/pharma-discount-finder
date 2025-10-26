@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
-import { useNavigate } from 'react-router-dom';
 import { HelpCircle, ChevronDown, ChevronUp } from 'lucide-react';
 
 export const FAQ: React.FC = () => {
   const [openIndex, setOpenIndex] = useState<number | null>(null);
-  const navigate = useNavigate();
 
   const faqs = [
     {
@@ -91,29 +89,6 @@ export const FAQ: React.FC = () => {
                 )}
               </div>
             ))}
-          </div>
-        </div>
-      </section>
-
-      <section className="bg-slate-50 dark:bg-slate-900 py-16">
-        <div className="max-w-4xl mx-auto px-4 sm:px-6 lg:px-8 text-center">
-          <h2 className="text-3xl font-bold text-slate-800 dark:text-slate-100 mb-4">Still Have Questions?</h2>
-          <p className="text-lg text-slate-600 dark:text-slate-300 mb-8">
-            Can't find what you're looking for? We're here to help.
-          </p>
-          <div className="flex flex-col sm:flex-row gap-4 justify-center">
-            <button
-              onClick={() => navigate('/contact')}
-              className="bg-blue-600 text-white px-8 py-3 rounded-lg hover:bg-blue-700 transition-colors font-semibold"
-            >
-              Contact Support
-            </button>
-            <button
-              onClick={() => navigate('/contact')}
-              className="border-2 border-blue-600 text-blue-600 dark:text-blue-400 dark:border-blue-500 px-8 py-3 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/30 transition-colors font-semibold"
-            >
-              Request Coverage
-            </button>
           </div>
         </div>
       </section>

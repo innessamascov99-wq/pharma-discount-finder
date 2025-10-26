@@ -3,12 +3,14 @@ import { useNavigate } from 'react-router-dom';
 import {
   LayoutDashboard,
   Users,
+  Database,
   Shield,
   Sparkles
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminMain } from '../components/AdminMain';
-import { AdminUsersTab } from '../components/AdminUsersTab';
+import { AdminUsers } from '../components/AdminUsers';
+import { AdminDatabase } from '../components/AdminDatabase';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
 
 export const AdminDashboard: React.FC = () => {
@@ -51,7 +53,7 @@ export const AdminDashboard: React.FC = () => {
           </div>
 
           <Tabs defaultValue="dashboard" className="w-full">
-            <TabsList className="grid w-full sm:w-auto grid-cols-2 sm:inline-flex">
+            <TabsList className="grid w-full sm:w-auto grid-cols-3 sm:inline-flex">
               <TabsTrigger value="dashboard" className="gap-2">
                 <LayoutDashboard className="w-4 h-4" />
                 <span>Dashboard</span>
@@ -60,6 +62,10 @@ export const AdminDashboard: React.FC = () => {
                 <Users className="w-4 h-4" />
                 <span>Users</span>
               </TabsTrigger>
+              <TabsTrigger value="database" className="gap-2">
+                <Database className="w-4 h-4" />
+                <span>Database</span>
+              </TabsTrigger>
             </TabsList>
 
             <TabsContent value="dashboard">
@@ -67,7 +73,11 @@ export const AdminDashboard: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="users">
-              <AdminUsersTab />
+              <AdminUsers />
+            </TabsContent>
+
+            <TabsContent value="database">
+              <AdminDatabase />
             </TabsContent>
           </Tabs>
         </div>

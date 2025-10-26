@@ -8,7 +8,8 @@ import {
   LineChart,
   Award,
   Clock,
-  Pill
+  Pill,
+  Sparkles
 } from 'lucide-react';
 import { Card, CardHeader, CardTitle, CardDescription, CardContent } from './ui';
 import {
@@ -20,6 +21,7 @@ import {
   TopProgram,
   RecentActivity,
 } from '../services/adminService';
+import { getAllDrugs, Drug } from '../services/searchService';
 
 export const AdminMain: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -33,6 +35,7 @@ export const AdminMain: React.FC = () => {
   const [userStats, setUserStats] = useState<UserStatistic[]>([]);
   const [topPrograms, setTopPrograms] = useState<TopProgram[]>([]);
   const [recentActivity, setRecentActivity] = useState<RecentActivity[]>([]);
+  const [popularDrugs, setPopularDrugs] = useState<Drug[]>([]);
 
   useEffect(() => {
     loadData();
@@ -41,17 +44,19 @@ export const AdminMain: React.FC = () => {
   const loadData = async () => {
     setLoading(true);
     try {
-      const [dashStats, userStatsData, topProgsData, recentActData] = await Promise.all([
+      const [dashStats, userStatsData, topProgsData, recentActData, allDrugs] = await Promise.all([
         getDashboardStats(),
         getUserStatistics(timeRange),
         getTopPrograms(10),
         getRecentActivity(20),
+        getAllDrugs(),
       ]);
 
       setStats(dashStats);
       setUserStats(userStatsData);
       setTopPrograms(topProgsData);
       setRecentActivity(recentActData);
+      setPopularDrugs(allDrugs.slice(0, 8));
     } catch (error) {
       console.error('Error loading admin dashboard data:', error);
     } finally {
@@ -272,19 +277,19 @@ export const AdminMain: React.FC = () => {
                 <BarChart3 className="w-5 h-5 text-white" />
               </div>
               <div>
-                <CardTitle className="text-base">Top Programs</CardTitle>
+                <CardTitle className="text-base">Top Searched Medications</CardTitle>
                 <CardDescription className="text-xs">
-                  Most searched medications
+                  {topPrograms.length > 0 ? 'Most searched by users' : 'Popular medications in database'}
                 </CardDescription>
               </div>
             </div>
           </CardHeader>
           <CardContent>
-            {topPrograms.length === 0 ? (
+            {topPrograms.length === 0 && popularDrugs.length === 0 ? (
               <div className="text-center py-8 text-muted-foreground">
-                No search data available yet
+                No data available yet
               </div>
-            ) : (
+            ) : topPrograms.length > 0 ? (
               <div className="space-y-3">
                 {topPrograms.map((program, index) => {
                   const maxCount = topPrograms[0]?.search_count || 1;
@@ -301,7 +306,7 @@ export const AdminMain: React.FC = () => {
                           </span>
                         </div>
                         <span className="text-sm font-bold text-muted-foreground">
-                          {program.search_count}
+                          {program.search_count} searches
                         </span>
                       </div>
                       <div className="w-full h-2 bg-muted rounded-full overflow-hidden">
@@ -313,6 +318,24 @@ export const AdminMain: React.FC = () => {
                     </div>
                   );
                 })}
+              </div>
+            ) : (
+              <div className="space-y-2">
+                <p className="text-xs text-muted-foreground mb-3">
+                  Showing popular medications (no search activity yet)
+                </p>
+                {popularDrugs.map((drug, index) => (
+                  <div key={drug.id} className="flex items-center justify-between py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors">
+                    <div className="flex items-center gap-2">
+                      <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-emerald-500 to-teal-500 text-white text-xs font-bold">
+                        {index + 1}
+                      </div>
+                      <span className="text-sm font-medium">
+                        {drug.medication_name}
+                      </span>
+                    </div>
+                  </div>
+                ))}
               </div>
             )}
           </CardContent>
@@ -368,26 +391,27 @@ export const AdminMain: React.FC = () => {
         </CardContent>
       </Card>
 
-      <Card className="border-0 shadow-lg">
-        <CardHeader>
-          <div className="flex items-center gap-3">
-            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
-              <Clock className="w-5 h-5 text-white" />
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        <Card className="border-0 shadow-lg">
+          <CardHeader>
+            <div className="flex items-center gap-3">
+              <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-violet-500 to-purple-500 flex items-center justify-center">
+                <Clock className="w-5 h-5 text-white" />
+              </div>
+              <div>
+                <CardTitle className="text-base">Recent User Activity</CardTitle>
+                <CardDescription className="text-xs">
+                  Latest searches and views across the platform
+                </CardDescription>
+              </div>
             </div>
-            <div>
-              <CardTitle className="text-base">Recent User Activity</CardTitle>
-              <CardDescription className="text-xs">
-                Latest searches and views across the platform
-              </CardDescription>
-            </div>
-          </div>
-        </CardHeader>
-        <CardContent>
-          {recentActivity.length === 0 ? (
-            <div className="text-center py-8 text-muted-foreground">
-              No recent activity
-            </div>
-          ) : (
+          </CardHeader>
+          <CardContent>
+            {recentActivity.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                No recent activity
+              </div>
+            ) : (
             <div className="space-y-3 max-h-[500px] overflow-y-auto pr-2">
               {recentActivity.map((activity, index) => (
                 <div
@@ -424,6 +448,50 @@ export const AdminMain: React.FC = () => {
           )}
         </CardContent>
       </Card>
+
+      <Card className="border-0 shadow-lg">
+        <CardHeader>
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 flex items-center justify-center">
+              <Sparkles className="w-5 h-5 text-white" />
+            </div>
+            <div>
+              <CardTitle className="text-base">Popular Medications</CardTitle>
+              <CardDescription className="text-xs">
+                Quick access to commonly searched drugs
+              </CardDescription>
+            </div>
+          </div>
+        </CardHeader>
+        <CardContent>
+          {popularDrugs.length === 0 ? (
+            <div className="text-center py-8 text-muted-foreground">
+              No medications available
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 gap-2 max-h-[500px] overflow-y-auto pr-2">
+              {popularDrugs.map((drug, index) => (
+                <div
+                  key={drug.id}
+                  className="flex items-center justify-between p-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors"
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex items-center justify-center w-8 h-8 rounded-lg bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs font-bold">
+                      {index + 1}
+                    </div>
+                    <div>
+                      <h4 className="font-semibold text-sm">{drug.medication_name}</h4>
+                      <p className="text-xs text-muted-foreground">{drug.manufacturer}</p>
+                    </div>
+                  </div>
+                  <span className="text-xs text-muted-foreground">{drug.drug_class}</span>
+                </div>
+              ))}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
     </div>
   );
 };

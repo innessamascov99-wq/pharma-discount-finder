@@ -17,7 +17,7 @@ import {
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Input, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { searchDrugs, Drug } from '../services/searchService';
+import { searchDrugs, Drug, getAllDrugs } from '../services/searchService';
 
 interface ActivityItem {
   id: string;
@@ -46,6 +46,7 @@ export const UserDashboard: React.FC = () => {
   const [searchQuery, setSearchQuery] = useState('');
   const [searchResults, setSearchResults] = useState<Drug[]>([]);
   const [searching, setSearching] = useState(false);
+  const [popularDrugs, setPopularDrugs] = useState<Drug[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -71,13 +72,17 @@ export const UserDashboard: React.FC = () => {
     }
 
     try {
-      const { data: activity, error: activityError } = await supabase
-        .rpc('get_user_recent_activity', { limit_count: 10 });
+      const [activityResult, drugsResult] = await Promise.all([
+        supabase.rpc('get_user_recent_activity', { limit_count: 10 }),
+        getAllDrugs()
+      ]);
 
-      if (!activityError && activity) {
-        setRecentActivity(activity);
-        calculateActivityStats(activity);
+      if (!activityResult.error && activityResult.data) {
+        setRecentActivity(activityResult.data);
+        calculateActivityStats(activityResult.data);
       }
+
+      setPopularDrugs(drugsResult.slice(0, 8));
     } catch (error) {
       console.error('Failed to load activity:', error);
     }
@@ -323,12 +328,31 @@ export const UserDashboard: React.FC = () => {
                   Loading...
                 </div>
               ) : activityStats.length === 0 ? (
-                <div className="text-center py-12">
-                  <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
-                  <h3 className="font-semibold mb-2">No search activity yet</h3>
-                  <p className="text-sm text-muted-foreground">
-                    Start searching for medications to see your activity stats
-                  </p>
+                <div className="space-y-4">
+                  <div className="text-center py-4">
+                    <Search className="w-12 h-12 text-muted-foreground mx-auto mb-4 opacity-50" />
+                    <h3 className="font-semibold mb-2">No search activity yet</h3>
+                    <p className="text-sm text-muted-foreground mb-4">
+                      Start searching to track your most viewed medications
+                    </p>
+                  </div>
+                  <div className="border-t pt-4">
+                    <h4 className="text-sm font-semibold mb-3 text-muted-foreground">Popular Medications</h4>
+                    <div className="space-y-2">
+                      {popularDrugs.map((drug, index) => (
+                        <div key={drug.id} className="flex items-center gap-2 py-2 px-3 rounded-lg bg-muted/50 hover:bg-muted transition-colors cursor-pointer" onClick={() => {
+                          setSearchQuery(drug.medication_name);
+                          handleSearch({ preventDefault: () => {} } as React.FormEvent);
+                        }}>
+                          <div className="flex items-center justify-center w-6 h-6 rounded-full bg-gradient-to-br from-blue-500 to-cyan-500 text-white text-xs font-bold">
+                            {index + 1}
+                          </div>
+                          <span className="text-sm font-medium flex-1">{drug.medication_name}</span>
+                          <ArrowRight className="w-4 h-4 text-muted-foreground" />
+                        </div>
+                      ))}
+                    </div>
+                  </div>
                 </div>
               ) : (
                 <div className="space-y-4">

@@ -36,9 +36,10 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAdminStatus = async (userId: string): Promise<boolean> => {
     try {
+      console.log('🔍 Checking admin status for user ID:', userId);
       // Retry logic to wait for trigger to complete
       let attempts = 0;
-      const maxAttempts = 5;
+      const maxAttempts = 8;
 
       while (attempts < maxAttempts) {
         const { data, error } = await supabase
@@ -48,23 +49,28 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           .maybeSingle();
 
         if (data) {
-          console.log('Admin status check for', data.email, ':', data.is_admin);
+          console.log('✅ User found:', data.email, '| is_admin:', data.is_admin);
+          if (data.is_admin) {
+            console.log('👑 ADMIN ACCESS GRANTED for', data.email);
+          }
           return data.is_admin || false;
         }
 
         if (error) {
-          console.error('Error checking admin status (attempt ' + (attempts + 1) + '):', error);
+          console.error('❌ Error checking admin status (attempt ' + (attempts + 1) + '):', error);
+        } else {
+          console.log('⏳ User record not found yet, attempt', (attempts + 1), '/', maxAttempts);
         }
 
-        // Wait before retrying (exponential backoff)
-        await new Promise(resolve => setTimeout(resolve, 500 * (attempts + 1)));
+        // Wait before retrying (longer backoff)
+        await new Promise(resolve => setTimeout(resolve, 800 * (attempts + 1)));
         attempts++;
       }
 
-      console.error('Failed to fetch user record after', maxAttempts, 'attempts');
+      console.error('❌ Failed to fetch user record after', maxAttempts, 'attempts');
       return false;
     } catch (error) {
-      console.error('Error checking admin status:', error);
+      console.error('❌ Error checking admin status:', error);
       return false;
     }
   };

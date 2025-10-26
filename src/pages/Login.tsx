@@ -12,18 +12,23 @@ export const Login: React.FC = () => {
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [focusedField, setFocusedField] = useState<string | null>(null);
-  const { signIn, signInWithGoogle, user, isAdmin } = useAuth();
+  const { signIn, signInWithGoogle, user, isAdmin, loading: authLoading } = useAuth();
   const navigate = useNavigate();
 
   useEffect(() => {
-    if (user) {
-      if (isAdmin) {
-        navigate('/admin');
-      } else {
-        navigate('/dashboard');
-      }
+    if (user && !authLoading) {
+      console.log('Login redirect - User:', user.email, 'isAdmin:', isAdmin);
+      setTimeout(() => {
+        if (isAdmin) {
+          console.log('Redirecting to /admin');
+          navigate('/admin');
+        } else {
+          console.log('Redirecting to /dashboard');
+          navigate('/dashboard');
+        }
+      }, 500);
     }
-  }, [user, isAdmin, navigate]);
+  }, [user, isAdmin, authLoading, navigate]);
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();

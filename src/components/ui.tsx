@@ -266,7 +266,7 @@ export const TabsList: React.FC<TabsListProps> = ({ children, className, value, 
     >
       {React.Children.map(children, (child) => {
         if (React.isValidElement(child)) {
-          return React.cloneElement(child, { value, onChange } as any);
+          return React.cloneElement(child, { currentValue: value, onChange } as any);
         }
         return child;
       })}
@@ -320,7 +320,7 @@ export const TabsContent: React.FC<TabsContentProps> = ({ value, children, class
   return (
     <div
       className={cn(
-        'mt-2 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
+        'mt-6 ring-offset-background focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2',
         className
       )}
     >

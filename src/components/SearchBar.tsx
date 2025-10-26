@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Search, Loader2, Sparkles } from 'lucide-react';
+import { getAllDrugs } from '../services/searchService';
 
 interface SearchBarProps {
   onSearch: (query: string) => void;
@@ -9,17 +10,33 @@ interface SearchBarProps {
 export const SearchBar: React.FC<SearchBarProps> = ({ onSearch, isLoading }) => {
   const [query, setQuery] = useState('');
   const [isFocused, setIsFocused] = useState(false);
+  const [popularMeds, setPopularMeds] = useState<string[]>([]);
 
-  const popularMeds = [
-    'Ozempic',
-    'Mounjaro',
-    'Trulicity',
-    'Jardiance',
-    'Humira',
-    'Enbrel',
-    'Stelara',
-    'Lantus'
-  ];
+  useEffect(() => {
+    const loadPopularDrugs = async () => {
+      try {
+        const drugs = await getAllDrugs();
+        const topDrugs = drugs
+          .slice(0, 8)
+          .map(drug => drug.medication_name);
+        setPopularMeds(topDrugs);
+      } catch (error) {
+        console.error('Failed to load popular drugs:', error);
+        setPopularMeds([
+          'Ozempic',
+          'Mounjaro',
+          'Trulicity',
+          'Jardiance',
+          'Humira',
+          'Enbrel',
+          'Stelara',
+          'Lantus'
+        ]);
+      }
+    };
+
+    loadPopularDrugs();
+  }, []);
 
   useEffect(() => {
     const timer = setTimeout(() => {

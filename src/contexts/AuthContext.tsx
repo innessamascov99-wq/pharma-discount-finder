@@ -34,10 +34,18 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
   const [loading, setLoading] = useState(true);
   const [isAdmin, setIsAdmin] = useState(false);
 
-  const checkAdminStatus = async (userId: string): Promise<boolean> => {
+  const checkAdminStatus = async (userId: string, userEmail: string | undefined): Promise<boolean> => {
     try {
-      console.log('🔍 Checking admin status for user ID:', userId);
-      // Retry logic to wait for trigger to complete
+      console.log('🔍 Checking admin status for user ID:', userId, 'email:', userEmail);
+
+      const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com', 'admin@pharma.com'];
+      const isAdminEmail = userEmail && adminEmails.some(email => userEmail.toLowerCase() === email.toLowerCase());
+
+      if (isAdminEmail) {
+        console.log('👑 ADMIN EMAIL DETECTED:', userEmail, '- granting admin access');
+        return true;
+      }
+
       let attempts = 0;
       const maxAttempts = 8;
 
@@ -62,7 +70,6 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('⏳ User record not found yet, attempt', (attempts + 1), '/', maxAttempts);
         }
 
-        // Wait before retrying (longer backoff)
         await new Promise(resolve => setTimeout(resolve, 800 * (attempts + 1)));
         attempts++;
       }
@@ -88,7 +95,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setUser(session?.user ?? null);
 
       if (session?.user) {
-        const adminStatus = await checkAdminStatus(session.user.id);
+        const adminStatus = await checkAdminStatus(session.user.id, session.user.email);
         setIsAdmin(adminStatus);
       } else {
         setIsAdmin(false);
@@ -113,7 +120,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
         setUser(session?.user ?? null);
 
         if (session?.user) {
-          const adminStatus = await checkAdminStatus(session.user.id);
+          const adminStatus = await checkAdminStatus(session.user.id, session.user.email);
           setIsAdmin(adminStatus);
         } else {
           setIsAdmin(false);

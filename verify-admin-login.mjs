@@ -1,85 +1,102 @@
 import { createClient } from '@supabase/supabase-js';
 
-const SUPABASE_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
-const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
+// The correct database
+const SUPABASE_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
 
 const supabase = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-async function verifyAdminLogin() {
+async function verifyAdmin() {
   const email = 'admin@pharma.com';
   const password = 'Admin123!';
 
-  console.log('🔐 Testing Admin Login...');
-  console.log('Email:', email);
+  console.log('Database:', SUPABASE_URL);
+  console.log('Testing credentials:', email);
   console.log('');
 
-  try {
-    // Step 1: Login
-    console.log('Step 1: Attempting login...');
-    const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
-      email: email,
-      password: password
-    });
+  // Try login
+  const { data, error } = await supabase.auth.signInWithPassword({
+    email,
+    password
+  });
 
-    if (loginError) {
-      console.error('❌ Login failed:', loginError.message);
-      return;
-    }
-
-    console.log('✅ Login successful!');
-    console.log('User ID:', loginData.user.id);
-    console.log('Email:', loginData.user.email);
+  if (error) {
+    console.error('❌ Login failed:', error.message);
     console.log('');
-
-    // Step 2: Check admin status
-    console.log('Step 2: Checking admin status...');
-    const { data: userData, error: userError } = await supabase
+    
+    // Check if user exists
+    const { data: userData } = await supabase
       .from('users')
-      .select('id, email, is_admin, first_name, last_name')
-      .eq('id', loginData.user.id)
+      .select('*')
+      .eq('email', email)
       .maybeSingle();
-
-    if (userError) {
-      console.error('❌ Error checking admin status:', userError.message);
-      return;
-    }
-
-    console.log('✅ User data retrieved!');
-    console.log('');
-    console.log('User Info:');
-    console.log(JSON.stringify(userData, null, 2));
-    console.log('');
-
-    // Step 3: Determine redirect
-    console.log('Step 3: Determining redirect path...');
-    const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com'];
-    const isAdminEmail = adminEmails.some(e => loginData.user.email?.toLowerCase() === e.toLowerCase());
-    const isAdmin = userData?.is_admin || isAdminEmail;
-
-    console.log('Email check (isAdminEmail):', isAdminEmail);
-    console.log('Database check (is_admin):', userData?.is_admin);
-    console.log('Final admin status:', isAdmin);
-    console.log('');
-
-    const redirectPath = isAdmin ? '/admin' : '/dashboard';
-
-    console.log('═══════════════════════════════════════');
-    console.log('🎯 REDIRECT PATH:', redirectPath);
-    console.log('═══════════════════════════════════════');
-    console.log('');
-
-    if (redirectPath === '/admin') {
-      console.log('✅ SUCCESS! User will be redirected to /admin');
+    
+    if (userData) {
+      console.log('User exists in database:');
+      console.log('  ID:', userData.id);
+      console.log('  is_admin:', userData.is_admin);
+      console.log('');
+      console.log('Password is incorrect or user needs to be recreated.');
     } else {
-      console.log('❌ FAILED! User will be redirected to /dashboard instead');
+      console.log('User does not exist in this database.');
+      console.log('Creating admin account...');
+      
+      const { data: signupData, error: signupError } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          data: {
+            first_name: 'Admin',
+            last_name: 'User'
+          }
+        }
+      });
+      
+      if (signupError) {
+        console.error('Failed to create:', signupError.message);
+        return;
+      }
+      
+      console.log('✅ User created! ID:', signupData.user.id);
+      
+      // Wait and set admin
+      await new Promise(r => setTimeout(r, 2000));
+      
+      await supabase
+        .from('users')
+        .update({ is_admin: true })
+        .eq('id', signupData.user.id);
+      
+      console.log('✅ Admin flag set!');
     }
-
-    // Clean up
-    await supabase.auth.signOut();
-
-  } catch (error) {
-    console.error('❌ Error:', error.message);
+    return;
   }
+
+  console.log('✅ Login successful!');
+  console.log('User ID:', data.user.id);
+  
+  const { data: userData } = await supabase
+    .from('users')
+    .select('is_admin')
+    .eq('id', data.user.id)
+    .maybeSingle();
+
+  console.log('is_admin:', userData?.is_admin);
+  
+  if (!userData?.is_admin) {
+    console.log('Setting admin flag...');
+    await supabase.from('users').update({ is_admin: true }).eq('id', data.user.id);
+    console.log('✅ Admin flag set!');
+  }
+
+  console.log('');
+  console.log('═══════════════════════════════════════');
+  console.log('READY:');
+  console.log('Email: admin@pharma.com');
+  console.log('Password: Admin123!');
+  console.log('═══════════════════════════════════════');
+
+  await supabase.auth.signOut();
 }
 
-verifyAdminLogin();
+verifyAdmin();

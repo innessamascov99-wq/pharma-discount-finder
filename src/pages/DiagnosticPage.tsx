@@ -120,9 +120,9 @@ export const DiagnosticPage: React.FC = () => {
                       ⚠️ Auth session exists but user record is missing! The trigger may have failed. Try signing out and back in.
                     </p>
                   )}
-                  {authUser && dbUser && !dbUser.is_admin && dbUser.email === 'pharmadiscountfinder@gmail.com' && (
+                  {authUser && dbUser && !dbUser.is_admin && (dbUser.email === 'pharmadiscountfinder@gmail.com' || dbUser.email === 'pharma.admin@gmail.com') && (
                     <p className="text-red-800 dark:text-red-200">
-                      ❌ Email is pharmadiscountfinder@gmail.com but is_admin is FALSE! Database trigger failed.
+                      ❌ Email is {dbUser.email} but is_admin is FALSE! Database trigger failed.
                     </p>
                   )}
                   {authUser && dbUser && dbUser.is_admin && (
@@ -137,12 +137,13 @@ export const DiagnosticPage: React.FC = () => {
                 <Button onClick={handleClearSession} variant="outline">
                   Clear Session & Logout
                 </Button>
-                {dbUser && !dbUser.is_admin && dbUser.email === 'pharmadiscountfinder@gmail.com' && (
+                {dbUser && !dbUser.is_admin && (dbUser.email === 'pharmadiscountfinder@gmail.com' || dbUser.email === 'pharma.admin@gmail.com') && (
                   <Button onClick={async () => {
                     await supabase.from('users').update({ is_admin: true }).eq('id', dbUser.id);
-                    window.location.reload();
+                    alert('Admin status granted! Redirecting to admin portal...');
+                    window.location.href = '/admin';
                   }}>
-                    Fix Admin Status
+                    Grant Admin Status
                   </Button>
                 )}
               </div>

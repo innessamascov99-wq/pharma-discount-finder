@@ -9,7 +9,7 @@ import {
 } from 'lucide-react';
 import { useAuth } from '../contexts/AuthContext';
 import { AdminMain } from '../components/AdminMain';
-import { AdminUsers } from '../components/AdminUsers';
+import { AdminUsersTab } from '../components/AdminUsersTab';
 import { AdminDatabase } from '../components/AdminDatabase';
 import { Tabs, TabsList, TabsTrigger, TabsContent } from '../components/ui';
 
@@ -73,7 +73,7 @@ export const AdminDashboard: React.FC = () => {
             </TabsContent>
 
             <TabsContent value="users">
-              <AdminUsers />
+              <AdminUsersTab />
             </TabsContent>
 
             <TabsContent value="database">

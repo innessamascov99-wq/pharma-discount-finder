@@ -36,18 +36,33 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
 
   const checkAdminStatus = async (userId: string): Promise<boolean> => {
     try {
-      const { data, error } = await supabase
-        .from('users')
-        .select('is_admin')
-        .eq('id', userId)
-        .maybeSingle();
+      // Retry logic to wait for trigger to complete
+      let attempts = 0;
+      const maxAttempts = 5;
 
-      if (error) {
-        console.error('Error checking admin status:', error);
-        return false;
+      while (attempts < maxAttempts) {
+        const { data, error } = await supabase
+          .from('users')
+          .select('is_admin, email')
+          .eq('id', userId)
+          .maybeSingle();
+
+        if (data) {
+          console.log('Admin status check for', data.email, ':', data.is_admin);
+          return data.is_admin || false;
+        }
+
+        if (error) {
+          console.error('Error checking admin status (attempt ' + (attempts + 1) + '):', error);
+        }
+
+        // Wait before retrying (exponential backoff)
+        await new Promise(resolve => setTimeout(resolve, 500 * (attempts + 1)));
+        attempts++;
       }
 
-      return data?.is_admin || false;
+      console.error('Failed to fetch user record after', maxAttempts, 'attempts');
+      return false;
     } catch (error) {
       console.error('Error checking admin status:', error);
       return false;

@@ -23,22 +23,40 @@ export const AuthCallback: React.FC = () => {
           console.log('Session established:', data.session);
           const user = data.session.user;
 
-          // Wait a moment for the trigger to create the user record
-          await new Promise(resolve => setTimeout(resolve, 500));
+          // Wait for the trigger to create the user record
+          // Try multiple times with exponential backoff
+          let userData = null;
+          let attempts = 0;
+          const maxAttempts = 5;
 
-          // Check admin status from database
-          const { data: userData, error: userError } = await supabase
-            .from('users')
-            .select('is_admin')
-            .eq('id', user.id)
-            .maybeSingle();
+          while (!userData && attempts < maxAttempts) {
+            await new Promise(resolve => setTimeout(resolve, 500 * (attempts + 1)));
 
-          if (userError) {
-            console.error('Error fetching user data:', userError);
+            const { data, error: userError } = await supabase
+              .from('users')
+              .select('is_admin, email')
+              .eq('id', user.id)
+              .maybeSingle();
+
+            if (data) {
+              userData = data;
+              console.log('User record found:', data);
+            } else if (userError) {
+              console.error('Error fetching user data (attempt ' + (attempts + 1) + '):', userError);
+            }
+
+            attempts++;
+          }
+
+          if (!userData) {
+            console.error('Failed to create user record after', maxAttempts, 'attempts');
+            setError('Account setup incomplete. Please try signing in again.');
+            setTimeout(() => navigate('/login'), 3000);
+            return;
           }
 
           const isAdmin = userData?.is_admin || false;
-          console.log('User admin status:', isAdmin);
+          console.log('User admin status:', isAdmin, 'for email:', userData.email);
 
           // Update last login
           try {

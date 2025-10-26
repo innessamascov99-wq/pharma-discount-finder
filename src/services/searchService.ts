@@ -58,6 +58,21 @@ export interface Program {
   similarity?: number;
 }
 
+export interface UserProgram {
+  id: string;
+  user_id: string;
+  program_id: string;
+  drug_id: string | null;
+  enrollment_date: string;
+  status: 'active' | 'expired' | 'cancelled';
+  renewal_date: string | null;
+  notes: string | null;
+  created_at: string;
+  updated_at: string;
+  program?: Program;
+  drug?: Drug;
+}
+
 const logActivity = async (actionType: string, medicationName?: string, drugId?: string, searchQuery?: string) => {
   try {
     const { data: { user } } = await supabase.auth.getUser();
@@ -274,5 +289,84 @@ export const getPharmacyPricingForDrug = async (drugId: string): Promise<Pharmac
   } catch (error) {
     console.error('Get pharmacy pricing error:', error);
     return [];
+  }
+};
+
+export const getUserPrograms = async (userId: string, status?: 'active' | 'expired' | 'cancelled'): Promise<UserProgram[]> => {
+  try {
+    let query = supabase
+      .from('user_programs')
+      .select(`
+        *,
+        program:programs(*),
+        drug:drugs(*)
+      `)
+      .eq('user_id', userId)
+      .order('enrollment_date', { ascending: false });
+
+    if (status) {
+      query = query.eq('status', status);
+    }
+
+    const { data, error } = await query;
+
+    if (error) throw error;
+    return data || [];
+  } catch (error) {
+    console.error('Get user programs error:', error);
+    return [];
+  }
+};
+
+export const enrollInProgram = async (
+  programId: string,
+  drugId?: string,
+  notes?: string
+): Promise<UserProgram | null> => {
+  try {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) throw new Error('User not authenticated');
+
+    const { data, error } = await supabase
+      .from('user_programs')
+      .insert({
+        user_id: user.id,
+        program_id: programId,
+        drug_id: drugId || null,
+        notes: notes || null,
+        status: 'active',
+      })
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Enroll in program error:', error);
+    return null;
+  }
+};
+
+export const updateProgramStatus = async (
+  userProgramId: string,
+  status: 'active' | 'expired' | 'cancelled',
+  notes?: string
+): Promise<UserProgram | null> => {
+  try {
+    const updateData: any = { status };
+    if (notes) updateData.notes = notes;
+
+    const { data, error } = await supabase
+      .from('user_programs')
+      .update(updateData)
+      .eq('id', userProgramId)
+      .select()
+      .single();
+
+    if (error) throw error;
+    return data;
+  } catch (error) {
+    console.error('Update program status error:', error);
+    return null;
   }
 };

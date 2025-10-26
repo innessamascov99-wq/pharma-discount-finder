@@ -15,7 +15,7 @@ import {
 import { Button, Card, CardHeader, CardTitle, CardDescription, CardContent, Badge } from '../components/ui';
 import { useAuth } from '../contexts/AuthContext';
 import { supabase } from '../lib/supabase';
-import { searchDrugs, Drug, getAllDrugs } from '../services/searchService';
+import { searchDrugs, Drug, getAllDrugs, getUserPrograms, UserProgram } from '../services/searchService';
 import { getTopPrograms, TopProgram } from '../services/adminService';
 import { SearchBar } from '../components/SearchBar';
 import { SearchResults } from '../components/SearchResults';
@@ -36,6 +36,7 @@ export const UserDashboard: React.FC = () => {
   const [searchResults, setSearchResults] = useState<Drug[]>([]);
   const [isSearching, setIsSearching] = useState(false);
   const [popularDrugs, setPopularDrugs] = useState<Drug[]>([]);
+  const [userPrograms, setUserPrograms] = useState<UserProgram[]>([]);
 
   useEffect(() => {
     if (!user) {
@@ -61,13 +62,15 @@ export const UserDashboard: React.FC = () => {
     }
 
     try {
-      const [topProgs, drugsResult] = await Promise.all([
+      const [topProgs, drugsResult, programs] = await Promise.all([
         getTopPrograms(5),
-        getAllDrugs()
+        getAllDrugs(),
+        getUserPrograms(user.id, 'active')
       ]);
 
       setTopSearchedMeds(topProgs);
       setPopularDrugs(drugsResult.slice(0, 10));
+      setUserPrograms(programs);
     } catch (error) {
       console.error('Failed to load activity:', error);
     }
@@ -136,7 +139,7 @@ export const UserDashboard: React.FC = () => {
     },
     {
       title: 'Active Programs',
-      value: '3',
+      value: userPrograms.length,
       icon: Activity,
       gradient: 'from-amber-500 to-orange-500',
       description: 'Currently enrolled',

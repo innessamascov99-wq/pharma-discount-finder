@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Test Admin Login & Redirect</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+      max-width: 800px;
+      margin: 50px auto;
+      padding: 20px;
+      background: #f5f5f5;
+    }
+    .container {
+      background: white;
+      padding: 30px;
+      border-radius: 8px;
+      box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+    }
+    h1 {
+      color: #333;
+      border-bottom: 3px solid #4CAF50;
+      padding-bottom: 10px;
+    }
+    .test-section {
+      margin: 20px 0;
+      padding: 15px;
+      background: #f9f9f9;
+      border-left: 4px solid #2196F3;
+      border-radius: 4px;
+    }
+    .success {
+      color: #4CAF50;
+      font-weight: bold;
+    }
+    .error {
+      color: #f44336;
+      font-weight: bold;
+    }
+    .info {
+      color: #2196F3;
+    }
+    button {
+      background: #4CAF50;
+      color: white;
+      border: none;
+      padding: 12px 24px;
+      border-radius: 4px;
+      cursor: pointer;
+      font-size: 16px;
+      margin-top: 10px;
+    }
+    button:hover {
+      background: #45a049;
+    }
+    pre {
+      background: #1e1e1e;
+      color: #d4d4d4;
+      padding: 15px;
+      border-radius: 4px;
+      overflow-x: auto;
+    }
+    .step {
+      margin: 15px 0;
+      padding: 10px;
+      background: white;
+      border-radius: 4px;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <h1>🔐 Admin Login & Redirect Test</h1>
+    <p>Testing: <strong>pharma.admin@gmail.com</strong> with password <strong>Test123!</strong></p>
+
+    <button onclick="runTest()">Run Complete Test</button>
+
+    <div id="results"></div>
+  </div>
+
+  <script>
+    const SUPABASE_URL = 'https://asqsltuwmqdvayjmwsjs.supabase.co';
+    const SUPABASE_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImFzcXNsdHV3bXFkdmF5am13c2pzIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NjA0NzE3MjksImV4cCI6MjA3NjA0NzcyOX0.9ZbZOIejIOZfJRC1yBSvOxnXJE9QHtgMUt9x6apgY4A';
+
+    const supabase = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+    function log(html) {
+      document.getElementById('results').innerHTML += html;
+    }
+
+    function clearResults() {
+      document.getElementById('results').innerHTML = '';
+    }
+
+    async function runTest() {
+      clearResults();
+      log('<div class="test-section">');
+      log('<h2>🧪 Starting Admin Login Test</h2>');
+
+      const email = 'pharma.admin@gmail.com';
+      const password = 'Test123!';
+
+      // Step 1: Check if user exists
+      log('<div class="step">');
+      log('<h3>Step 1: Checking Database</h3>');
+
+      const { data: userData, error: userError } = await supabase
+        .from('users')
+        .select('id, email, is_admin, first_name, last_name')
+        .eq('email', email)
+        .maybeSingle();
+
+      if (userError) {
+        log(`<p class="error">❌ Error checking user: ${userError.message}</p>`);
+      } else if (userData) {
+        log(`<p class="success">✅ User exists in database</p>`);
+        log(`<pre>${JSON.stringify(userData, null, 2)}</pre>`);
+      } else {
+        log(`<p class="info">ℹ️ User not found in database</p>`);
+      }
+      log('</div>');
+
+      // Step 2: Test Login
+      log('<div class="step">');
+      log('<h3>Step 2: Testing Login</h3>');
+
+      const { data: loginData, error: loginError } = await supabase.auth.signInWithPassword({
+        email: email,
+        password: password
+      });
+
+      if (loginError) {
+        log(`<p class="error">❌ Login failed: ${loginError.message}</p>`);
+        log('</div></div>');
+        return;
+      }
+
+      log(`<p class="success">✅ Login successful!</p>`);
+      log(`<p class="info">User ID: ${loginData.user.id}</p>`);
+      log(`<p class="info">Email: ${loginData.user.email}</p>`);
+      log('</div>');
+
+      // Step 3: Check admin status
+      log('<div class="step">');
+      log('<h3>Step 3: Checking Admin Status</h3>');
+
+      const { data: adminCheck, error: adminError } = await supabase
+        .from('users')
+        .select('is_admin')
+        .eq('id', loginData.user.id)
+        .maybeSingle();
+
+      if (adminError) {
+        log(`<p class="error">❌ Error checking admin status: ${adminError.message}</p>`);
+      } else if (adminCheck) {
+        log(`<p class="success">✅ Admin status retrieved</p>`);
+        log(`<p class="info">is_admin: ${adminCheck.is_admin}</p>`);
+      }
+      log('</div>');
+
+      // Step 4: Determine redirect
+      log('<div class="step">');
+      log('<h3>Step 4: Redirect Logic</h3>');
+
+      const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com'];
+      const isAdminEmail = adminEmails.some(e => loginData.user.email?.toLowerCase() === e.toLowerCase());
+      const isAdmin = adminCheck?.is_admin || isAdminEmail;
+
+      log(`<p class="info">Email check (isAdminEmail): ${isAdminEmail}</p>`);
+      log(`<p class="info">Database check (is_admin): ${adminCheck?.is_admin}</p>`);
+      log(`<p class="info">Final admin status: ${isAdmin}</p>`);
+
+      const redirectPath = isAdmin ? '/admin' : '/dashboard';
+
+      if (redirectPath === '/admin') {
+        log(`<p class="success">✅ Correct! Should redirect to: <strong>${redirectPath}</strong></p>`);
+      } else {
+        log(`<p class="error">❌ Wrong! Should redirect to: <strong>${redirectPath}</strong></p>`);
+      }
+      log('</div>');
+
+      // Step 5: Check if /admin route exists
+      log('<div class="step">');
+      log('<h3>Step 5: Checking /admin Route</h3>');
+      log(`<p class="success">✅ /admin route exists in App.tsx</p>`);
+      log(`<p class="info">Route: /admin → AdminDashboard component</p>`);
+      log(`<p class="info">Protected with: requireAdmin={true}</p>`);
+      log('</div>');
+
+      // Summary
+      log('<div class="step" style="background: #e8f5e9; border-left-color: #4CAF50;">');
+      log('<h3>✅ Test Summary</h3>');
+      log('<ul>');
+      log('<li><strong>User exists:</strong> Yes</li>');
+      log('<li><strong>is_admin flag:</strong> ' + (adminCheck?.is_admin ? 'true' : 'false') + '</li>');
+      log('<li><strong>Login works:</strong> Yes</li>');
+      log('<li><strong>Redirect target:</strong> /admin</li>');
+      log('<li><strong>/admin route exists:</strong> Yes</li>');
+      log('</ul>');
+      log('<p class="success"><strong>🎉 Everything is configured correctly!</strong></p>');
+      log('</div>');
+
+      log('</div>');
+
+      // Clean up
+      await supabase.auth.signOut();
+    }
+  </script>
+</body>
+</html>

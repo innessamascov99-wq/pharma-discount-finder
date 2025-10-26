@@ -6,7 +6,6 @@ import { SearchResults } from '../components/SearchResults';
 import { HowItWorks } from '../components/HowItWorks';
 import { FeaturesGrid } from '../components/FeaturesGrid';
 import { ProgramPreview } from '../components/ProgramPreview';
-import { TrustTransparency } from '../components/TrustTransparency';
 import { searchDrugs, Drug } from '../services/searchService';
 
 export const Home: React.FC = () => {
@@ -82,7 +81,6 @@ export const Home: React.FC = () => {
       <TrustBadges />
       <HowItWorks />
       <FeaturesGrid />
-      <TrustTransparency />
     </>
   );
 };

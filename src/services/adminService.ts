@@ -53,6 +53,21 @@ export const getAllUsers = async (
   try {
     console.log('getAllUsers called with:', { searchQuery, page, pageSize });
 
+    const { data: sessionData } = await supabase.auth.getSession();
+    console.log('Current session:', {
+      user: sessionData.session?.user?.email,
+      userId: sessionData.session?.user?.id,
+      authenticated: !!sessionData.session
+    });
+
+    const { data: currentUser } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', sessionData.session?.user?.id)
+      .single();
+
+    console.log('Current user is_admin:', currentUser?.is_admin);
+
     let query = supabase
       .from('users')
       .select('*', { count: 'exact' })
@@ -73,6 +88,12 @@ export const getAllUsers = async (
 
     if (error) {
       console.error('Supabase query error:', error);
+      console.error('Error details:', {
+        message: error.message,
+        code: error.code,
+        details: error.details,
+        hint: error.hint
+      });
       throw error;
     }
 

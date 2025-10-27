@@ -60,28 +60,14 @@ export const getAllUsers = async (
       authenticated: !!sessionData.session
     });
 
-    // Query public.users table directly
-    let query = supabase
-      .from('users')
-      .select('*', { count: 'exact' });
-
-    // Apply search filter if provided
-    if (searchQuery && searchQuery.trim() !== '') {
-      query = query.or(
-        `email.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`
-      );
-    }
-
-    // Apply pagination
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-
-    const { data, error, count } = await query
-      .order('created_at', { ascending: false })
-      .range(from, to);
+    const { data, error } = await supabase.rpc('admin_get_all_users', {
+      search_term: searchQuery || null,
+      page_number: page,
+      page_size: pageSize
+    });
 
     if (error) {
-      console.error('Query error:', error);
+      console.error('RPC error:', error);
       console.error('Error details:', {
         message: error.message,
         code: error.code,
@@ -91,11 +77,13 @@ export const getAllUsers = async (
       throw error;
     }
 
-    console.log('Query successful. Users:', data?.length, 'Total:', count);
+    const totalCount = data && data.length > 0 ? data[0].total_count : 0;
+
+    console.log('RPC successful. Users:', data?.length, 'Total:', totalCount);
 
     return {
       users: (data || []) as UserProfile[],
-      total: count || 0,
+      total: Number(totalCount) || 0,
     };
   } catch (error) {
     console.error('Get all users error:', error);

@@ -67,9 +67,23 @@ export const AdminAllUsers: React.FC = () => {
     } catch (error) {
       console.error('Error loading users:', error);
 
-      // Show more detailed error message
-      const errorMessage = error instanceof Error ? error.message : String(error);
-      alert(`Failed to load users.\n\nError: ${errorMessage}\n\nPlease check the browser console for more details.`);
+      // Show more detailed error message with proper object serialization
+      let errorMessage = 'Unknown error';
+      if (error instanceof Error) {
+        errorMessage = error.message;
+      } else if (typeof error === 'object' && error !== null) {
+        errorMessage = JSON.stringify(error, null, 2);
+      } else {
+        errorMessage = String(error);
+      }
+
+      // Check for auth issues
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) {
+        alert('Failed to load users: You are not authenticated. Please log in again.');
+      } else {
+        alert(`Failed to load users.\n\nError: ${errorMessage}\n\nPlease check the browser console for more details.`);
+      }
     } finally {
       setLoading(false);
     }

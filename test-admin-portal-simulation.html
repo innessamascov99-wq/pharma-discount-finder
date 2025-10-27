@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Admin Portal User Search Test</title>
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <style>
+    body {
+      font-family: monospace;
+      padding: 20px;
+      background: #1a1a1a;
+      color: #00ff00;
+    }
+    .section {
+      margin: 20px 0;
+      padding: 15px;
+      border: 1px solid #333;
+      background: #0a0a0a;
+    }
+    button {
+      margin: 5px;
+      padding: 10px 20px;
+      background: #333;
+      color: #00ff00;
+      border: 1px solid #00ff00;
+      cursor: pointer;
+    }
+    button:hover {
+      background: #00ff00;
+      color: #000;
+    }
+    .error { color: #ff0000; }
+    .success { color: #00ff00; }
+    .info { color: #00aaff; }
+    pre {
+      background: #000;
+      padding: 10px;
+      overflow-x: auto;
+      border-left: 3px solid #00ff00;
+    }
+  </style>
+</head>
+<body>
+  <h1>Admin Portal User Search Diagnostic</h1>
+
+  <div class="section">
+    <h2>Step 1: Test Database Connection</h2>
+    <button onclick="testConnection()">Test Connection</button>
+    <div id="connection-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 2: Check Current User Session</h2>
+    <button onclick="checkSession()">Check Session</button>
+    <div id="session-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 3: Test User Query (Unauthenticated)</h2>
+    <button onclick="testUnauthQuery()">Query Users (No Auth)</button>
+    <div id="unauth-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 4: Check if User is Admin</h2>
+    <button onclick="checkAdminStatus()">Check Admin Status</button>
+    <div id="admin-status-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 5: Test User Query (As Authenticated Admin)</h2>
+    <button onclick="testAuthQuery()">Query Users (Authenticated)</button>
+    <div id="auth-result"></div>
+  </div>
+
+  <div class="section">
+    <h2>Step 6: Test RLS Policies Directly</h2>
+    <button onclick="testRLS()">Test RLS</button>
+    <div id="rls-result"></div>
+  </div>
+
+  <script>
+    const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const supabaseAnonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = window.supabase.createClient(supabaseUrl, supabaseAnonKey);
+
+    async function testConnection() {
+      const result = document.getElementById('connection-result');
+      result.innerHTML = '<p class="info">Testing connection...</p>';
+
+      try {
+        const { data, error } = await supabase
+          .from('users')
+          .select('count');
+
+        if (error) {
+          result.innerHTML = `<p class="error">❌ Connection Error: ${error.message}</p>`;
+        } else {
+          result.innerHTML = `<p class="success">✅ Connected to database successfully!</p>`;
+        }
+      } catch (err) {
+        result.innerHTML = `<p class="error">❌ Exception: ${err.message}</p>`;
+      }
+    }
+
+    async function checkSession() {
+      const result = document.getElementById('session-result');
+      result.innerHTML = '<p class="info">Checking session...</p>';
+
+      try {
+        const { data: { session }, error } = await supabase.auth.getSession();
+
+        if (error) {
+          result.innerHTML = `<p class="error">❌ Session Error: ${error.message}</p>`;
+          return;
+        }
+
+        if (!session) {
+          result.innerHTML = `<p class="error">❌ No active session - User not logged in</p>
+            <p class="info">You need to be logged in as an admin to view users.</p>`;
+          return;
+        }
+
+        result.innerHTML = `
+          <p class="success">✅ Active Session Found</p>
+          <pre>${JSON.stringify({
+            email: session.user.email,
+            id: session.user.id,
+            role: session.user.role,
+            aud: session.user.aud
+          }, null, 2)}</pre>
+        `;
+      } catch (err) {
+        result.innerHTML = `<p class="error">❌ Exception: ${err.message}</p>`;
+      }
+    }
+
+    async function testUnauthQuery() {
+      const result = document.getElementById('unauth-result');
+      result.innerHTML = '<p class="info">Querying users without authentication...</p>';
+
+      try {
+        const { data, error, count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact' });
+
+        if (error) {
+          result.innerHTML = `<p class="error">❌ Query Error: ${error.message}</p>
+            <pre>${JSON.stringify(error, null, 2)}</pre>`;
+          return;
+        }
+
+        result.innerHTML = `
+          <p class="success">✅ Query Successful (Unauthenticated)</p>
+          <p>Total Count: ${count}</p>
+          <p>Rows Returned: ${data?.length || 0}</p>
+          <p class="info">Note: With RLS, unauthenticated users should see 0 rows</p>
+        `;
+      } catch (err) {
+        result.innerHTML = `<p class="error">❌ Exception: ${err.message}</p>`;
+      }
+    }
+
+    async function checkAdminStatus() {
+      const result = document.getElementById('admin-status-result');
+      result.innerHTML = '<p class="info">Checking admin status...</p>';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          result.innerHTML = `<p class="error">❌ Not logged in</p>`;
+          return;
+        }
+
+        const { data: userData, error } = await supabase
+          .from('users')
+          .select('id, email, is_admin, is_blocked')
+          .eq('id', session.user.id)
+          .single();
+
+        if (error) {
+          result.innerHTML = `<p class="error">❌ Error checking admin status: ${error.message}</p>
+            <pre>${JSON.stringify(error, null, 2)}</pre>`;
+          return;
+        }
+
+        result.innerHTML = `
+          <p class="success">✅ User Data Retrieved</p>
+          <pre>${JSON.stringify(userData, null, 2)}</pre>
+          ${userData.is_admin ?
+            '<p class="success">✅ User IS an admin</p>' :
+            '<p class="error">❌ User is NOT an admin</p>'}
+        `;
+      } catch (err) {
+        result.innerHTML = `<p class="error">❌ Exception: ${err.message}</p>`;
+      }
+    }
+
+    async function testAuthQuery() {
+      const result = document.getElementById('auth-result');
+      result.innerHTML = '<p class="info">Querying all users as authenticated user...</p>';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          result.innerHTML = `<p class="error">❌ Not logged in - Cannot test authenticated query</p>`;
+          return;
+        }
+
+        const { data, error, count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact' })
+          .order('created_at', { ascending: false });
+
+        if (error) {
+          result.innerHTML = `<p class="error">❌ Query Error: ${error.message}</p>
+            <p>Error Code: ${error.code}</p>
+            <pre>${JSON.stringify(error, null, 2)}</pre>`;
+          return;
+        }
+
+        result.innerHTML = `
+          <p class="success">✅ Query Successful (Authenticated)</p>
+          <p>Total Count: ${count}</p>
+          <p>Rows Returned: ${data?.length || 0}</p>
+          <details>
+            <summary>User List</summary>
+            <pre>${JSON.stringify(data, null, 2)}</pre>
+          </details>
+        `;
+      } catch (err) {
+        result.innerHTML = `<p class="error">❌ Exception: ${err.message}</p>
+          <pre>${err.stack}</pre>`;
+      }
+    }
+
+    async function testRLS() {
+      const result = document.getElementById('rls-result');
+      result.innerHTML = '<p class="info">Testing RLS policies...</p>';
+
+      try {
+        const { data: { session } } = await supabase.auth.getSession();
+
+        if (!session) {
+          result.innerHTML = `<p class="error">❌ Not logged in</p>`;
+          return;
+        }
+
+        // Test 1: Can user see their own record?
+        const { data: ownData, error: ownError } = await supabase
+          .from('users')
+          .select('*')
+          .eq('id', session.user.id)
+          .single();
+
+        // Test 2: Can user see all records?
+        const { data: allData, error: allError, count } = await supabase
+          .from('users')
+          .select('*', { count: 'exact' });
+
+        let html = '<h3>RLS Policy Test Results:</h3>';
+
+        // Test 1 result
+        if (ownError) {
+          html += `<p class="error">❌ Cannot see own record: ${ownError.message}</p>`;
+        } else {
+          html += `<p class="success">✅ Can see own record</p>`;
+        }
+
+        // Test 2 result
+        if (allError) {
+          html += `<p class="error">❌ Cannot see all records: ${allError.message}</p>
+            <pre>${JSON.stringify(allError, null, 2)}</pre>`;
+        } else {
+          html += `<p class="success">✅ Can see all records</p>`;
+          html += `<p>Total accessible: ${count} users</p>`;
+          html += `<p>Records returned: ${allData?.length || 0}</p>`;
+        }
+
+        result.innerHTML = html;
+      } catch (err) {
+        result.innerHTML = `<p class="error">❌ Exception: ${err.message}</p>`;
+      }
+    }
+
+    // Auto-check session on load
+    window.addEventListener('load', () => {
+      checkSession();
+    });
+  </script>
+</body>
+</html>

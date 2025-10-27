@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>Check Actual Database Schema</title>
+  <script type="module">
+    import { createClient } from 'https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2/+esm';
+
+    // Use exact same config as frontend
+    const supabaseUrl = import.meta.env?.VITE_SUPABASE_URL || 'https://nuhfqkhplldontxtoxkg.supabase.co';
+    const supabaseKey = import.meta.env?.VITE_SUPABASE_ANON_KEY || 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+    const supabase = createClient(supabaseUrl, supabaseKey);
+
+    async function checkSchema() {
+      const output = document.getElementById('output');
+      output.innerHTML = '<h2>Checking Database Connection...</h2>';
+
+      // Check connection
+      output.innerHTML += `<p><strong>Connecting to:</strong> ${supabaseUrl}</p>`;
+      output.innerHTML += `<p><strong>Anon Key (first 50 chars):</strong> ${supabaseKey.substring(0, 50)}...</p>`;
+
+      // Login as admin
+      output.innerHTML += '<h3>Step 1: Login as admin</h3>';
+      const { data: authData, error: authError } = await supabase.auth.signInWithPassword({
+        email: 'admin@pharma.com',
+        password: 'Admin123!'
+      });
+
+      if (authError) {
+        output.innerHTML += `<p style="color: red;">❌ Login failed: ${authError.message}</p>`;
+        return;
+      }
+
+      output.innerHTML += `<p style="color: green;">✅ Logged in as: ${authData.user.email}</p>`;
+      output.innerHTML += `<p>User ID: ${authData.user.id}</p>`;
+
+      // Try to query users table with SELECT *
+      output.innerHTML += '<h3>Step 2: Query users table</h3>';
+      const { data: users, error: usersError } = await supabase
+        .from('users')
+        .select('*')
+        .limit(1);
+
+      if (usersError) {
+        output.innerHTML += `<p style="color: red;">❌ Query failed: ${usersError.message}</p>`;
+        output.innerHTML += `<p>Code: ${usersError.code}</p>`;
+        output.innerHTML += `<p>Details: ${usersError.details}</p>`;
+        output.innerHTML += `<p>Hint: ${usersError.hint}</p>`;
+      } else {
+        output.innerHTML += `<p style="color: green;">✅ Query successful!</p>`;
+        output.innerHTML += `<p>Returned ${users.length} users</p>`;
+
+        if (users.length > 0) {
+          output.innerHTML += '<h3>Schema (columns found):</h3>';
+          output.innerHTML += '<ul>';
+          Object.keys(users[0]).forEach(key => {
+            output.innerHTML += `<li><strong>${key}:</strong> ${typeof users[0][key]} = ${JSON.stringify(users[0][key])}</li>`;
+          });
+          output.innerHTML += '</ul>';
+        } else {
+          output.innerHTML += '<p>No users found in result (RLS might be blocking)</p>';
+        }
+      }
+
+      // Try with SQL query to get schema
+      output.innerHTML += '<h3>Step 3: Check if first_name column exists</h3>';
+      const { data: testData, error: testError } = await supabase
+        .from('users')
+        .select('id, email, first_name')
+        .limit(1);
+
+      if (testError) {
+        output.innerHTML += `<p style="color: red;">❌ Column check failed: ${testError.message}</p>`;
+        output.innerHTML += `<p><strong>This confirms: first_name column does NOT exist in this database</strong></p>`;
+      } else {
+        output.innerHTML += `<p style="color: green;">✅ first_name column EXISTS!</p>`;
+        output.innerHTML += `<p>Data: ${JSON.stringify(testData)}</p>`;
+      }
+    }
+
+    window.addEventListener('DOMContentLoaded', checkSchema);
+  </script>
+</head>
+<body>
+  <h1>Database Schema Check</h1>
+  <div id="output">Loading...</div>
+</body>
+</html>

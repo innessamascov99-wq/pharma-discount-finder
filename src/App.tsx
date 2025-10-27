@@ -18,6 +18,7 @@ import { UserDashboard } from './pages/UserDashboard';
 import { AdminDashboard } from './pages/AdminDashboard';
 import { AuthCallback } from './pages/AuthCallback';
 import { DiagnosticPage } from './pages/DiagnosticPage';
+import { DiagnosticConnection } from './pages/DiagnosticConnection';
 import { AuthProvider } from './contexts/AuthContext';
 
 function AppContent() {
@@ -73,6 +74,7 @@ function AppContent() {
               <Route path="/programs" element={<Programs />} />
               <Route path="/search" element={<Search />} />
               <Route path="/diagnostic" element={<DiagnosticPage />} />
+              <Route path="/diagnostic-connection" element={<DiagnosticConnection />} />
               <Route
                 path="/dashboard"
                 element={

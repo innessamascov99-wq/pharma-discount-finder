@@ -9,8 +9,7 @@
     "lint": "eslint .",
     "preview": "vite preview",
     "typecheck": "tsc --noEmit -p tsconfig.app.json",
-    "verify-db": "tsx scripts/verify-db-config.ts",
-    "prebuild": "tsx scripts/verify-db-config.ts"
+    "verify-db": "tsx scripts/verify-db-config.ts"
   },
   "dependencies": {
     "@supabase/supabase-js": "^2.57.4",

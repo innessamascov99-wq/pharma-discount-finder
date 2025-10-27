@@ -155,11 +155,9 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       setSession(data.session);
       setUser(data.session.user);
 
-      try {
-        await supabase.rpc('update_last_login');
-      } catch (err) {
-        console.error('Error updating last login:', err);
-      }
+      supabase.rpc('update_last_login').catch(err => {
+        console.warn('Last login update unavailable:', err?.message);
+      });
     }
 
     if (error) {

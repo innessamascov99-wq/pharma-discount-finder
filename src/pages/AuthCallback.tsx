@@ -89,12 +89,10 @@ export const AuthCallback: React.FC = () => {
           const isAdmin = userData?.is_admin || isAdminEmail;
           console.log('User admin status:', isAdmin, 'for email:', userData.email, '(DB:', userData?.is_admin, ', Email match:', isAdminEmail, ')');
 
-          // Update last login
-          try {
-            await supabase.rpc('update_last_login');
-          } catch (err) {
-            console.error('Error updating last login:', err);
-          }
+          // Update last login (non-blocking)
+          supabase.rpc('update_last_login').catch(err => {
+            console.warn('Last login update unavailable:', err?.message);
+          });
 
           navigate(isAdmin ? '/admin' : '/dashboard');
         } else {

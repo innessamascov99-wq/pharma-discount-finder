@@ -77,17 +77,19 @@ const logActivity = async (actionType: string, medicationName?: string, drugId?:
   try {
     const { data: { user } } = await supabase.auth.getUser();
     if (user) {
-      await searchSupabase.rpc('log_user_activity', {
+      searchSupabase.rpc('log_user_activity', {
         p_action_type: actionType,
         p_medication_name: medicationName || null,
         p_drug_id: drugId || null,
         p_program_id: null,
         p_search_query: searchQuery || null,
         p_metadata: {}
+      }).catch(err => {
+        console.warn('Activity logging unavailable:', err.message);
       });
     }
   } catch (error) {
-    console.error('Failed to log activity:', error);
+    console.warn('Activity logging failed:', error);
   }
 };
 

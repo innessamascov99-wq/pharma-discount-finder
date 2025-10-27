@@ -29,6 +29,7 @@ import {
   setUserAdmin,
   UserProfile,
 } from '../services/adminService';
+import { supabase } from '../lib/supabase';
 
 export const AdminAllUsers: React.FC = () => {
   const [loading, setLoading] = useState(true);
@@ -46,6 +47,14 @@ export const AdminAllUsers: React.FC = () => {
   const loadUsers = async () => {
     setLoading(true);
     try {
+      // Log current session before attempting query
+      const { data: { session } } = await supabase.auth.getSession();
+      console.log('🔐 Current session when loading users:', {
+        email: session?.user?.email,
+        id: session?.user?.id,
+        authenticated: !!session
+      });
+
       console.log('Loading users with query:', searchQuery, 'page:', currentPage);
       const { users: userData, total } = await getAllUsers(
         searchQuery,
@@ -57,7 +66,10 @@ export const AdminAllUsers: React.FC = () => {
       setTotalUsers(total);
     } catch (error) {
       console.error('Error loading users:', error);
-      alert('Failed to load users. Please check your admin permissions and try again.');
+
+      // Show more detailed error message
+      const errorMessage = error instanceof Error ? error.message : String(error);
+      alert(`Failed to load users.\n\nError: ${errorMessage}\n\nPlease check the browser console for more details.`);
     } finally {
       setLoading(false);
     }

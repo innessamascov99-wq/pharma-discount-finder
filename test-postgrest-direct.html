@@ -1,0 +1,97 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Test PostgREST Direct</title>
+</head>
+<body>
+    <h1>Testing PostgREST API</h1>
+    <div id="results"></div>
+
+    <script type="module">
+        const resultsDiv = document.getElementById('results');
+
+        async function testPostgREST() {
+            const supabaseUrl = 'https://nuhfqkhplldontxtoxkg.supabase.co';
+            const anonKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
+
+            resultsDiv.innerHTML += '<p>Step 1: Testing direct PostgREST API call...</p>';
+
+            // Test 1: Direct API call without auth
+            try {
+                const response = await fetch(`${supabaseUrl}/rest/v1/users?select=count`, {
+                    headers: {
+                        'apikey': anonKey,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const data = await response.text();
+                resultsDiv.innerHTML += `<p>Response status: ${response.status}</p>`;
+                resultsDiv.innerHTML += `<p>Response: ${data}</p>`;
+
+                if (!response.ok) {
+                    resultsDiv.innerHTML += '<p style="color: red;">❌ PostgREST API call failed</p>';
+                    return;
+                }
+
+                resultsDiv.innerHTML += '<p style="color: green;">✅ PostgREST API working</p>';
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+
+            // Test 2: Login and query with auth
+            resultsDiv.innerHTML += '<hr><p>Step 2: Login as admin and query users...</p>';
+
+            try {
+                // Login
+                const loginResponse = await fetch(`${supabaseUrl}/auth/v1/token?grant_type=password`, {
+                    method: 'POST',
+                    headers: {
+                        'apikey': anonKey,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({
+                        email: 'admin@pharma.com',
+                        password: 'Admin123!'
+                    })
+                });
+
+                const loginData = await loginResponse.json();
+
+                if (!loginResponse.ok) {
+                    resultsDiv.innerHTML += `<p style="color: red;">❌ Login failed: ${JSON.stringify(loginData)}</p>`;
+                    return;
+                }
+
+                resultsDiv.innerHTML += `<p style="color: green;">✅ Logged in as: ${loginData.user.email}</p>`;
+                const accessToken = loginData.access_token;
+
+                // Query users with auth token
+                const usersResponse = await fetch(`${supabaseUrl}/rest/v1/users?select=*`, {
+                    headers: {
+                        'apikey': anonKey,
+                        'Authorization': `Bearer ${accessToken}`,
+                        'Content-Type': 'application/json'
+                    }
+                });
+
+                const usersData = await usersResponse.json();
+                resultsDiv.innerHTML += `<p>Users response status: ${usersResponse.status}</p>`;
+                resultsDiv.innerHTML += `<p>Users data: ${JSON.stringify(usersData, null, 2)}</p>`;
+
+                if (Array.isArray(usersData)) {
+                    resultsDiv.innerHTML += `<p style="color: green;">✅ Retrieved ${usersData.length} users</p>`;
+                    resultsDiv.innerHTML += '<pre>' + JSON.stringify(usersData, null, 2) + '</pre>';
+                } else {
+                    resultsDiv.innerHTML += '<p style="color: red;">❌ Unexpected response format</p>';
+                }
+
+            } catch (error) {
+                resultsDiv.innerHTML += `<p style="color: red;">❌ Error: ${error.message}</p>`;
+            }
+        }
+
+        testPostgREST();
+    </script>
+</body>
+</html>

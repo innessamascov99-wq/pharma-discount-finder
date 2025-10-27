@@ -60,34 +60,15 @@ export const getAllUsers = async (
       authenticated: !!sessionData.session
     });
 
-    const { data: currentUser } = await supabase
-      .from('users')
-      .select('is_admin')
-      .eq('id', sessionData.session?.user?.id)
-      .single();
-
-    console.log('Current user is_admin:', currentUser?.is_admin);
-
-    let query = supabase
-      .from('users')
-      .select('*', { count: 'exact' })
-      .order('created_at', { ascending: false });
-
-    if (searchQuery && searchQuery.trim()) {
-      query = query.or(
-        `email.ilike.%${searchQuery}%,first_name.ilike.%${searchQuery}%,last_name.ilike.%${searchQuery}%`
-      );
-    }
-
-    const from = (page - 1) * pageSize;
-    const to = from + pageSize - 1;
-    query = query.range(from, to);
-
-    console.log('Executing query from', from, 'to', to);
-    const { data, error, count } = await query;
+    // Use RPC function instead of direct table access to bypass PostgREST cache issues
+    const { data, error } = await supabase.rpc('get_all_users_admin', {
+      search_query: searchQuery || '',
+      page_number: page,
+      page_size: pageSize
+    });
 
     if (error) {
-      console.error('Supabase query error:', error);
+      console.error('RPC query error:', error);
       console.error('Error details:', {
         message: error.message,
         code: error.code,
@@ -97,11 +78,17 @@ export const getAllUsers = async (
       throw error;
     }
 
-    console.log('Query successful. Users:', data?.length, 'Total count:', count);
+    console.log('RPC query successful. Users:', data?.length);
+
+    // Extract total count from first row (all rows have the same total_count)
+    const totalCount = data && data.length > 0 ? data[0].total_count : 0;
+
+    // Remove total_count from each user object
+    const users = (data || []).map(({ total_count, ...user }: any) => user);
 
     return {
-      users: (data || []) as UserProfile[],
-      total: count || 0,
+      users: users as UserProfile[],
+      total: totalCount,
     };
   } catch (error) {
     console.error('Get all users error:', error);

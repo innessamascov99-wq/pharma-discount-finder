@@ -19,7 +19,7 @@ export const FAQ: React.FC = () => {
     },
     {
       question: "Is this medical advice?",
-      answer: "No, this is not medical advice. Diabetic Discount provides educational information about manufacturer discount programs only. Always consult with your healthcare provider before making decisions about your medications or treatment."
+      answer: "No, this is not medical advice. Diabetic Discount Finder provides educational information about manufacturer discount programs only. Always consult with your healthcare provider before making decisions about your medications or treatment."
     },
     {
       question: "Will more medications be added to the database?",

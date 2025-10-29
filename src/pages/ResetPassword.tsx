@@ -72,7 +72,7 @@ export const ResetPassword: React.FC = () => {
             </div>
             <div className="text-left">
               <div className="text-xl font-bold tracking-tight">
-                Diabetic Discount
+                Diabetic Discount Finder
               </div>
               <div className="text-xs text-muted-foreground font-medium">
                 Sweet Deals. Healthier Life!

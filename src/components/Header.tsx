@@ -54,7 +54,7 @@ export const Header: React.FC = () => {
               </div>
               <div className="flex flex-col">
                 <span className="text-xl font-bold tracking-tight">
-                  Diabetic Discount
+                  Diabetic Discount Finder
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
                   Sweet Deals. Healthier Life!

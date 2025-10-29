@@ -60,30 +60,52 @@ export const getAllUsers = async (
       authenticated: !!sessionData.session
     });
 
-    const { data, error } = await supabase.rpc('admin_get_all_users', {
-      search_term: searchQuery || null,
-      page_number: page,
-      page_size: pageSize
-    });
+    // Verify current user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', sessionData.session?.user?.id)
+      .maybeSingle();
+
+    if (userError) {
+      console.error('Error checking admin status:', userError);
+      throw new Error('Unable to verify admin status');
+    }
+
+    if (!currentUser?.is_admin) {
+      throw new Error('Unauthorized: Admin access required');
+    }
+
+    // Build query for users table
+    let query = supabase
+      .from('users')
+      .select('*', { count: 'exact' });
+
+    // Apply search filter if provided
+    if (searchQuery && searchQuery.trim()) {
+      const searchTerm = `%${searchQuery.trim().toLowerCase()}%`;
+      query = query.or(
+        `email.ilike.${searchTerm},first_name.ilike.${searchTerm},last_name.ilike.${searchTerm}`
+      );
+    }
+
+    // Apply pagination
+    const from = (page - 1) * pageSize;
+    const to = from + pageSize - 1;
+    query = query.range(from, to).order('created_at', { ascending: false });
+
+    const { data, error, count } = await query;
 
     if (error) {
-      console.error('RPC error:', error);
-      console.error('Error details:', {
-        message: error.message,
-        code: error.code,
-        details: error.details,
-        hint: error.hint
-      });
+      console.error('Query error:', error);
       throw error;
     }
 
-    const totalCount = data && data.length > 0 ? data[0].total_count : 0;
-
-    console.log('RPC successful. Users:', data?.length, 'Total:', totalCount);
+    console.log('Query successful. Users:', data?.length, 'Total:', count);
 
     return {
       users: (data || []) as UserProfile[],
-      total: Number(totalCount) || 0,
+      total: count || 0,
     };
   } catch (error) {
     console.error('Get all users error:', error);
@@ -96,10 +118,24 @@ export const toggleUserBlocked = async (
   blockStatus: boolean
 ): Promise<void> => {
   try {
-    const { error } = await supabase.rpc('toggle_user_blocked', {
-      target_user_id: userId,
-      block_status: blockStatus,
-    });
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    // Verify current user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', sessionData.session?.user?.id)
+      .maybeSingle();
+
+    if (userError || !currentUser?.is_admin) {
+      throw new Error('Unauthorized: Admin access required');
+    }
+
+    // Update the user's blocked status
+    const { error } = await supabase
+      .from('users')
+      .update({ is_blocked: blockStatus })
+      .eq('id', userId);
 
     if (error) throw error;
   } catch (error) {
@@ -113,10 +149,24 @@ export const setUserAdmin = async (
   adminStatus: boolean
 ): Promise<void> => {
   try {
-    const { error } = await supabase.rpc('set_user_admin', {
-      target_user_id: userId,
-      admin_status: adminStatus,
-    });
+    const { data: sessionData } = await supabase.auth.getSession();
+
+    // Verify current user is admin
+    const { data: currentUser, error: userError } = await supabase
+      .from('users')
+      .select('is_admin')
+      .eq('id', sessionData.session?.user?.id)
+      .maybeSingle();
+
+    if (userError || !currentUser?.is_admin) {
+      throw new Error('Unauthorized: Admin access required');
+    }
+
+    // Update the user's admin status
+    const { error } = await supabase
+      .from('users')
+      .update({ is_admin: adminStatus })
+      .eq('id', userId);
 
     if (error) throw error;
   } catch (error) {

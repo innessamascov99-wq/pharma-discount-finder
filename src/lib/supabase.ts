@@ -4,7 +4,7 @@ import { createClient } from '@supabase/supabase-js';
 // Database: https://nuhfqkhplldontxtoxkg.supabase.co
 // Project ID: nuhfqkhplldontxtoxkg
 const CORRECT_URL = 'https://nuhfqkhplldontxtoxkg.supabase.co';
-const CORRECT_ANON_KEY = 'ANON_KEY_NEEDED'; // TODO: Replace with actual anon key
+const CORRECT_ANON_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im51aGZxa2hwbGxkb250eHRveGtnIiwicm9sZSI6ImFub24iLCJpYXQiOjE3NTc4NzQyODYsImV4cCI6MjA3MzQ1MDI4Nn0.ceTZ_YZtqCRv2v3UCgHM42OXdb97KrmVhnxgk0iD3eE';
 
 // User authentication database
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL || CORRECT_URL;

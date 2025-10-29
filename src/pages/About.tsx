@@ -63,7 +63,7 @@ export const About: React.FC = () => {
         <div className="max-w-5xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="text-center mb-12">
             <h1 className="text-4xl lg:text-5xl font-bold text-slate-800 dark:text-slate-100 mb-6 leading-tight">
-              Why We Built Pharma Discount Finder
+              Why We Built Diabetic Discount
             </h1>
             <p className="text-xl text-slate-600 dark:text-slate-300 leading-relaxed max-w-3xl mx-auto">
               Prescription costs shouldn't be a barrier to health. We created this platform to make
@@ -81,7 +81,7 @@ export const About: React.FC = () => {
                 options."
               </div>
               <footer className="text-emerald-600 dark:text-emerald-400 font-semibold text-base">
-                — The Pharma Discount Finder Team
+                — The Diabetic Discount Team
               </footer>
               <div className="absolute -top-4 -left-2 text-8xl text-slate-200 dark:text-slate-700 font-serif leading-none">"</div>
             </blockquote>

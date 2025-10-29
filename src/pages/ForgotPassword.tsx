@@ -54,7 +54,7 @@ export const ForgotPassword: React.FC = () => {
             </div>
             <div className="text-left">
               <div className="text-xl font-bold tracking-tight">
-                Pharma Discount Finder
+                Diabetic Discount
               </div>
               <div className="text-xs text-muted-foreground font-medium">
                 Medication Made Affordable

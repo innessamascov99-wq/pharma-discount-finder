@@ -95,14 +95,14 @@ export const Footer: React.FC = () => {
           {/* Tagline */}
           <div className="text-center mb-4 sm:mb-6">
             <p className="text-base sm:text-lg font-medium text-gray-300">
-              Pharma Discount Finder — Transparency for Patients
+              Diabetic Discount — Transparency for Patients
             </p>
           </div>
 
           {/* Copyright and Social */}
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <p className="text-gray-400 text-sm">
-              © 2025 Pharma Discount Finder. All rights reserved.
+              © 2025 Diabetic Discount. All rights reserved.
             </p>
             
             {/* Social Media Icons */}

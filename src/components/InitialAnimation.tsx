@@ -96,7 +96,7 @@ export const InitialAnimation: React.FC<InitialAnimationProps> = ({ onComplete }
                     Diabetic Discount
                   </h1>
                   <p className="text-sm text-muted-foreground font-medium">
-                    Medication Made Affordable
+                    Sweet Deals. Healthier Life!
                   </p>
                 </div>
               </div>

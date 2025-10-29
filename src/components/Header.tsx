@@ -57,7 +57,7 @@ export const Header: React.FC = () => {
                   Diabetic Discount
                 </span>
                 <span className="text-xs text-muted-foreground font-medium">
-                  Medication Made Affordable
+                  Sweet Deals. Healthier Life!
                 </span>
               </div>
             </div>

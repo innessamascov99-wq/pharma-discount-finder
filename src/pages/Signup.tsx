@@ -151,7 +151,7 @@ export const Signup: React.FC = () => {
                   Diabetic Discount
                 </div>
                 <div className="text-xs text-muted-foreground font-medium">
-                  Medication Made Affordable
+                  Sweet Deals. Healthier Life!
                 </div>
               </div>
             </Link>

@@ -38,7 +38,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
     try {
       console.log('🔍 Checking admin status for user ID:', userId, 'email:', userEmail);
 
-      const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com', 'admin@pharma.com'];
+      const adminEmails = ['diabetic.admin@gmail.com', 'diabeticdiscount@gmail.com', 'admin@diabetic.com'];
       const isAdminEmail = userEmail && adminEmails.some(email => userEmail.toLowerCase() === email.toLowerCase());
 
       if (isAdminEmail) {
@@ -47,7 +47,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
       }
 
       let attempts = 0;
-      const maxAttempts = 8;
+      const maxAttempts = 3;
 
       while (attempts < maxAttempts) {
         const { data, error } = await supabase
@@ -70,7 +70,7 @@ export const AuthProvider: React.FC<AuthProviderProps> = ({ children }) => {
           console.log('⏳ User record not found yet, attempt', (attempts + 1), '/', maxAttempts);
         }
 
-        await new Promise(resolve => setTimeout(resolve, 800 * (attempts + 1)));
+        await new Promise(resolve => setTimeout(resolve, 300));
         attempts++;
       }
 

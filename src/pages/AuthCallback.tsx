@@ -24,13 +24,12 @@ export const AuthCallback: React.FC = () => {
           const user = data.session.user;
 
           // Wait for the trigger to create the user record
-          // Try multiple times with exponential backoff
           let userData = null;
           let attempts = 0;
-          const maxAttempts = 10;
+          const maxAttempts = 3;
 
           while (!userData && attempts < maxAttempts) {
-            await new Promise(resolve => setTimeout(resolve, 1000 * (attempts + 1)));
+            await new Promise(resolve => setTimeout(resolve, 400));
 
             const { data, error: userError } = await supabase
               .from('users')
@@ -84,7 +83,7 @@ export const AuthCallback: React.FC = () => {
             }
           }
 
-          const adminEmails = ['pharma.admin@gmail.com', 'pharmadiscountfinder@gmail.com'];
+          const adminEmails = ['diabetic.admin@gmail.com', 'diabeticdiscount@gmail.com', 'admin@diabetic.com'];
           const isAdminEmail = adminEmails.some(email => userData.email?.toLowerCase() === email.toLowerCase());
           const isAdmin = userData?.is_admin || isAdminEmail;
           console.log('User admin status:', isAdmin, 'for email:', userData.email, '(DB:', userData?.is_admin, ', Email match:', isAdminEmail, ')');
